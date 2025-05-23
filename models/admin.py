@@ -1182,7 +1182,65 @@ def admin_user_details(user_id):
         .order_by(Payment.created_at.desc())
         .all()
     )
-      # Make sure all datetime objects are timezone-aware
+    
+    # Get user's QR codes using raw SQL to avoid model import issues
+    user_qr_codes = []
+    try:
+        # Use raw SQL query to get QR codes with scan count
+        query = """
+            SELECT 
+                qr.id, 
+                qr.unique_id, 
+                qr.name, 
+                qr.qr_type, 
+                qr.is_dynamic, 
+                qr.created_at,
+                qr.color, 
+                qr.background_color, 
+                qr.shape, 
+                qr.module_size, 
+                qr.inner_eye_color, 
+                qr.outer_eye_color,
+                COALESCE(COUNT(s.id), 0) as scan_count
+            FROM qr_code qr
+            LEFT JOIN scan s ON qr.id = s.qr_code_id
+            WHERE qr.user_id = :user_id 
+            GROUP BY qr.id, qr.unique_id, qr.name, qr.qr_type, qr.is_dynamic, 
+                     qr.created_at, qr.color, qr.background_color, qr.shape, 
+                     qr.module_size, qr.inner_eye_color, qr.outer_eye_color
+            ORDER BY qr.created_at DESC
+        """
+        from sqlalchemy import text
+        result = db.session.execute(text(query), {"user_id": user_id})
+        
+        # Convert raw results to dictionary-like objects
+        for row in result:
+            qr_dict = {
+                'id': row[0],
+                'unique_id': row[1], 
+                'name': row[2],
+                'qr_type': row[3],
+                'is_dynamic': row[4],
+                'created_at': row[5],
+                'color': row[6],
+                'background_color': row[7],
+                'shape': row[8],
+                'module_size': row[9],
+                'inner_eye_color': row[10],
+                'outer_eye_color': row[11],
+                'scan_count': row[12]
+            }
+            user_qr_codes.append(type('QRCode', (), qr_dict))
+    except Exception as e:
+        current_app.logger.error(f"Error fetching QR codes: {str(e)}")
+        import traceback
+        current_app.logger.error(traceback.format_exc())
+        user_qr_codes = []
+    
+    # Get subscription plans for modals
+    subscription_plans = Subscription.query.filter_by(is_active=True).all()
+    
+    # Make sure all datetime objects are timezone-aware
     for sub, _ in subscriptions:
         if sub.start_date.tzinfo is None:
             sub.start_date = sub.start_date.replace(tzinfo=UTC)
@@ -1194,6 +1252,7 @@ def admin_user_details(user_id):
             payment.created_at = payment.created_at.replace(tzinfo=UTC)
         if payment.invoice_date and payment.invoice_date.tzinfo is None:
             payment.invoice_date = payment.invoice_date.replace(tzinfo=UTC)
+    
     # Calculate current date for checking subscription status
     now = datetime.now(UTC)
     
@@ -1201,6 +1260,8 @@ def admin_user_details(user_id):
                           user=user,
                           subscriptions=subscriptions,
                           payments=payments,
+                          user_qr_codes=user_qr_codes,
+                          subscription_plans=subscription_plans,
                           now=now)
 
 @admin_bp.route('/remove_user/<int:user_id>', methods=['POST'])
