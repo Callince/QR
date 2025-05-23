@@ -2024,101 +2024,6 @@
                 }
             });
         }
-        
-        function setupColorPickers() {
-            const colorInputs = document.querySelectorAll('input[type="text"][id$="color"]');
-            const colorPreviews = document.querySelectorAll('.color-preview');
-            
-            // Setup each color preview element
-            colorPreviews.forEach(preview => {
-                // Find associated input
-                const input = preview.closest('.flex').querySelector('input[type="text"]');
-                if (!input) return;
-                
-                // Set initial color based on input value
-                preview.style.backgroundColor = formatColorValue(input.value);
-        
-                // Create a popup color picker
-                const popupId = `color-popup-${input.id}`;
-                let popup = document.getElementById(popupId);
-                
-                if (!popup) {
-                    popup = document.createElement('div');
-                    popup.id = popupId;
-                    popup.className = 'color-picker-popup hidden';
-                    popup.innerHTML = `
-                        <div class="color-presets">
-                            <div class="color-preset" style="background-color: #000000" data-color="#000000"></div>
-                            <div class="color-preset" style="background-color: #FFFFFF" data-color="#FFFFFF"></div>
-                            <div class="color-preset" style="background-color: #FF0000" data-color="#FF0000"></div>
-                            <div class="color-preset" style="background-color: #00FF00" data-color="#00FF00"></div>
-                            <div class="color-preset" style="background-color: #0000FF" data-color="#0000FF"></div>
-                            <div class="color-preset" style="background-color: #FFFF00" data-color="#FFFF00"></div>
-                            <div class="color-preset" style="background-color: #FF00FF" data-color="#FF00FF"></div>
-                            <div class="color-preset" style="background-color: #00FFFF" data-color="#00FFFF"></div>
-                            <div class="color-preset" style="background-color: #FFA500" data-color="#FFA500"></div>
-                            <div class="color-preset" style="background-color: #800080" data-color="#800080"></div>
-                            <div class="color-preset" style="background-color: #008000" data-color="#008000"></div>
-                            <div class="color-preset" style="background-color: #800000" data-color="#800000"></div>
-                        </div>
-                        <input type="color" class="w-full h-8 mt-2" value="${formatColorValue(input.value)}">
-                    `;
-                    preview.parentNode.appendChild(popup);
-                    
-                    // Add event listeners to color presets
-                    popup.querySelectorAll('.color-preset').forEach(preset => {
-                        preset.addEventListener('click', function() {
-                            const color = this.getAttribute('data-color');
-                            updateColorInput(input, preview, color);
-                            popup.classList.add('hidden');
-                        });
-                    });
-                    
-                    // Add event listener to color input in popup
-                    popup.querySelector('input[type="color"]').addEventListener('input', function() {
-                        const color = this.value;
-                        updateColorInput(input, preview, color);
-                    });
-                }
-                
-                // Toggle popup visibility on click
-                preview.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    
-                    // Hide all other popups
-                    document.querySelectorAll('.color-picker-popup').forEach(p => {
-                        if (p.id !== popupId) {
-                            p.classList.add('hidden');
-                        }
-                    });
-                    
-                    // Toggle this popup
-                    popup.classList.toggle('hidden');
-                    
-                    // Update the color input in the popup
-                    popup.querySelector('input[type="color"]').value = formatColorValue(input.value);
-                });
-                
-                // Also make the input update the preview and trigger changes
-                input.addEventListener('input', function() {
-                    updateColorInput(input, preview, this.value);
-                });
-                
-                // Handle paste events
-                input.addEventListener('paste', function(e) {
-                    setTimeout(() => {
-                        updateColorInput(input, preview, this.value);
-                    }, 10);
-                });
-            });
-            
-            // Close popups when clicking outside
-            document.addEventListener('click', function() {
-                document.querySelectorAll('.color-picker-popup').forEach(popup => {
-                    popup.classList.add('hidden');
-                });
-            });
-        }
 
         function updateColorInput(input, preview, color) {
             // Format the color properly
@@ -3151,6 +3056,607 @@ document.addEventListener("DOMContentLoaded", function () {
         exportType.addEventListener('change', toggleGradientOptions);
         toggleGradientOptions(); // initialize
     }
+});
+
+function setupColorPickers() {
+    const inputs = document.querySelectorAll('input[id$="color"]');
+
+    inputs.forEach(input => {
+        const flex = input.closest('.flex');
+        if (!flex) return;
+
+        const preview = flex.querySelector('.color-preview');
+        if (!preview) return;
+
+        // Set initial color
+        preview.style.backgroundColor = formatColorValue(input.value);
+
+        const popupId = `color-popup-${input.id}`;
+        let popup = document.getElementById(popupId);
+
+        if (!popup) {
+            popup = document.createElement('div');
+            popup.id = popupId;
+            popup.className = 'color-picker-popup hidden absolute z-50 mt-2 p-2';
+            popup.innerHTML = `
+                <div class="grid grid-cols-6 gap-2">
+                    ${['#000000','#FFFFFF','#FF0000','#00FF00','#0000FF','#FFFF00','#FF00FF','#00FFFF','#FFA500','#800080','#008000','#800000']
+                    .map(color => `<div class="color-preset w-6 h-6 cursor-pointer rounded" style="background-color: ${color}" data-color="${color}"></div>`).join('')}
+                </div>
+                <input type="color" class="mt-2 w-full h-8" value="${formatColorValue(input.value)}">
+            `;
+            flex.appendChild(popup);
+
+            // Preset click
+            popup.querySelectorAll('.color-preset').forEach(preset => {
+                preset.addEventListener('click', function () {
+                    const color = this.dataset.color;
+                    updateColorInput(input, preview, color);
+                    popup.classList.add('hidden');
+                });
+            });
+
+            // Native color picker
+            popup.querySelector('input[type="color"]').addEventListener('input', function () {
+                updateColorInput(input, preview, this.value);
+            });
+        }
+
+        // Show popup on preview click
+        preview.addEventListener('click', function (e) {
+            e.stopPropagation();
+            document.querySelectorAll('.color-picker-popup').forEach(p => {
+                if (p !== popup) p.classList.add('hidden');
+            });
+            popup.classList.toggle('hidden');
+            popup.querySelector('input[type="color"]').value = formatColorValue(input.value);
+        });
+
+        // Also make the input update the preview and trigger changes
+        input.addEventListener('input', function() {
+            updateColorInput(input, preview, this.value);
+        });
+
+        // Handle paste
+        input.addEventListener('paste', function () {
+            setTimeout(() => updateColorInput(input, preview, this.value), 10);
+        });
+    });
+
+    document.addEventListener('click', () => {
+        document.querySelectorAll('.color-picker-popup').forEach(popup => popup.classList.add('hidden'));
+    });
+}
+
+function formatColorValue(val) {
+    if (!val) return '#000000';
+    if (val[0] !== '#') val = '#' + val;
+    return val.length === 7 || val.length === 4 ? val : '#000000';
+}
+
+function updateColorInput(input, preview, color) {
+    input.value = color;
+    preview.style.backgroundColor = color;
+    input.dispatchEvent(new Event('change'));
+}
+// Enhanced setupGradientOptions function
+function setupGradientOptions() {
+    const exportTypeSelect = document.getElementById('export_type');
+    const gradientOptions = document.getElementById('gradient-options');
+    const customEyesCheckbox = document.getElementById('custom_eyes');
+    const eyeCustomizationOptions = document.getElementById('eye-customization-options');
+    
+    if (exportTypeSelect && gradientOptions) {
+        // Set initial state - ensure PNG is default
+        exportTypeSelect.value = 'png';
+        gradientOptions.classList.add('hidden');
+        
+        // Initialize hidden field for gradient tracking
+        let gradientField = document.getElementById('using_gradient');
+        if (!gradientField) {
+            gradientField = document.createElement('input');
+            gradientField.type = 'hidden';
+            gradientField.id = 'using_gradient';
+            gradientField.name = 'using_gradient';
+            exportTypeSelect.parentNode.appendChild(gradientField);
+        }
+        gradientField.value = 'false';
+        
+        // Store original state of eye customization
+        let originalEyeState = customEyesCheckbox ? customEyesCheckbox.checked : false;
+        
+        // Add event listener for changes
+        exportTypeSelect.addEventListener('change', function() {
+            const isGradient = this.value === 'gradient';
+            gradientOptions.classList.toggle('hidden', !isGradient);
+            gradientField.value = isGradient ? 'true' : 'false';
+            
+            // Force eye customization when gradient is selected
+            if (isGradient && customEyesCheckbox) {
+                // Store original state only when switching to gradient
+                if (!customEyesCheckbox.disabled) {
+                    originalEyeState = customEyesCheckbox.checked;
+                }
+                
+                // Force check the custom eyes checkbox
+                customEyesCheckbox.checked = true;
+                
+                // Disable the checkbox so user can't uncheck it while using gradient
+                customEyesCheckbox.disabled = true;
+                
+                // Show eye customization options
+                if (eyeCustomizationOptions) {
+                    eyeCustomizationOptions.classList.remove('hidden');
+                }
+                
+                // Update hidden field for custom eyes tracking
+                let customEyesField = document.getElementById('using_custom_eyes');
+                if (!customEyesField) {
+                    customEyesField = document.createElement('input');
+                    customEyesField.type = 'hidden';
+                    customEyesField.id = 'using_custom_eyes';
+                    customEyesField.name = 'using_custom_eyes';
+                    customEyesCheckbox.parentNode.appendChild(customEyesField);
+                }
+                customEyesField.value = 'true';
+                
+                // Initialize gradient colors from main QR color
+                const mainColor = document.getElementById('color').value || '#000000';
+                const gradientStartInput = document.getElementById('gradient_start');
+                const gradientEndInput = document.getElementById('gradient_end');
+                
+                // Set start color to main color if not already set
+                if (gradientStartInput && (!gradientStartInput.dataset.userChanged || gradientStartInput.dataset.userChanged !== 'true')) {
+                    gradientStartInput.value = mainColor;
+                    const startPreview = document.getElementById('gradient-start-preview');
+                    if (startPreview) startPreview.style.backgroundColor = mainColor;
+                    gradientStartInput.dataset.userChanged = 'false';
+                }
+                
+                // Set end color to lighter version of main color if not already set
+                if (gradientEndInput && (!gradientEndInput.dataset.userChanged || gradientEndInput.dataset.userChanged !== 'true')) {
+                    const endColor = lightenColor(mainColor, 30);
+                    gradientEndInput.value = endColor;
+                    const endPreview = document.getElementById('gradient-end-preview');
+                    if (endPreview) endPreview.style.backgroundColor = endColor;
+                    gradientEndInput.dataset.userChanged = 'false';
+                }
+                
+                // Set eye colors to match gradient colors
+                synchronizeEyeColors(true);
+            } 
+            else if (customEyesCheckbox) {
+                // Re-enable the checkbox when switching back to solid color
+                customEyesCheckbox.disabled = false;
+                
+                // Restore original state if we had previously forced it on
+                if (customEyesCheckbox.disabled) {
+                    customEyesCheckbox.checked = originalEyeState;
+                    
+                    // Hide eye customization options if they were originally hidden
+                    if (eyeCustomizationOptions && !originalEyeState) {
+                        eyeCustomizationOptions.classList.add('hidden');
+                    }
+                    
+                    // Update hidden field for custom eyes
+                    let customEyesField = document.getElementById('using_custom_eyes');
+                    if (customEyesField) {
+                        customEyesField.value = originalEyeState ? 'true' : 'false';
+                    }
+                }
+            }
+            
+            // Update gradient preview
+            if (isGradient) {
+                updateGradientPreview();
+            }
+            
+            // Update QR preview
+            if (window.updateQRPreview) {
+                window.updateQRPreview('Changed to ' + this.options[this.selectedIndex].text);
+            }
+        });
+        
+        // Listen for gradient color changes to sync with eye colors
+        const gradientStartInput = document.getElementById('gradient_start');
+        const gradientEndInput = document.getElementById('gradient_end');
+        
+        if (gradientStartInput && gradientEndInput) {
+            gradientStartInput.addEventListener('input', () => synchronizeEyeColors(true));
+            gradientEndInput.addEventListener('input', () => synchronizeEyeColors(true));
+        }
+    }
+}
+
+// Helper function to synchronize eye colors with gradient colors
+function synchronizeEyeColors(forceSync = false) {
+    const isGradient = document.getElementById('export_type')?.value === 'gradient';
+    
+    if (!isGradient && !forceSync) return;
+    
+    const gradientStartInput = document.getElementById('gradient_start');
+    const gradientEndInput = document.getElementById('gradient_end');
+    const innerEyeColorInput = document.getElementById('inner_eye_color');
+    const outerEyeColorInput = document.getElementById('outer_eye_color');
+    
+    // Set eye colors to match gradient colors if using gradient
+    if (innerEyeColorInput && gradientStartInput && 
+        (!innerEyeColorInput.dataset.userChanged || innerEyeColorInput.dataset.userChanged !== 'true')) {
+        innerEyeColorInput.value = gradientStartInput.value;
+        const innerPreview = document.getElementById('inner-eye-color-preview');
+        if (innerPreview) innerPreview.style.backgroundColor = gradientStartInput.value;
+    }
+    
+    if (outerEyeColorInput && gradientEndInput && 
+        (!outerEyeColorInput.dataset.userChanged || outerEyeColorInput.dataset.userChanged !== 'true')) {
+        outerEyeColorInput.value = gradientEndInput.value;
+        const outerPreview = document.getElementById('outer-eye-color-preview');
+        if (outerPreview) outerPreview.style.backgroundColor = gradientEndInput.value;
+    }
+}
+
+// Improved template application function
+function enhancedApplyTemplateStyles(template) {
+    if (!template) return;
+    
+    console.log("Applying template:", template);
+    
+    // Define templates with their respective styles
+    const templates = {
+        modern: {
+            shape: "rounded",
+            color: "#2c5282", // Updated to match formal blue
+            background_color: "#FFFFFF",
+            export_type: "png", // Explicitly set to non-gradient
+            custom_eyes: true,
+            inner_eye_style: "circle",
+            outer_eye_style: "rounded",
+            inner_eye_color: "#2c5282", // Updated to match formal blue
+            outer_eye_color: "#2c5282" // Updated to match formal blue
+        },
+        corporate: {
+            shape: "square",
+            color: "#1a365d", // Darker blue for corporate style
+            background_color: "#FFFFFF",
+            export_type: "png", // Explicitly set to non-gradient
+            frame_type: "square",
+            frame_color: "#1a365d", // Darker blue for corporate style
+            custom_eyes: false
+        },
+        playful: {
+            shape: "circle",
+            export_type: "gradient", // Only this template uses gradient
+            gradient_start: "#3182ce", // Updated to match formal blue palette
+            gradient_end: "#90cdf4", // Updated to match formal blue palette
+            background_color: "#FFFFFF",
+            custom_eyes: true,
+            inner_eye_style: "circle",
+            outer_eye_style: "circle",
+            inner_eye_color: "#3182ce", // Updated to match formal blue palette
+            outer_eye_color: "#3182ce" // Updated to match formal blue palette
+        },
+        minimal: {
+            shape: "square",
+            color: "#2d3748", // Gray for minimal style
+            background_color: "#FFFFFF",
+            export_type: "png", // Explicitly set to non-gradient
+            custom_eyes: false
+        },
+        high_contrast: {
+            shape: "square",
+            color: "#000000",
+            background_color: "#FFFFFF",
+            export_type: "png", // Explicitly set to non-gradient
+            module_size: 12,
+            quiet_zone: 4,
+            custom_eyes: false
+        }
+    };
+    
+    // Get the template styles
+    const styles = templates[template];
+    if (!styles) return;
+    
+    console.log("Template styles:", styles);
+    
+    // Reset user-changed flags when applying template
+    document.querySelectorAll('input[id$="color"]').forEach(input => {
+        input.dataset.userChanged = 'false';
+    });
+    
+    // Apply template styles
+    Object.keys(styles).forEach(key => {
+        const value = styles[key];
+        const element = document.getElementById(key);
+        
+        if (element) {
+            // Handle color inputs specially
+            if (key.includes('color')) {
+                // Only update if user hasn't changed it
+                if (element.dataset.userChanged !== 'true') {
+                    const formattedColor = formatColorValue(value);
+                    element.value = formattedColor;
+                    
+                    // Update preview for color inputs
+                    const preview = document.getElementById(`${key}-preview`);
+                    if (preview) {
+                        preview.style.backgroundColor = formattedColor;
+                    }
+                }
+            } 
+            // Handle checkboxes
+            else if (element.type === 'checkbox') {
+                element.checked = value;
+                
+                // Toggle related panels for custom eyes
+                if (key === 'custom_eyes') {
+                    const eyeOptions = document.getElementById('eye-customization-options');
+                    if (eyeOptions) {
+                        eyeOptions.classList.toggle('hidden', !value);
+                    }
+                    
+                    // Update hidden field
+                    const hiddenField = document.getElementById('using_custom_eyes');
+                    if (hiddenField) {
+                        hiddenField.value = value ? 'true' : 'false';
+                    }
+                }
+            }
+            // Handle select elements
+            else if (element.tagName === 'SELECT') {
+                element.value = value;
+                
+                // Special handling for export type
+                if (key === 'export_type') {
+                    const gradientOptions = document.getElementById('gradient-options');
+                    if (gradientOptions) {
+                        const isGradient = value === 'gradient';
+                        gradientOptions.classList.toggle('hidden', !isGradient);
+                        
+                        // If gradient, ensure custom eyes are enabled
+                        if (isGradient) {
+                            const customEyesCheckbox = document.getElementById('custom_eyes');
+                            if (customEyesCheckbox) {
+                                customEyesCheckbox.checked = true;
+                                customEyesCheckbox.disabled = true;
+                                
+                                // Show eye customization options
+                                const eyeOptions = document.getElementById('eye-customization-options');
+                                if (eyeOptions) {
+                                    eyeOptions.classList.remove('hidden');
+                                }
+                                
+                                // Sync eye colors with gradient colors
+                                synchronizeEyeColors(true);
+                            }
+                        }
+                    }
+                    
+                    // Update hidden field
+                    const gradientField = document.getElementById('using_gradient');
+                    if (gradientField) {
+                        gradientField.value = value === 'gradient' ? 'true' : 'false';
+                    } else {
+                        // Create hidden field if it doesn't exist
+                        const newField = document.createElement('input');
+                        newField.type = 'hidden';
+                        newField.id = 'using_gradient';
+                        newField.name = 'using_gradient';
+                        newField.value = value === 'gradient' ? 'true' : 'false';
+                        element.parentNode.appendChild(newField);
+                    }
+                }
+            }
+            // Handle text inputs
+            else if (element.type === 'text' || element.type === 'number' || element.type === 'range') {
+                element.value = value;
+                
+                // Update display value for range inputs
+                if (element.type === 'range') {
+                    const valueDisplay = document.getElementById(`${key}-value`);
+                    if (valueDisplay) {
+                        valueDisplay.textContent = value;
+                    }
+                }
+            }
+        }
+        
+        // Handle radio button groups
+        if (key === 'shape') {
+            const radio = document.getElementById(`shape-${value}`);
+            if (radio) {
+                radio.checked = true;
+                
+                // Update styles on the label
+                const allLabels = document.querySelectorAll('.shape-option label');
+                allLabels.forEach(label => {
+                    label.classList.remove('bg-secondary-50', 'border-secondary-500');
+                });
+                
+                const label = document.querySelector(`label[for="shape-${value}"]`);
+                if (label) {
+                    label.classList.add('bg-secondary-50', 'border-secondary-500');
+                }
+            }
+        }
+        else if (key === 'frame_type') {
+            const radio = document.getElementById(`frame-${value}`);
+            if (radio) {
+                radio.checked = true;
+                
+                // Update styles on the label
+                const allLabels = document.querySelectorAll('input[name="frame_type"] + label');
+                allLabels.forEach(label => {
+                    label.classList.remove('bg-secondary-50', 'border-secondary-500');
+                });
+                
+                const label = document.querySelector(`label[for="frame-${value}"]`);
+                if (label) {
+                    label.classList.add('bg-secondary-50', 'border-secondary-500');
+                }
+                
+                // Show/hide frame text input based on frame type
+                const frameTextContainer = document.getElementById('frame-text-container');
+                if (frameTextContainer) {
+                    frameTextContainer.classList.toggle('hidden', !['scan_me', 'branded'].includes(value));
+                }
+            }
+        }
+    });
+    
+    // Update gradient preview if needed
+    if (styles.export_type === 'gradient') {
+        updateGradientPreview();
+    }
+    
+    // Trigger preview update
+    updateQRPreview(`Applied '${template}' template`);
+}
+
+// Fix for gradient activation issues
+function fixGradientActivation() {
+    const exportTypeSelect = document.getElementById('export_type');
+    const gradientOptions = document.getElementById('gradient-options');
+    
+    if (exportTypeSelect && gradientOptions) {
+        // Ensure 'png' (solid color) is the default value
+        exportTypeSelect.value = 'png';
+        gradientOptions.classList.add('hidden');
+        
+        // Make sure the hidden gradient field is set correctly
+        let gradientField = document.getElementById('using_gradient');
+        if (!gradientField) {
+            gradientField = document.createElement('input');
+            gradientField.type = 'hidden';
+            gradientField.id = 'using_gradient';
+            gradientField.name = 'using_gradient';
+            exportTypeSelect.parentNode.appendChild(gradientField);
+        }
+        gradientField.value = 'false';
+        
+        // Setup initial eye customization state
+        const customEyesCheckbox = document.getElementById('custom_eyes');
+        if (customEyesCheckbox) {
+            customEyesCheckbox.disabled = false;
+            
+            // Make sure eye customization is correctly initialized
+            const eyeOptions = document.getElementById('eye-customization-options');
+            if (eyeOptions) {
+                eyeOptions.classList.toggle('hidden', !customEyesCheckbox.checked);
+            }
+        }
+    }
+}
+
+// Enhanced setup for eye customization
+function setupEnhancedEyeCustomization() {
+    const customEyesCheckbox = document.getElementById('custom_eyes');
+    const eyeCustomizationOptions = document.getElementById('eye-customization-options');
+    const exportTypeSelect = document.getElementById('export_type');
+    
+    if (customEyesCheckbox && eyeCustomizationOptions) {
+        // Set initial state
+        eyeCustomizationOptions.classList.toggle('hidden', !customEyesCheckbox.checked);
+        
+        // Add hidden field to track custom eyes
+        let customEyesField = document.getElementById('using_custom_eyes');
+        if (!customEyesField) {
+            customEyesField = document.createElement('input');
+            customEyesField.type = 'hidden';
+            customEyesField.id = 'using_custom_eyes';
+            customEyesField.name = 'using_custom_eyes';
+            customEyesCheckbox.parentNode.appendChild(customEyesField);
+        }
+        customEyesField.value = customEyesCheckbox.checked ? 'true' : 'false';
+        
+        // Add event listener
+        customEyesCheckbox.addEventListener('change', function() {
+            // Don't allow unchecking if using gradient
+            if (exportTypeSelect && exportTypeSelect.value === 'gradient' && !this.checked) {
+                this.checked = true;
+                return;
+            }
+            
+            eyeCustomizationOptions.classList.toggle('hidden', !this.checked);
+            customEyesField.value = this.checked ? 'true' : 'false';
+            
+            // When enabling custom eyes, set the eye colors appropriately
+            if (this.checked) {
+                // If gradient is active, set eye colors to match gradient colors
+                if (exportTypeSelect && exportTypeSelect.value === 'gradient') {
+                    synchronizeEyeColors(true);
+                } else {
+                    // Otherwise use main QR color
+                    const mainColor = document.getElementById('color').value;
+                    const innerEyeColorInput = document.getElementById('inner_eye_color');
+                    const outerEyeColorInput = document.getElementById('outer_eye_color');
+                    
+                    if (innerEyeColorInput && (!innerEyeColorInput.value || innerEyeColorInput.value === '#000000')) {
+                        innerEyeColorInput.value = mainColor;
+                        const innerPreview = document.getElementById('inner-eye-color-preview');
+                        if (innerPreview) innerPreview.style.backgroundColor = mainColor;
+                    }
+                    
+                    if (outerEyeColorInput && (!outerEyeColorInput.value || outerEyeColorInput.value === '#000000')) {
+                        outerEyeColorInput.value = mainColor;
+                        const outerPreview = document.getElementById('outer-eye-color-preview');
+                        if (outerPreview) outerPreview.style.backgroundColor = mainColor;
+                    }
+                }
+            }
+            
+            // Trigger preview update
+            if (window.updateQRPreview) {
+                window.updateQRPreview('Toggled custom eye styles');
+            }
+        });
+    }
+    
+    // Add listeners to eye color inputs to track user changes
+    const eyeColorInputs = [
+        document.getElementById('inner_eye_color'),
+        document.getElementById('outer_eye_color')
+    ];
+    
+    eyeColorInputs.forEach(input => {
+        if (input) {
+            input.addEventListener('input', function() {
+                this.dataset.userChanged = 'true';
+            });
+        }
+    });
+}
+
+// Initialize everything together
+document.addEventListener('DOMContentLoaded', function() {
+    // Setup the enhanced gradient options
+    setupGradientOptions();
+    
+    // Setup enhanced eye customization
+    setupEnhancedEyeCustomization();
+    
+    // Fix gradient activation
+    fixGradientActivation();
+    
+    // Add listener to template selection to handle gradient properly
+    document.querySelectorAll('.template-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const templateName = this.dataset.template;
+            
+            // Check if this is a gradient template
+            if (templateName === 'playful') {
+                // Make sure export type is set to gradient
+                const exportTypeSelect = document.getElementById('export_type');
+                if (exportTypeSelect) {
+                    exportTypeSelect.value = 'gradient';
+                    
+                    // Trigger the change event to update UI
+                    const event = new Event('change');
+                    exportTypeSelect.dispatchEvent(event);
+                }
+            }
+        });
+    });
 });
 </script>
 
