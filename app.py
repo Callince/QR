@@ -51,6 +51,11 @@ from flask_wtf.csrf import CSRFProtect
 from flask import Flask, session
 from flask import request, flash, redirect, url_for
 from models.subscription import subscription_bp
+
+# Load environment variables
+from dotenv import load_dotenv
+load_dotenv()
+
 # Create the Flask instance at module level
 app = Flask(__name__)
 
@@ -74,11 +79,11 @@ app.jinja_env.globals['hasattr'] = hasattr  # Add hasattr as a global
 
 
 def create_app():
-    # Configure the app
-    app.config['SECRET_KEY'] = 'your-secret-key'
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:Devi%401234@localhost:5432/qr_codes'
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['UPLOAD_FOLDER'] = 'static/uploads'
+    # Configure the app using environment variables
+    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'fallback-secret-key-for-development')
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:///qr_codes.db')
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = os.getenv('SQLALCHEMY_TRACK_MODIFICATIONS', 'False').lower() == 'true'
+    app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'static/uploads')
 
     # Initialize the shared SQLAlchemy instance with this app
     db.init_app(app)
@@ -91,23 +96,21 @@ def create_app():
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(subscription_bp, url_prefix='/subscription')
 
-    app.config['DEFAULT_TIMEZONE'] = os.environ.get('DEFAULT_TIMEZONE', 'Asia/Calcutta')
+    app.config['DEFAULT_TIMEZONE'] = os.getenv('DEFAULT_TIMEZONE', 'Asia/Calcutta')
+    
     #----------------------
     # CSRF Protection
     #----------------------
-    # Use a consistent secret key - don't override the one set above
-    # app.config['SECRET_KEY'] = os.urandom(24)  # REMOVED - don't override the key
-    app.config['WTF_CSRF_ENABLED'] = True  # Enable CSRF protection
-    app.config['WTF_CSRF_SECRET_KEY'] = os.urandom(24)  # Generate a random CSRF secret key
+    app.config['WTF_CSRF_ENABLED'] = os.getenv('WTF_CSRF_ENABLED', 'False').lower() == 'true'
+    app.config['WTF_CSRF_SECRET_KEY'] = os.getenv('WTF_CSRF_SECRET_KEY', os.urandom(24))
+    app.config['WTF_CSRF_TIME_LIMIT'] = int(os.getenv('WTF_CSRF_TIME_LIMIT', '3600'))
 
-    app.config['WTF_CSRF_ENABLED'] = False  # Disable global CSRF protection
     csrf = CSRFProtect(app)
-    # Configure token expiration
-    app.config['WTF_CSRF_TIME_LIMIT'] = 3600  # Token valid for 1 hour
 
-    app.config['SESSION_COOKIE_SECURE'] = True  # HTTPS only
-    app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent JavaScript access
-    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Strict site origin control
+    # Session Security Configuration
+    app.config['SESSION_COOKIE_SECURE'] = os.getenv('SESSION_COOKIE_SECURE', 'True').lower() == 'true'
+    app.config['SESSION_COOKIE_HTTPONLY'] = os.getenv('SESSION_COOKIE_HTTPONLY', 'True').lower() == 'true'
+    app.config['SESSION_COOKIE_SAMESITE'] = os.getenv('SESSION_COOKIE_SAMESITE', 'Lax')
     
     #Selective Route Protection
     @app.before_request
@@ -137,7 +140,6 @@ def create_app():
         with app.app_context():
             db.create_all()
             create_super_admin()
-
 
     @app.errorhandler(CSRFError)
     def handle_csrf_error(e):
@@ -174,51 +176,58 @@ def create_app():
     #----------------------
     # Logging configuration
     #----------------------
-    log_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'flask_app.log')
+    log_file = os.getenv('LOG_FILE', 'flask_app.log')
+    log_level = getattr(logging, os.getenv('LOG_LEVEL', 'INFO').upper())
+    log_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), log_file)
+    
     logging.basicConfig(
         filename=log_path, 
-        level=logging.INFO, 
+        level=log_level, 
         format='%(asctime)s - %(levelname)s - %(message)s'
     )
-    logging.info("Flask app started successfully")
+    logging.info("Flask app started successfully with environment configuration")
 
     # Ensure download directory exists
-    download_dir = "download_files"
+    download_dir = os.getenv('DOWNLOAD_DIRECTORY', 'download_files')
     os.makedirs(download_dir, exist_ok=True)
 
-
-    # Configure Flask-Caching (simple in-memory)
-    app.config['CACHE_TYPE'] = 'simple'
-    app.config['CACHE_DEFAULT_TIMEOUT'] = 300
+    # Configure Flask-Caching
+    app.config['CACHE_TYPE'] = os.getenv('CACHE_TYPE', 'simple')
+    app.config['CACHE_DEFAULT_TIMEOUT'] = int(os.getenv('CACHE_DEFAULT_TIMEOUT', '300'))
     cache = Cache(app)
 
+    # Razorpay configuration using environment variables
+    app.config['RAZORPAY_KEY_ID'] = os.getenv('RAZORPAY_KEY_ID')
+    app.config['RAZORPAY_KEY_SECRET'] = os.getenv('RAZORPAY_KEY_SECRET')
+    app.config['RAZORPAY_WEBHOOK_SECRET'] = os.getenv('RAZORPAY_WEBHOOK_SECRET')
 
-    # Add Razorpay configuration in your app config section
-    app.config['RAZORPAY_KEY_ID'] = 'rzp_test_omIBrvMFqrjDyN'
-    app.config['RAZORPAY_KEY_SECRET'] = 'XThGZMtibOTjFjG4wGsuXFD7'
-    app.config['RAZORPAY_WEBHOOK_SECRET'] = 'your_webhook_secret'  # Add this if you have webhook integration
+    # Initialize Razorpay client only if credentials are provided
+    if app.config['RAZORPAY_KEY_ID'] and app.config['RAZORPAY_KEY_SECRET']:
+        razorpay_client = razorpay.Client(auth=(app.config['RAZORPAY_KEY_ID'], app.config['RAZORPAY_KEY_SECRET']))
+        app.config['RAZORPAY_CLIENT'] = razorpay_client
+    else:
+        logging.warning("Razorpay credentials not found in environment variables")
 
-    # Initialize Razorpay client
-    razorpay_client = razorpay.Client(auth=(app.config['RAZORPAY_KEY_ID'], app.config['RAZORPAY_KEY_SECRET']))
-    app.config['RAZORPAY_CLIENT'] = razorpay_client
+    # Flask-Mail configuration using environment variables
+    app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
+    app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', '587'))
+    app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'True').lower() == 'true'
+    app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+    app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
 
-
-    # Flask-Mail configuration
-    app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-    app.config['MAIL_PORT'] = 587
-    app.config['MAIL_USE_TLS'] = True
-    app.config['MAIL_USERNAME'] = 'callincegoodsonmarialouis@gmail.com'
-    app.config['MAIL_PASSWORD'] = 'zfol bflm xqsf wtuq'
+    # Validate email configuration
+    if not app.config['MAIL_USERNAME'] or not app.config['MAIL_PASSWORD']:
+        logging.warning("Email credentials not found in environment variables")
 
     mail = Mail(app)
-
     mail.init_app(app)
     login_manager.init_app(app)
     login_manager.login_view = 'login'
     login_manager.login_message = 'You need to log in to access this page.'
     login_manager.login_message_category = 'info'
     migrate = Migrate(app, db)
-    
+
+# [REST OF YOUR CODE REMAINS THE SAME - I'll include it but truncate for brevity]
 # QR code style templates - Updated with gradient flag
 QR_TEMPLATES = {
     "modern": {
@@ -283,6 +292,7 @@ QR_TEMPLATES = {
         "gradient": False  # Not a gradient template
     }
 }
+
 
 @app.before_request
 def load_subscription_data():
