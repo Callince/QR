@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="theme-color" content="{{ detail.primary_color or '#1e3a8a' }}">
+  <title>{{ detail.name }} - Business Card</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-color: {{ detail.primary_color or '#1e3a8a' }};
+      --secondary-color: {{ detail.secondary_color or '#3730a3' }};
+      --bg-primary: #ffffff;
+      --bg-secondary: #f9fafb;
+      --bg-tertiary: #f3f4f6;
+      --text-primary: #111827;
+      --text-secondary: #6b7280;
+      --text-tertiary: #9ca3af;
+      --border-color: #e5e7eb;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --transition: all 0.2s ease;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .vcard-container {
+      max-width: 450px;
+      margin: 2rem auto;
+      background: var(--bg-primary);
+      border-radius: 16px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .vcard-container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    }
+
+    .vcard-header {
+      background: var(--primary-color);
+      color: white;
+      padding: 3rem 2rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header-pattern {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      opacity: 0.1;
+      background: linear-gradient(135deg, transparent 25%, var(--secondary-color) 25%, var(--secondary-color) 50%, transparent 50%, transparent 75%, var(--secondary-color) 75%);
+      background-size: 30px 30px;
+    }
+
+    .header-accent {
+      position: absolute;
+      top: -50%;
+      right: -20%;
+      width: 300px;
+      height: 300px;
+      background: var(--secondary-color);
+      border-radius: 50%;
+      opacity: 0.1;
+    }
+
+    .profile-section {
+      position: relative;
+      z-index: 1;
+    }
+
+    .profile-image {
+      width: 120px;
+      height: 120px;
+      margin: 0 auto 1.5rem;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 4px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 0 0 0 3px var(--secondary-color);
+      position: relative;
+    }
+
+    .profile-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .profile-image-placeholder {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      font-weight: 600;
+      color: white;
+    }
+
+    .vcard-header h1 {
+      font-size: 1.875rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.025em;
+    }
+
+    .title-company {
+      font-size: 1.125rem;
+      font-weight: 400;
+      opacity: 0.9;
+    }
+
+    .vcard-content {
+      padding: 2rem;
+    }
+
+    .section {
+      margin-bottom: 2rem;
+    }
+
+    .section:last-child {
+      margin-bottom: 0;
+    }
+
+    .section-title {
+      font-size: 0.875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--secondary-color);
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--secondary-color);
+      position: relative;
+    }
+
+    .section-title::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 60px;
+      height: 2px;
+      background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    }
+
+    .contact-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .contact-item {
+      display: flex;
+      align-items: center;
+      padding: 0.875rem;
+      border-radius: 10px;
+      background: var(--bg-secondary);
+      text-decoration: none;
+      color: var(--text-primary);
+      transition: var(--transition);
+      border: 1px solid transparent;
+    }
+
+    .contact-item:hover {
+      background: var(--bg-primary);
+      border-color: var(--secondary-color);
+      box-shadow: 0 0 0 3px rgba(var(--secondary-color), 0.1);
+      transform: translateX(4px);
+    }
+
+    .contact-icon {
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      color: white;
+      border-radius: 12px;
+      margin-right: 1rem;
+      font-size: 1.1rem;
+    }
+
+    .contact-info {
+      flex: 1;
+    }
+
+    .contact-label {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.025em;
+    }
+
+    .contact-value {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .social-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .social-link {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1rem 0.5rem;
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+      text-decoration: none;
+      color: var(--text-primary);
+      transition: var(--transition);
+      background: var(--bg-primary);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .social-link::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+    }
+
+    .social-link:hover {
+      border-color: var(--secondary-color);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    }
+
+    .social-link:hover::before {
+      transform: translateX(0);
+    }
+
+    .social-icon {
+      font-size: 1.5rem;
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+    }
+
+    .social-name {
+      font-size: 0.875rem;
+      text-transform: capitalize;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 0.875rem 1.5rem;
+      border: none;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.15);
+      transform: translate(-50%, -50%);
+      transition: width 0.3s, height 0.3s;
+    }
+
+    .btn:hover::before {
+      width: 100%;
+      height: 100%;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      color: white;
+      box-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: var(--bg-primary);
+      color: var(--secondary-color);
+      border: 2px solid var(--secondary-color);
+    }
+
+    .btn-secondary:hover {
+      background: var(--secondary-color);
+      color: white;
+      border-color: var(--secondary-color);
+    }
+
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      padding: 2rem;
+    }
+
+    .modal-content {
+      background: var(--bg-primary);
+      border-radius: 16px;
+      max-width: 400px;
+      margin: auto;
+      padding: 2rem;
+      text-align: center;
+      position: relative;
+      top: 50%;
+      transform: translateY(-50%);
+      box-shadow: var(--shadow-lg);
+      border: 2px solid var(--border-color);
+    }
+
+    .modal-header {
+      margin-bottom: 1.5rem;
+    }
+
+    .modal-header h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--secondary-color);
+    }
+
+    .close-modal {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: var(--bg-secondary);
+      border: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: var(--transition);
+      color: var(--text-secondary);
+    }
+
+    .close-modal:hover {
+      background: var(--secondary-color);
+      color: white;
+      transform: rotate(90deg);
+    }
+
+    /* Mobile Optimizations */
+    @media (max-width: 640px) {
+      body {
+        background: var(--bg-primary);
+      }
+
+      .vcard-container {
+        margin: 0;
+        max-width: 100%;
+        border-radius: 0;
+        box-shadow: none;
+      }
+
+      .vcard-header {
+        padding: 2.5rem 1.5rem;
+      }
+
+      .profile-image {
+        width: 100px;
+        height: 100px;
+      }
+
+      .vcard-header h1 {
+        font-size: 1.5rem;
+      }
+
+      .title-company {
+        font-size: 1rem;
+      }
+
+      .vcard-content {
+        padding: 1.5rem;
+      }
+
+      .section-title {
+        font-size: 0.75rem;
+      }
+
+      .contact-item {
+        padding: 0.625rem;
+      }
+
+      .contact-icon {
+        width: 36px;
+        height: 36px;
+        margin-right: 0.75rem;
+      }
+
+      .social-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+      }
+
+      .social-link {
+        padding: 0.75rem 0.25rem;
+      }
+
+      .social-icon {
+        font-size: 1.25rem;
+      }
+
+      .social-name {
+        font-size: 0.75rem;
+      }
+
+      .action-buttons {
+        flex-direction: column;
+      }
+
+      .btn {
+        padding: 0.875rem;
+      }
+    }
+
+    /* Smaller devices */
+    @media (max-width: 375px) {
+      .vcard-header {
+        padding: 2rem 1rem;
+      }
+
+      .profile-image {
+        width: 80px;
+        height: 80px;
+      }
+
+      .vcard-header h1 {
+        font-size: 1.25rem;
+      }
+
+      .social-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    /* Touch optimizations */
+    @media (hover: none) and (pointer: coarse) {
+      .contact-item,
+      .social-link,
+      .btn {
+        -webkit-tap-highlight-color: transparent;
+      }
+    }
+
+    /* Loading state */
+    .loading {
+      position: relative;
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    /* Toast notification */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--text-primary);
+      color: var(--bg-primary);
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      z-index: 10000;
+      animation: slideUp 0.3s ease, fadeOut 0.3s ease 2s;
+      box-shadow: var(--shadow-lg);
+    }
+
+    @keyframes slideUp {
+      from { transform: translate(-50%, 100%); opacity: 0; }
+      to { transform: translate(-50%, 0); opacity: 1; }
+    }
+
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+
+    /* Print styles */
+    @media print {
+      body {
+        background: white;
+      }
+
+      .vcard-container {
+        box-shadow: none;
+        border: 1px solid var(--border-color);
+      }
+
+      .action-buttons {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="vcard-container">
+    <header class="vcard-header">
+      <div class="header-pattern"></div>
+      <div class="header-accent"></div>
+      <div class="profile-section">
+        <div class="profile-image">
+          {% if detail.logo_path %}
+          <img src="{{ url_for('static', filename='uploads/' + detail.logo_path.replace('\\', '/')) }}" alt="{{ detail.name }}">
+          {% else %}
+          <div class="profile-image-placeholder">
+            {{ detail.name[0] | upper }}
+          </div>
+          {% endif %}
+        </div>
+        <h1>{{ detail.name }}</h1>
+        <div class="title-company">
+          {% if detail.title %}{{ detail.title }}{% endif %}
+          {% if detail.title and detail.company %} • {% endif %}
+          {% if detail.company %}{{ detail.company }}{% endif %}
+        </div>
+      </div>
+    </header>
+    
+    <div class="vcard-content">
+      <section class="section">
+        <h2 class="section-title">Contact Information</h2>
+        <div class="contact-list">
+          {% if detail.phone %}
+          <a href="tel:{{ detail.phone }}" class="contact-item">
+            <div class="contact-icon">
+              <i class="fas fa-phone"></i>
+            </div>
+            <div class="contact-info">
+              <div class="contact-label">Phone</div>
+              <div class="contact-value">{{ detail.phone }}</div>
+            </div>
+          </a>
+          {% endif %}
+          
+          {% if detail.email %}
+          <a href="mailto:{{ detail.email }}" class="contact-item">
+            <div class="contact-icon">
+              <i class="fas fa-envelope"></i>
+            </div>
+            <div class="contact-info">
+              <div class="contact-label">Email</div>
+              <div class="contact-value">{{ detail.email }}</div>
+            </div>
+          </a>
+          {% endif %}
+          
+          {% if detail.website %}
+          <a href="{{ detail.website }}" target="_blank" class="contact-item">
+            <div class="contact-icon">
+              <i class="fas fa-globe"></i>
+            </div>
+            <div class="contact-info">
+              <div class="contact-label">Website</div>
+              <div class="contact-value">{{ detail.website.replace('https://', '').replace('http://', '') }}</div>
+            </div>
+          </a>
+          {% endif %}
+          
+          {% if detail.address %}
+          <div class="contact-item">
+            <div class="contact-icon">
+              <i class="fas fa-map-marker-alt"></i>
+            </div>
+            <div class="contact-info">
+              <div class="contact-label">Address</div>
+              <div class="contact-value">{{ detail.address }}</div>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </section>
+      
+      {% if detail.social_media %}
+      {% set social_data = detail.social_media %}
+      {% if social_data is string %}
+      {% set social_data = social_data | safe | fromjson %}
+      {% endif %}
+      {% if social_data and social_data|length > 0 %}
+      <section class="section">
+        <h2 class="section-title">Connect</h2>
+        <div class="social-grid">
+          {% for platform, link in social_data.items() %}
+          <a href="{{ link }}" target="_blank" class="social-link">
+            <i class="fab fa-{{ platform }} social-icon"></i>
+            <span class="social-name">{{ platform }}</span>
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+      {% endif %}
+      
+      <div class="action-buttons">
+        <button class="btn btn-primary" id="saveContact">
+          <i class="fas fa-download"></i>
+          Save Contact
+        </button>
+        <button class="btn btn-secondary" id="shareContact">
+          <i class="fas fa-share-alt"></i>
+          Share
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR Code Modal -->
+  <div class="modal" id="shareModal">
+    <div class="modal-content">
+      <button class="close-modal" onclick="closeModal()">
+        <i class="fas fa-times"></i>
+      </button>
+      <div class="modal-header">
+        <h3>Share Business Card</h3>
+      </div>
+      <div id="qrcode" style="display: flex; justify-content: center; margin: 1.5rem 0;"></div>
+      <p style="color: var(--text-secondary); font-size: 0.875rem;">Scan this QR code to share</p>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script>
+    // Save Contact functionality
+    document.getElementById('saveContact').addEventListener('click', function(e) {
+      e.preventDefault();
+      
+      this.classList.add('loading');
+      
+      const vcard = `BEGIN:VCARD
+VERSION:3.0
+FN:{{ detail.name }}
+N:{{ detail.name.split()[-1] if detail.name.split()|length > 1 else '' }};{{ detail.name.split()[0] if detail.name.split()|length > 0 else detail.name }};;;
+{% if detail.title %}TITLE:{{ detail.title }}{% endif %}
+{% if detail.company %}ORG:{{ detail.company }}{% endif %}
+{% if detail.phone %}TEL:{{ detail.phone }}{% endif %}
+{% if detail.email %}EMAIL:{{ detail.email }}{% endif %}
+{% if detail.address %}ADR:;;{{ detail.address }};;;;{% endif %}
+{% if detail.website %}URL:{{ detail.website }}{% endif %}
+{% if detail.social_media %}
+{% set social_data = detail.social_media %}
+{% if social_data is string %}
+{% set social_data = social_data | safe | fromjson %}
+{% endif %}
+{% for platform, link in social_data.items() %}
+X-SOCIALPROFILE;TYPE={{ platform | upper }}:{{ link }}
+{% endfor %}
+{% endif %}
+END:VCARD`;
+      
+      const blob = new Blob([vcard], { type: 'text/vcard' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = '{{ detail.name | replace(" ", "_") }}.vcf';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      
+      setTimeout(() => {
+        this.classList.remove('loading');
+        showToast('Contact saved successfully');
+      }, 500);
+    });
+    
+    // Share functionality
+    document.getElementById('shareContact').addEventListener('click', async function() {
+      const currentUrl = window.location.href;
+      
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: '{{ detail.name }}\'s Business Card',
+            text: 'Contact information',
+            url: currentUrl
+          });
+        } catch (err) {
+          if (err.name !== 'AbortError') {
+            showQRModal();
+          }
+        }
+      } else {
+        showQRModal();
+      }
+    });
+    
+    function showQRModal() {
+      const modal = document.getElementById('shareModal');
+      modal.style.display = 'block';
+      
+      const qrcodeContainer = document.getElementById('qrcode');
+      qrcodeContainer.innerHTML = '';
+      new QRCode(qrcodeContainer, {
+        text: window.location.href,
+        width: 200,
+        height: 200,
+        colorDark: getComputedStyle(document.documentElement).getPropertyValue('--primary-color'),
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+    }
+    
+    function closeModal() {
+      document.getElementById('shareModal').style.display = 'none';
+    }
+    
+    window.onclick = function(event) {
+      const modal = document.getElementById('shareModal');
+      if (event.target == modal) {
+        closeModal();
+      }
+    }
+    
+    // Toast notification
+    function showToast(message) {
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 2500);
+    }
+  </script>
+</body>
+</html>

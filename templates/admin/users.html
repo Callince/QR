@@ -1,0 +1,361 @@
+{% extends "admin/base.html" %}
+
+{% block title %}User Management{% endblock %}
+
+{% block page_title %}User Management{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Users</li>
+{% endblock %}
+
+{% block content %}
+<style>
+    /* Plan type badge colors */
+    .badge[data-plan-type="normal"] {
+        background-color: #17a2b8 !important;
+        color: white;
+    }
+    
+    .badge[data-plan-type="dynamic"] {
+        background-color: #6f42c1 !important;
+        color: white;
+    }
+    
+    /* Default style for plan type badges */
+    .badge[data-plan-type] {
+        text-transform: capitalize;
+        font-weight: 500;
+        padding: 0.4em 0.8em;
+    }
+</style>
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="m-0"><i class="fas fa-users me-2"></i>Users Overview</h5>
+                <div class="input-group" style="max-width: 300px;">
+                    <input type="text" class="form-control" id="userSearch" placeholder="Search users...">
+                    <button class="btn btn-outline-secondary" type="button">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Joined</th>
+                                <th>Status</th>
+                                <th>Subscription</th>
+                                <th>Plan Type</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr>
+                                <td>{{ user.id }}</td>
+                                <td>
+                                    <a href="{{ url_for('admin.admin_user_details', user_id=user.id) }}" class="text-primary">
+                                        {{ user.name }}
+                                    </a>
+                                </td>
+                                <td>{{ user.company_email }}</td>
+                                <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                                <td>
+                                    {% if user.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if user.id in user_subscriptions and user_subscriptions[user.id] %}
+                                    <span class="badge" style="background-color: var(--primary-color);">Subscribed</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Free</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if user.id in user_subscriptions %}
+                                        {% set plan_type = user_subscriptions[user.id]['subscription'].plan_type|default('Normal')|lower %}
+                                        <span class="badge" data-plan-type="{{ plan_type }}">
+                                            {{ user_subscriptions[user.id]['subscription'].plan_type|default('Normal') }}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ url_for('admin.admin_user_details', user_id=user.id) }}" class="btn btn-sm btn-outline-info">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editUserModal{{ user.id }}">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteUserModal{{ user.id }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer">
+                <nav aria-label="User pagination">
+                    <ul class="pagination justify-content-center mb-0">
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Previous</a>
+                        </li>
+                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                        <li class="page-item">
+                            <a class="page-link" href="#">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- All modals placed here, outside of the table structure -->
+{% for user in users %}
+<!-- Delete User Modal -->
+<div class="modal fade" id="deleteUserModal{{ user.id }}" tabindex="-1" aria-labelledby="deleteUserModalLabel{{ user.id }}" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteUserModalLabel{{ user.id }}">Confirm User Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete user <strong>{{ user.name }}</strong>?
+                {% if user.id in user_subscriptions and user_subscriptions[user.id] %}
+                <div class="alert alert-warning mt-3">
+                    <i class="fas fa-exclamation-triangle me-2"></i> This user has active subscriptions. You must remove their subscriptions before deleting.
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="{{ url_for('admin.remove_user', user_id=user.id) }}" method="POST">
+                    <button type="submit" class="btn btn-danger" {% if user.id in user_subscriptions and user_subscriptions[user.id] %}disabled{% endif %}>
+                        Delete User
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit User Modal -->
+<div class="modal fade" id="editUserModal{{ user.id }}" tabindex="-1" aria-labelledby="editUserModalLabel{{ user.id }}" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editUserModalLabel{{ user.id }}">Edit User</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('admin.admin_edit_user', user_id=user.id) }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="name{{ user.id }}" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="name{{ user.id }}" name="name" value="{{ user.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email{{ user.id }}" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email{{ user.id }}" name="company_email" value="{{ user.company_email }}" required>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="emailConfirmed{{ user.id }}" name="email_confirmed" {% if user.email_confirmed %}checked{% endif %}>
+                        <label class="form-check-label" for="emailConfirmed{{ user.id }}">Active</label>
+                    </div>
+                    {% if user.id in user_subscriptions and user_subscriptions[user.id] %}
+                    <div class="mb-3">
+                        <label class="form-label">Current Subscription</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-tag"></i>
+                            </span>
+                            <input type="text" class="form-control" 
+                                value="{{ user_subscriptions[user.id]['subscription'].plan }} ({{ user_subscriptions[user.id]['subscription'].plan_type|default('Normal') }})" 
+                                disabled>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="m-0"><i class="fas fa-chart-pie me-2"></i>User Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="stat-card">
+                            <div class="stat-card-body">
+                                <div class="icon icon-users">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <div class="stat-title">Total Users</div>
+                                    <div class="stat-value">{{ users|length }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="stat-card">
+                            <div class="stat-card-body">
+                                <div class="icon icon-subscriptions">
+                                    <i class="fas fa-tag"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <div class="stat-title">Subscribed Users</div>
+                                    <div class="stat-value">{{ user_subscriptions.values()|select|list|length }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="stat-card">
+                            <div class="stat-card-body">
+                                <div class="icon icon-revenue">
+                                    <i class="fas fa-user-check"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <div class="stat-title">Active Users</div>
+                                    <div class="stat-value">{{ users|selectattr('is_active', 'equalto', true)|list|length }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="stat-card">
+                            <div class="stat-card-body">
+                                <div class="icon icon-expiring">
+                                    <i class="fas fa-user-times"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <div class="stat-title">Inactive Users</div>
+                                    <div class="stat-value">{{ users|selectattr('is_active', 'equalto', false)|list|length }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="m-0"><i class="fas fa-user-plus me-2"></i>Add New User</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('admin.admin_add_user') }}" method="POST">
+                    <div class="mb-3">
+                        <label for="newName" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="newName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newEmail" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="newEmail" name="company_email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newPassword" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="newPassword" name="password" required>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="newEmailConfirmed" name="email_confirmed" checked>
+                        <label class="form-check-label" for="newEmailConfirmed">Active</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-user-plus me-2"></i> Add User
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add animation to cards
+        const cards = document.querySelectorAll('.card');
+        cards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+            
+            setTimeout(() => {
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, 100 + (index * 50));
+        });
+    
+        // Simple search functionality
+        document.getElementById('userSearch').addEventListener('keyup', function() {
+            const searchText = this.value.toLowerCase();
+            const tableRows = document.querySelectorAll('tbody tr');
+            
+            tableRows.forEach(function(row) {
+                const username = row.cells[1].textContent.toLowerCase();
+                const email = row.cells[2].textContent.toLowerCase();
+                
+                if (username.includes(searchText) || email.includes(searchText)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+        
+        // Ensure modals work properly
+        var editModals = document.querySelectorAll('[id^="editUserModal"]');
+        var deleteModals = document.querySelectorAll('[id^="deleteUserModal"]');
+        
+        // Initialize all modals if needed
+        if (typeof bootstrap !== 'undefined') {
+            editModals.forEach(function(modal) {
+                new bootstrap.Modal(modal);
+            });
+            
+            deleteModals.forEach(function(modal) {
+                new bootstrap.Modal(modal);
+            });
+        }
+         // Apply custom styling to plan type badges
+         document.querySelectorAll('.badge[data-plan-type]').forEach(function(badge) {
+            const planType = badge.getAttribute('data-plan-type');
+            if (planType) {
+                badge.classList.add('bg-' + (planType === 'normal' ? 'info' : 'purple'));
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,530 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - QR Craft{% endblock %}
+{% block content %}
+<div class="bg-gray-50 min-h-[80vh]">
+    <!-- Hero Section with QR Pattern Background -->
+    <div class="relative overflow-hidden">
+        <div class="qr-pattern h-40 relative">
+            <div class="absolute inset-0 bg-gradient-to-r from-primary-500/10 to-secondary-600/10"></div>
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center">
+                <div class="animate-fade-in">
+                    <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Your QR Codes</h1>
+                    <p class="text-gray-600 mt-2">Manage and track all your QR codes in one place</p>
+                </div>
+            </div>
+            <!-- Animated QR element in corner -->
+            <div class="absolute top-4 right-4 w-16 h-16 animate-qr animate-float"></div>
+        </div>
+    </div>
+<!-- Dashboard Content -->
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10 mb-12">
+    <!-- Subscription Status Card (NEW) -->
+    {% if has_subscription %}
+    <div class="glass backdrop-blur-lg bg-white/90 rounded-2xl shadow-xl p-6 mb-6 animate-fade-in">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+            <div class="flex items-center space-x-4">
+                <div class="flex-shrink-0">
+                    <div class="h-12 w-12 bg-secondary-100 rounded-full flex items-center justify-center text-secondary-700">
+                        <i class="fas fa-crown text-xl"></i>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900">{{ plan_name }} Subscription</h3>
+                    <p class="text-sm text-gray-600">Expires on {{ expires_on|date('%b %d, %Y') if expires_on else 'Unknown' }}</p>
+                </div>
+            </div>
+            <div class="mt-4 md:mt-0 flex flex-col space-y-3">
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-sm font-medium text-gray-700">QR Codes</span>
+                        <span class="text-xs text-gray-500">{{ qr_remaining }} remaining</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                        <div class="bg-secondary-600 h-2.5 rounded-full" style="width: {{ qr_percent }}%"></div>
+                    </div>
+                </div>
+                
+                {% if analytics_remaining is defined %}
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-sm font-medium text-gray-700">Analytics</span>
+                        <span class="text-xs text-gray-500">{{ analytics_remaining }} remaining</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                        <div class="bg-primary-600 h-2.5 rounded-full" style="width: {{ analytics_percent }}%"></div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="flex justify-between items-center mt-2">
+                    <span class="text-xs text-gray-500">{{ days_remaining }} days left</span>
+                    <a href="{{ url_for('subscription.user_subscriptions') }}" class="text-sm text-secondary-600 hover:text-secondary-800 font-medium">
+                        Manage Subscription
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="glass backdrop-blur-lg bg-white/90 rounded-2xl shadow-xl p-6 mb-6 animate-fade-in">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+            <div class="flex items-center space-x-4">
+                <div class="flex-shrink-0">
+                    <div class="h-12 w-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-400">
+                        <i class="fas fa-crown text-xl"></i>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900">No Active Subscription</h3>
+                    <p class="text-sm text-gray-600">Subscribe to unlock premium features</p>
+                </div>
+            </div>
+            <div class="mt-4 md:mt-0">
+                <a href="{{ url_for('subscription.user_subscriptions') }}" class="btn btn-gradient px-6 py-2">
+                    <i class="fas fa-crown mr-2"></i> Subscribe Now
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Dashboard Controls -->
+    <div class="mb-6 glass backdrop-blur-lg bg-white/90 rounded-2xl shadow-xl p-6 animate-fade-in">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-3 md:space-y-0">
+            <!-- Filter and Search -->
+            <div class="flex flex-1 flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
+                <div class="relative">
+                    <select id="qr-filter" class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-lg">
+                        <option value="all">All Types</option>
+                        <option value="link">URL</option>
+                        <option value="email">Email</option>
+                        <option value="text">Text</option>
+                        <option value="call">Call</option>
+                        <option value="sms">SMS</option>
+                        <option value="whatsapp">WhatsApp</option>
+                        <option value="wifi">WiFi</option>
+                        <option value="vcard">vCard</option>
+                        <option value="event">Event</option>
+                    </select>
+                </div>
+                <div class="relative flex-1">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-search text-gray-400"></i>
+                    </div>
+                    <input type="text" id="qr-search" placeholder="Search QR codes..." class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
+                </div>
+            </div>
+            
+            <!-- View Toggle and Sort -->
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2">
+                    <button id="grid-view" class="p-2 rounded-lg text-gray-700 bg-gray-100 hover:bg-gray-200 focus:ring-2 focus:ring-primary-500 transition-all duration-300">
+                        <i class="fas fa-th-large"></i>
+                    </button>
+                    <button id="list-view" class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 focus:ring-2 focus:ring-primary-500 transition-all duration-300">
+                        <i class="fas fa-list"></i>
+                    </button>
+                </div>
+                <div class="relative">
+                    <select id="qr-sort" class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-lg">
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="name-asc">Name (A-Z)</option>
+                        <option value="name-desc">Name (Z-A)</option>
+                        <option value="scans">Most Scans</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR Code Grid/List View -->
+    <div id="qr-container">
+        {% if qr_codes %}
+            <!-- Grid View (default) -->
+            <div id="grid-view-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {% for qr in qr_codes %}
+                <div class="glass backdrop-blur-lg bg-white/90 overflow-hidden rounded-2xl shadow-xl hover:shadow-lg transition-shadow duration-200 animate-fade-in" data-type="{{ qr.qr_type }}" data-name="{{ qr.name }}">
+                    <div class="p-4 bg-gradient-to-r from-primary-500/5 to-secondary-600/5">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-8 h-8 rounded-lg 
+                                    {% if qr.qr_type == 'link' %}bg-blue-100 text-primary-600
+                                    {% elif qr.qr_type == 'email' %}bg-purple-100 text-primary-600
+                                    {% elif qr.qr_type == 'text' %}bg-gray-100 text-gray-600
+                                    {% elif qr.qr_type == 'call' %}bg-green-100 text-green-600
+                                    {% elif qr.qr_type == 'sms' %}bg-indigo-100 text-indigo-600
+                                    {% elif qr.qr_type == 'whatsapp' %}bg-green-100 text-green-600
+                                    {% elif qr.qr_type == 'wifi' %}bg-yellow-100 text-yellow-600
+                                    {% elif qr.qr_type == 'vcard' %}bg-orange-100 text-orange-600
+                                    {% elif qr.qr_type == 'event' %}bg-red-100 text-red-600
+                                    {% else %}bg-gray-100 text-gray-600{% endif %}
+                                    flex items-center justify-center">
+                                    {% if qr.qr_type == 'link' %}<i class="fas fa-link"></i>
+                                    {% elif qr.qr_type == 'email' %}<i class="fas fa-envelope"></i>
+                                    {% elif qr.qr_type == 'text' %}<i class="fas fa-font"></i>
+                                    {% elif qr.qr_type == 'call' %}<i class="fas fa-phone"></i>
+                                    {% elif qr.qr_type == 'sms' %}<i class="fas fa-comment"></i>
+                                    {% elif qr.qr_type == 'whatsapp' %}<i class="fab fa-whatsapp"></i>
+                                    {% elif qr.qr_type == 'wifi' %}<i class="fas fa-wifi"></i>
+                                    {% elif qr.qr_type == 'vcard' %}<i class="fas fa-address-card"></i>
+                                    {% elif qr.qr_type == 'event' %}<i class="fas fa-calendar"></i>
+                                    {% else %}<i class="fas fa-qrcode"></i>{% endif %}
+                                </div>
+                                <span class="text-sm font-medium text-gray-600">{{ qr.qr_type|capitalize }}</span>
+                            </div>
+                            <div>
+                                {% if qr.is_dynamic %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-secondary-50 text-secondary-700">
+                                    <span class="w-2 h-2 bg-secondary-500 rounded-full animate-pulse mr-1"></span>
+                                    Dynamic
+                                </span>
+                                {% else %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                    Static
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center justify-center p-6">
+                        <a href="{{ url_for('view_qr', qr_id=qr.unique_id) }}" class="block">
+                            <img src="{{ url_for('preview_qr') }}?qr_type={{ qr.qr_type }}&color={{ qr.color|urlencode }}&background_color={{ qr.background_color|urlencode }}&shape={{ qr.shape }}&module_size={{ qr.module_size }}&id={{ qr.unique_id }}" 
+                                alt="{{ qr.name }}" class="w-32 h-32 object-contain mx-auto">
+                        </a>
+                    </div>
+                    
+                    <div class="border-t border-gray-200 p-4">
+                        <h3 class="text-lg font-medium text-gray-900 truncate">{{ qr.name }}</h3>
+                        <div class="mt-2 flex items-center justify-between">
+                            <div class="text-sm text-gray-600">
+                                Created {{ qr.created_at.strftime('%b %d, %Y') }}
+                            </div>
+                            <div class="flex space-x-2">
+                                <a href="{{ url_for('view_qr', qr_id=qr.unique_id) }}" class="text-primary-600 hover:text-primary-700 transition-colors duration-200">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{{ url_for('edit_qr', qr_id=qr.unique_id) }}" class="text-secondary-600 hover:text-secondary-700 transition-colors duration-200">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button onclick="confirmDelete('{{ qr.unique_id }}', '{{ qr.name }}')" class="text-red-600 hover:text-red-700 transition-colors duration-200">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- List View (hidden by default) -->
+            <div id="list-view-container" class="hidden glass backdrop-blur-lg bg-white/90 rounded-2xl shadow-xl overflow-hidden animate-fade-in">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gradient-to-r from-primary-500/5 to-secondary-600/5">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">QR Code</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Name</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Type</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Status</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Created</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for qr in qr_codes %}
+                        <tr data-type="{{ qr.qr_type }}" data-name="{{ qr.name }}" class="hover:bg-gray-50 transition-colors duration-150">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <a href="{{ url_for('view_qr', qr_id=qr.unique_id) }}">
+                                    <img src="{{ url_for('preview_qr') }}?qr_type={{ qr.qr_type }}&color={{ qr.color|urlencode }}&background_color={{ qr.background_color|urlencode }}&shape={{ qr.shape }}&module_size={{ qr.module_size }}&id={{ qr.unique_id }}" 
+                                        alt="{{ qr.name }}" class="w-16 h-16 object-contain">
+                                </a>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">{{ qr.name }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-6 h-6 rounded-lg 
+                                        {% if qr.qr_type == 'link' %}bg-blue-100 text-primary-600
+                                        {% elif qr.qr_type == 'email' %}bg-purple-100 text-primary-600
+                                        {% elif qr.qr_type == 'text' %}bg-gray-100 text-gray-600
+                                        {% elif qr.qr_type == 'call' %}bg-green-100 text-green-600
+                                        {% elif qr.qr_type == 'sms' %}bg-indigo-100 text-indigo-600
+                                        {% elif qr.qr_type == 'whatsapp' %}bg-green-100 text-green-600
+                                        {% elif qr.qr_type == 'wifi' %}bg-yellow-100 text-yellow-600
+                                        {% elif qr.qr_type == 'vcard' %}bg-orange-100 text-orange-600
+                                        {% elif qr.qr_type == 'event' %}bg-red-100 text-red-600
+                                        {% else %}bg-gray-100 text-gray-600{% endif %}
+                                        flex items-center justify-center">
+                                        {% if qr.qr_type == 'link' %}<i class="fas fa-link"></i>
+                                        {% elif qr.qr_type == 'email' %}<i class="fas fa-envelope"></i>
+                                        {% elif qr.qr_type == 'text' %}<i class="fas fa-font"></i>
+                                        {% elif qr.qr_type == 'call' %}<i class="fas fa-phone"></i>
+                                        {% elif qr.qr_type == 'sms' %}<i class="fas fa-comment"></i>
+                                        {% elif qr.qr_type == 'whatsapp' %}<i class="fab fa-whatsapp"></i>
+                                        {% elif qr.qr_type == 'wifi' %}<i class="fas fa-wifi"></i>
+                                        {% elif qr.qr_type == 'vcard' %}<i class="fas fa-address-card"></i>
+                                        {% elif qr.qr_type == 'event' %}<i class="fas fa-calendar"></i>
+                                        {% else %}<i class="fas fa-qrcode"></i>{% endif %}
+                                    </div>
+                                    <span class="text-sm text-gray-600">{{ qr.qr_type|capitalize }}</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if qr.is_dynamic %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-secondary-50 text-secondary-700">
+                                    <span class="w-2 h-2 bg-secondary-500 rounded-full animate-pulse mr-1"></span>
+                                    Dynamic
+                                </span>
+                                {% else %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                    Static
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-600">{{ qr.created_at.strftime('%b %d, %Y') }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <div class="flex space-x-2">
+                                    <a href="{{ url_for('view_qr', qr_id=qr.unique_id) }}" class="text-primary-600 hover:text-primary-700 transition-colors duration-200" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('edit_qr', qr_id=qr.unique_id) }}" class="text-secondary-600 hover:text-secondary-700 transition-colors duration-200" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{{ url_for('qr_analytics', qr_id=qr.unique_id) }}" class="text-secondary-600 hover:text-secondary-700 transition-colors duration-200" title="Analytics">
+                                        <i class="fas fa-chart-bar"></i>
+                                    </a>
+                                    <button onclick="confirmDelete('{{ qr.unique_id }}', '{{ qr.name }}')" class="text-red-600 hover:text-red-700 transition-colors duration-200" title="Delete">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <!-- Empty State -->
+            <div class="glass backdrop-blur-lg bg-white/90 rounded-2xl shadow-xl p-8 text-center animate-fade-in">
+                <div class="mx-auto w-24 h-24 bg-gradient-to-br from-primary-500/20 to-secondary-600/20 rounded-full flex items-center justify-center mb-4">
+                    <i class="fas fa-qrcode text-4xl text-gray-400"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-800 mb-2">No QR codes yet</h3>
+                <p class="text-gray-600 mb-6 max-w-md mx-auto">Get started by creating your first QR code. Choose from different types and customize the design.</p>
+                
+                <!-- Modified Create QR Button with subscription check -->
+                {% if has_subscription and qr_remaining > 0 %}
+                <a href="{{ url_for('create_qr') }}" class="gradient-bg text-white font-medium py-3 px-6 rounded-lg transition-all duration-300 hover:shadow-glow inline-flex items-center gap-2">
+                    <i class="fas fa-plus"></i>
+                    Create QR Code
+                </a>
+                {% else %}
+                <a href="{{ url_for('subscription.user_subscriptions') }}" class="gradient-bg text-white font-medium py-3 px-6 rounded-lg transition-all duration-300 hover:shadow-glow inline-flex items-center gap-2">
+                    <i class="fas fa-crown"></i>
+                    Subscribe to Create More QR Codes
+                </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+</div>
+<!-- Delete Confirmation Modal -->
+<div id="delete-modal" class="hidden fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        <div class="inline-block align-bottom glass backdrop-blur-lg bg-white/90 rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <div class="p-6">
+                <div class="sm:flex sm:items-start">
+                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                        <i class="fas fa-exclamation-triangle text-red-600"></i>
+                    </div>
+                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                            Delete QR Code
+                        </h3>
+                        <div class="mt-2">
+                            <p class="text-sm text-gray-600" id="delete-message">
+                                Are you sure you want to delete this QR code? This action cannot be undone.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <form id="delete-form" method="POST">
+                    <button type="submit" class="gradient-bg text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 hover:shadow-glow">
+                        Delete
+                    </button>
+                </form>
+                <button type="button" onclick="closeDeleteModal()" class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+    // Search and filter functionality
+    const qrSearch = document.getElementById('qr-search');
+    const qrFilter = document.getElementById('qr-filter');
+    const qrSort = document.getElementById('qr-sort');
+    
+    function filterQRCodes() {
+        const searchTerm = qrSearch.value.toLowerCase();
+        const filterType = qrFilter.value;
+        
+        // Get all QR code elements from both views
+        const gridItems = document.querySelectorAll('#grid-view-container > div');
+        const listRows = document.querySelectorAll('#list-view-container tbody tr');
+        
+        // Filter grid items
+        gridItems.forEach(item => {
+            const name = item.getAttribute('data-name').toLowerCase();
+            const type = item.getAttribute('data-type');
+            
+            const matchesSearch = name.includes(searchTerm);
+            const matchesFilter = filterType === 'all' || type === filterType;
+            
+            if (matchesSearch && matchesFilter) {
+                item.classList.remove('hidden');
+            } else {
+                item.classList.add('hidden');
+            }
+        });
+        
+        // Filter list items
+        listRows.forEach(row => {
+            const name = row.getAttribute('data-name').toLowerCase();
+            const type = row.getAttribute('data-type');
+            
+            const matchesSearch = name.includes(searchTerm);
+            const matchesFilter = filterType === 'all' || type === filterType;
+            
+            if (matchesSearch && matchesFilter) {
+                row.classList.remove('hidden');
+            } else {
+                row.classList.add('hidden');
+            }
+        });
+    }
+    
+    qrSearch.addEventListener('input', filterQRCodes);
+    qrFilter.addEventListener('change', filterQRCodes);
+    
+    // View toggle functionality
+    const gridViewBtn = document.getElementById('grid-view');
+    const listViewBtn = document.getElementById('list-view');
+    const gridViewContainer = document.getElementById('grid-view-container');
+    const listViewContainer = document.getElementById('list-view-container');
+    
+    gridViewBtn.addEventListener('click', () => {
+        gridViewContainer.classList.remove('hidden');
+        listViewContainer.classList.add('hidden');
+        gridViewBtn.classList.add('bg-gray-100', 'text-gray-700');
+        gridViewBtn.classList.remove('text-gray-500');
+        listViewBtn.classList.remove('bg-gray-100', 'text-gray-700');
+        listViewBtn.classList.add('text-gray-500');
+    });
+    
+    listViewBtn.addEventListener('click', () => {
+        gridViewContainer.classList.add('hidden');
+        listViewContainer.classList.remove('hidden');
+        listViewBtn.classList.add('bg-gray-100', 'text-gray-700');
+        listViewBtn.classList.remove('text-gray-500');
+        gridViewBtn.classList.remove('bg-gray-100', 'text-gray-700');
+        gridViewBtn.classList.add('text-gray-500');
+    });
+    
+    // Delete confirmation modal
+    function confirmDelete(qrId, qrName) {
+        const modal = document.getElementById('delete-modal');
+        const message = document.getElementById('delete-message');
+        const form = document.getElementById('delete-form');
+        
+        message.textContent = `Are you sure you want to delete the QR code "${qrName}"? This action cannot be undone.`;
+        form.action = `/qr/${qrId}/delete`;
+        
+        modal.classList.remove('hidden');
+    }
+    
+    function closeDeleteModal() {
+        const modal = document.getElementById('delete-modal');
+        modal.classList.add('hidden');
+    }
+    
+    // Close modal when clicking outside
+    window.addEventListener('click', (event) => {
+        const modal = document.getElementById('delete-modal');
+        if (event.target === modal) {
+            closeDeleteModal();
+        }
+    });
+    
+    // Sorting functionality
+    qrSort.addEventListener('change', () => {
+        const sortValue = qrSort.value;
+        
+        // Get all QR code elements from both views
+        const gridItems = Array.from(document.querySelectorAll('#grid-view-container > div'));
+        const listRows = Array.from(document.querySelectorAll('#list-view-container tbody tr'));
+        
+        // Helper function to get sorting criteria
+        function getSortValue(element, sortType) {
+            switch(sortType) {
+                case 'name-asc':
+                case 'name-desc':
+                    return element.getAttribute('data-name');
+                // For other criteria, we would need additional data attributes
+                default:
+                    return element.getAttribute('data-name');
+            }
+        }
+        
+        // Sort grid items
+        gridItems.sort((a, b) => {
+            const aValue = getSortValue(a, sortValue);
+            const bValue = getSortValue(b, sortValue);
+            
+            if (sortValue === 'name-asc') {
+                return aValue.localeCompare(bValue);
+            } else if (sortValue === 'name-desc') {
+                return bValue.localeCompare(aValue);
+            }
+            
+            // Default to name-asc
+            return aValue.localeCompare(bValue);
+        });
+        
+        // Re-append sorted items to container
+        const gridContainer = document.getElementById('grid-view-container');
+        gridItems.forEach(item => gridContainer.appendChild(item));
+        
+        // Sort list rows
+        listRows.sort((a, b) => {
+            const aValue = getSortValue(a, sortValue);
+            const bValue = getSortValue(b, sortValue);
+            
+            if (sortValue === 'name-asc') {
+                return aValue.localeCompare(bValue);
+            } else if (sortValue === 'name-desc') {
+                return bValue.localeCompare(aValue);
+            }
+            
+            // Default to name-asc
+            return aValue.localeCompare(bValue);
+        });
+        
+        // Re-append sorted rows to table
+        const listContainer = document.querySelector('#list-view-container tbody');
+        listRows.forEach(row => listContainer.appendChild(row));
+    });
+</script>
+{% endblock %}

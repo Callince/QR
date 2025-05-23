@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Login | QR Craft{% endblock %}
+
+{% block content %}
+<section class="qr-pattern py-16">
+    <div class="max-w-md mx-auto px-4 sm:px-6">
+        <!-- Card -->
+        <div class="bg-white rounded-lg shadow-card overflow-hidden fade-in">
+            <!-- Header -->
+            <div class="px-8 pt-8 pb-6">
+                <h2 class="text-2xl font-bold text-center text-gray-800">Welcome Back</h2>
+                <p class="text-center text-gray-600 mt-2">Please enter your credentials to sign in</p>
+            </div>
+            
+            <!-- Form -->
+            <div class="px-8 pb-8">
+                <form id="loginForm" method="post" action="{{ url_for('login') }}" autocomplete="off">
+                    <!-- Add CSRF token -->
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <!-- Email input -->
+                    <div class="mb-6">
+                        <label for="companyEmail" class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-envelope text-gray-400"></i>
+                            </div>
+                            <input type="email" id="companyEmail" name="companyEmail" class="focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 text-gray-800" placeholder="your.email@example.com" required>
+                        </div>
+                        <div id="emailFeedback" class="mt-2 text-sm text-red-600 hidden"></div>
+                    </div>
+
+                    <!-- Password input -->
+                    <div class="mb-4">
+                        <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-lock text-gray-400"></i>
+                            </div>
+                            <input type="password" id="password" name="password" class="focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 text-gray-800" placeholder="Enter your password" required>
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                <button type="button" id="passwordToggle" class="text-gray-400 hover:text-gray-600 focus:outline-none transition-colors duration-300">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="passwordFeedback" class="mt-2 text-sm text-red-600 hidden"></div>
+                    </div>
+
+                    <!-- Forgot password link -->
+                    <div class="flex justify-end mb-6">
+                        <a href="{{ url_for('reset_request') }}" class="text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors duration-300">Forgot password?</a>
+                    </div>
+
+                    <!-- Submit button -->
+                    <button type="submit" class="w-full flex justify-center items-center px-4 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-700 hover:to-secondary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-300">
+                        <i class="fas fa-sign-in-alt mr-2"></i>
+                        <span>Sign in</span>
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Sign up link -->
+            <div class="px-8 py-6 bg-gray-50 border-t border-gray-200">
+                <p class="text-sm text-center text-gray-600">
+                    Don't have an account? 
+                    <a href="{{ url_for('signup') }}" class="font-medium text-primary-600 hover:text-primary-700 transition-colors duration-300">Sign up</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const passwordField = document.getElementById('password');
+        const passwordToggle = document.getElementById('passwordToggle');
+        const loginForm = document.getElementById('loginForm');
+        const emailField = document.getElementById('companyEmail');
+        const emailFeedback = document.getElementById('emailFeedback');
+        const passwordFeedback = document.getElementById('passwordFeedback');
+
+        // Toggle password visibility
+        passwordToggle.addEventListener('click', function() {
+            const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordField.setAttribute('type', type);
+            
+            // Toggle icon
+            const icon = passwordToggle.querySelector('i');
+            icon.className = type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+        });
+
+        // Form validation
+        loginForm.addEventListener('submit', function(e) {
+            let isValid = true;
+
+            // Email validation
+            if (!validateEmail(emailField.value)) {
+                e.preventDefault();
+                emailField.classList.add('border-red-500');
+                emailFeedback.textContent = 'Please enter a valid email address';
+                emailFeedback.classList.remove('hidden');
+                isValid = false;
+            } else {
+                emailField.classList.remove('border-red-500');
+                emailFeedback.classList.add('hidden');
+            }
+
+            // Password validation
+            if (passwordField.value.length < 8) {
+                e.preventDefault();
+                passwordField.classList.add('border-red-500');
+                passwordFeedback.textContent = 'Password must be at least 8 characters long';
+                passwordFeedback.classList.remove('hidden');
+                isValid = false;
+            } else {
+                passwordField.classList.remove('border-red-500');
+                passwordFeedback.classList.add('hidden');
+            }
+
+            // No need to prevent submission if valid - form will submit naturally
+        });
+
+        // Validate email format
+        function validateEmail(email) {
+            const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            return re.test(String(email).toLowerCase());
+        }
+    });
+</script>
+{% endblock %}

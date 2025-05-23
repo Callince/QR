@@ -1,0 +1,196 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Add New User Subscription{% endblock %}
+
+{% block page_title %}Add New User Subscription{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('admin.admin_subscribed_users') }}">Subscribed Users</a></li>
+<li class="breadcrumb-item active">Add New</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <div class="row">
+        <div class="col-lg-8 col-md-12 mx-auto">
+            <div class="card">
+                <div class="card-header d-flex align-items-center">
+                    <i class="fas fa-plus-circle me-2"></i> New Subscription Details
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('admin.admin_new_subscribed_user') }}" method="POST">
+                        <div class="mb-4">
+                            <label for="user_id" class="form-label">
+                                <i class="fas fa-user me-2 text-primary"></i>User
+                            </label>
+                            <select class="form-select" id="user_id" name="user_id" required>
+                                <option value="">Select a user</option>
+                                {% for user in users %}
+                                <option value="{{ user.id }}">{{ user.name }} ({{ user.company_email }})</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Select the user to assign this subscription to</div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="subscription_id" class="form-label">
+                                <i class="fas fa-tag me-2 text-primary"></i>Subscription Plan
+                            </label>
+                            <select class="form-select" id="subscription_id" name="subscription_id" required>
+                                <option value="">Select a plan</option>
+                                {% for subscription in subscriptions %}
+                                <option value="{{ subscription.S_ID }}" 
+                                    data-analytics="{{ subscription.analytics }}"
+                                    data-qr-count="{{ subscription.qr_count }}"
+                                    data-designs="{{ subscription.design or '' }}">
+                                    {{ subscription.plan }} - ₹{{ subscription.price }} ({{ subscription.days }} days)
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Plan Features Preview -->
+                        <div class="mb-4 d-none" id="planFeaturesPreview">
+                            <div class="card bg-light">
+                                <div class="card-header">
+                                    <i class="fas fa-info-circle me-2"></i> Plan Features
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="feature-item" id="analyticsFeature">
+                                                <i class="fas fa-chart-bar text-primary me-2"></i>
+                                                <span>Analytics: <span class="fw-bold" id="analyticsCount">0</span></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="feature-item" id="qrFeature">
+                                                <i class="fas fa-qrcode text-primary me-2"></i>
+                                                <span>QR Codes: <span class="fw-bold" id="qrCount">0</span></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="feature-item" id="designsFeature">
+                                                <i class="fas fa-palette text-primary me-2"></i>
+                                                <span>Design Templates: <span class="fw-bold" id="designCount">0</span></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Auto-renewal option -->
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="auto_renew" name="auto_renew" checked>
+                                <label class="form-check-label" for="auto_renew">
+                                    <i class="fas fa-sync-alt me-2 text-primary"></i>Enable Auto-Renewal
+                                </label>
+                                <div class="form-text">Subscription will automatically renew when it expires</div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('admin.admin_subscribed_users') }}" class="btn btn-outline-secondary me-md-2">
+                                <i class="fas fa-times me-1"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Add Subscription
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add animation to the card
+        const card = document.querySelector('.card');
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        
+        setTimeout(() => {
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, 100);
+        
+        // Add select2 for better dropdowns if available
+        if (typeof $.fn.select2 !== 'undefined') {
+            $('#user_id').select2({
+                placeholder: 'Select a user',
+                allowClear: true,
+                width: '100%'
+            });
+            
+            $('#subscription_id').select2({
+                placeholder: 'Select a plan',
+                allowClear: true,
+                width: '100%'
+            });
+        }
+        
+        // Update plan features preview when a plan is selected
+        $('#subscription_id').on('change', function() {
+            const selectedOption = $(this).find('option:selected');
+            
+            if (selectedOption.val()) {
+                // Get plan features
+                const analytics = selectedOption.data('analytics') || 0;
+                const qrCount = selectedOption.data('qr-count') || 0;
+                const designs = selectedOption.data('designs') || '';
+                const designsArray = designs ? designs.split(',') : [];
+                
+                // Update the preview
+                $('#analyticsCount').text(analytics);
+                $('#qrCount').text(qrCount);
+                $('#designCount').text(designsArray.length);
+                
+                // Show the preview
+                $('#planFeaturesPreview').removeClass('d-none');
+                
+                // Highlight features based on availability
+                $('#analyticsFeature').toggleClass('text-muted', analytics <= 0);
+                $('#qrFeature').toggleClass('text-muted', qrCount <= 0);
+                $('#designsFeature').toggleClass('text-muted', designsArray.length <= 0);
+            } else {
+                // Hide the preview if no plan is selected
+                $('#planFeaturesPreview').addClass('d-none');
+            }
+        });
+    });
+</script>
+
+<style>
+    .feature-item {
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+        transition: all 0.2s;
+    }
+    
+    .feature-item:hover {
+        background-color: rgba(0, 123, 255, 0.1);
+    }
+    
+    .text-muted {
+        opacity: 0.6;
+    }
+    
+    /* Animation for the form submission */
+    .btn-primary:active {
+        animation: btn-pulse 0.3s ease-out;
+    }
+    
+    @keyframes btn-pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(0.95); }
+        100% { transform: scale(1); }
+    }
+</style>
+{% endblock %}

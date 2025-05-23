@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+
+{% block title %}Subscription Details - QR Craft{% endblock %}
+
+{% block content %}
+<!-- Hero Section with QR Pattern Background -->
+<div class="relative overflow-hidden">
+    <div class="qr-pattern h-40 relative">
+        <div class="absolute inset-0 bg-gradient-to-r from-primary-500/10 to-secondary-600/10"></div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center">
+            <div class="animate-fade-in">
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Subscription Details</h1>
+                <p class="text-gray-600 mt-2">View and manage your active subscription</p>
+            </div>
+        </div>
+        <!-- Animated QR element in corner -->
+        <div class="absolute top-4 right-4 w-16 h-16 animate-qr animate-float"></div>
+    </div>
+</div>
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10 mb-12">
+    <!-- Back button -->
+    <div class="flex justify-between items-center mb-6">
+        <div></div>
+        <a href="{{ url_for('subscription.user_subscriptions') }}" 
+           class="px-4 py-2 glass backdrop-blur-md bg-white/50 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg transition-all duration-300 flex items-center gap-2 transform hover:scale-105">
+            <i class="fas fa-arrow-left"></i>
+            Back to Subscriptions
+        </a>
+    </div>
+
+    <!-- Subscription Overview Card -->
+    <div class="glass backdrop-blur-lg bg-white/90 rounded-2xl shadow-xl p-6 mb-8 animate-fade-in">
+        <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+            <i class="fas fa-clipboard-check text-primary-600 text-2xl"></i>
+            {{ plan.plan }} Plan
+        </h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <div class="flex items-center mb-3">
+                    <i class="fas fa-calendar-alt text-primary-600 text-lg w-8"></i>
+                    <div>
+                        <p class="text-sm text-gray-600">Start Date</p>
+                        <p class="font-medium text-gray-900">{{ subscription.start_date.strftime('%B %d, %Y') }}</p>
+                    </div>
+                </div>
+                <div class="flex items-center mb-3">
+                    <i class="fas fa-calendar-check text-primary-600 text-lg w-8"></i>
+                    <div>
+                        <p class="text-sm text-gray-600">End Date</p>
+                        <p class="font-medium text-gray-900">{{ subscription.end_date.strftime('%B %d, %Y') }}</p>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <i class="fas fa-hourglass-half text-primary-600 text-lg w-8"></i>
+                    <div>
+                        <p class="text-sm text-gray-600">Days Remaining</p>
+                        <p class="font-medium text-gray-900">{{ subscription.days_remaining }} days</p>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="flex items-center mb-3">
+                    <i class="fas fa-chart-line text-primary-600 text-lg w-8"></i>
+                    <div>
+                        <p class="text-sm text-gray-600">Daily Usage Limit</p>
+                        <p class="font-medium text-gray-900">{{ plan.usage_per_day }} operations</p>
+                    </div>
+                </div>
+                <div class="flex items-center mb-3">
+                    <i class="fas fa-tachometer-alt text-primary-600 text-lg w-8"></i>
+                    <div>
+                        <p class="text-sm text-gray-600">Current Usage</p>
+                        <p class="font-medium text-gray-900">{{ subscription.current_usage }} operations</p>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <i class="fas fa-sync text-primary-600 text-lg w-8"></i>
+                    <div>
+                        <p class="text-sm text-gray-600">Auto-Renewal</p>
+                        <p class="font-medium">
+                            {% if subscription.is_auto_renew %}
+                                <span class="text-secondary-600">Enabled</span>
+                            {% else %}
+                                <span class="text-red-600">Disabled</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Usage progress bar -->
+        <div class="mt-6">
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-sm text-gray-600">Daily Usage: {{ subscription.current_usage }}/{{ plan.usage_per_day }}</span>
+                <span class="text-sm font-medium">{{ subscription.daily_usage_percent|round }}%</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                <div class="{% if subscription.daily_usage_percent < 50 %}bg-primary-500{% elif subscription.daily_usage_percent < 75 %}bg-yellow-500{% else %}bg-red-500{% endif %} h-2.5 rounded-full transition-all duration-500 progress-bar-hover" 
+                     style="width: {{ subscription.daily_usage_percent }}%"></div>
+            </div>
+        </div>
+
+        <!-- Analytics and QR Code Usage Section -->
+        <div class="mt-4">
+            {% if hasattr(plan, 'analytics') and plan.analytics > 0 %}
+            <div class="flex justify-between items-center mb-2 mt-4">
+                <span class="text-sm text-gray-600">Analytics Usage: {{ subscription.analytics_used }}/{{ plan.analytics }}</span>
+                <span class="text-sm font-medium">{{ subscription.analytics_percent|round }}%</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden mb-3">
+                <div class="{% if subscription.analytics_percent < 50 %}bg-primary-500{% elif subscription.analytics_percent < 75 %}bg-yellow-500{% else %}bg-red-500{% endif %} h-2.5 rounded-full transition-all duration-500 progress-bar-hover" 
+                     style="width: {{ subscription.analytics_percent }}%"></div>
+            </div>
+            {% endif %}
+            
+            {% if hasattr(plan, 'qr_count') and plan.qr_count > 0 %}
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-sm text-gray-600">QR Codes Generated: {{ subscription.qr_generated }}/{{ plan.qr_count }}</span>
+                <span class="text-sm font-medium">{{ subscription.qr_percent|round }}%</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                <div class="{% if subscription.qr_percent < 50 %}bg-primary-500{% elif subscription.qr_percent < 75 %}bg-yellow-500{% else %}bg-red-500{% endif %} h-2.5 rounded-full transition-all duration-500 progress-bar-hover" 
+                     style="width: {{ subscription.qr_percent }}%"></div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Designs Available Section (if applicable) -->
+        {% if hasattr(plan, 'design') and plan.design %}
+        <div class="mt-6 pt-4 border-t border-gray-200">
+            <h4 class="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                <i class="fas fa-palette text-primary-600"></i>
+                Available Design Templates
+            </h4>
+            <div class="flex flex-wrap gap-2">
+                {% for design in plan.get_designs() %}
+                <span class="px-3 py-1 bg-primary-50 text-primary-700 rounded-full text-sm">
+                    {{ design }}
+                </span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Usage History Section -->
+    <div class="glass backdrop-blur-lg bg-white/90 rounded-2xl shadow-xl p-6 mb-8 animate-fade-in">
+        <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+            <i class="fas fa-history text-primary-600 text-2xl"></i>
+            Usage History
+        </h3>
+        
+        <!-- Usage History Container - Will be updated via AJAX -->
+        <div id="usage-history-container">
+            {% include 'user/partials/usage_history.html' %}
+        </div>
+    </div>
+
+    <!-- Payment History Section -->
+    <div class="glass backdrop-blur-lg bg-white/90 rounded-2xl shadow-xl p-6 mb-8 animate-fade-in">
+        <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+            <i class="fas fa-file-invoice-dollar text-primary-600 text-2xl"></i>
+            Payment History
+        </h3>
+        
+        {% if payment_records %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full">
+                <thead>
+                    <tr class="border-b border-gray-200">
+                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Invoice Number</th>
+                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Date</th>
+                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Amount</th>
+                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Status</th>
+                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for payment in payment_records %}
+                    <tr class="hover:bg-gray-50/50 transition-colors duration-200">
+                        <td class="py-3 px-4 whitespace-nowrap font-medium text-gray-900">{{ payment.invoice_number }}</td>
+                        <td class="py-3 px-4 whitespace-nowrap text-gray-600">{{ payment.created_at.strftime('%Y-%m-%d') }}</td>
+                        <td class="py-3 px-4 whitespace-nowrap text-gray-600">{{ payment.currency }} {{ payment.total_amount }}</td>
+                        <td class="py-3 px-4 whitespace-nowrap">
+                            {% if payment.status == 'completed' %}
+                                <span class="glass rounded-full px-3 py-1 text-xs bg-green-50 text-green-700 flex items-center gap-1 w-min">
+                                    <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                                    {{ payment.status }}
+                                </span>
+                            {% elif payment.status == 'created' %}
+                                <span class="glass rounded-full px-3 py-1 text-xs bg-yellow-50 text-yellow-700 flex items-center gap-1 w-min">
+                                    <span class="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></span>
+                                    {{ payment.status }}
+                                </span>
+                            {% else %}
+                                <span class="glass rounded-full px-3 py-1 text-xs bg-red-50 text-red-700 flex items-center gap-1 w-min">
+                                    <span class="w-2 h-2 bg-red-500 rounded-full"></span>
+                                    {{ payment.status }}
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3 px-4 whitespace-nowrap">
+                            {% if payment.status == 'completed' and payment.invoice_number %}
+                            <a href="{{ url_for('subscription.download_invoice', payment_id=payment.iid) }}" 
+                               class="text-primary-600 hover:text-primary-800 transition-colors duration-200 flex items-center gap-1">
+                               <i class="fas fa-download"></i>
+                               <span>Invoice</span>
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="rounded-lg bg-blue-50 p-4 hover:bg-blue-100 transition-colors duration-300">
+            <div class="flex">
+                <div class="flex-shrink-0 transform transition-all duration-300 hover:scale-110">
+                    <i class="fas fa-info-circle text-blue-500 text-lg"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-blue-700">No payment records found for this subscription.</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Daily Usage Statistics Section -->
+    {% if daily_usage %}
+    <div class="glass backdrop-blur-lg bg-white/90 rounded-2xl shadow-xl p-6 mb-8 animate-fade-in">
+        <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+            <i class="fas fa-chart-bar text-primary-600 text-2xl"></i>
+            Daily Usage Statistics
+        </h3>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+            {% for date, count in daily_usage %}
+            <div class="glass backdrop-blur-md bg-white/50 rounded-xl p-4 hover:shadow-md transition-all duration-300 hover:-translate-y-1">
+                <div class="flex flex-col">
+                    <span class="text-sm font-medium text-gray-600">{{ date }}</span>
+                    <span class="text-2xl font-bold text-primary-600">{{ count }}</span>
+                    <span class="text-xs text-gray-500">operations</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- AJAX Pagination JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initial setup to bind event listeners to pagination links
+    bindPaginationEvents();
+});
+
+function bindPaginationEvents() {
+    // Find all pagination links within the usage history container
+    const paginationLinks = document.querySelectorAll('#usage-history-container .pagination-link');
+    
+    // Add click event listeners to each link
+    paginationLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const url = this.getAttribute('href');
+            loadUsageHistoryPage(url);
+        });
+    });
+}
+
+function loadUsageHistoryPage(url) {
+    // Show loading indicator
+    const container = document.getElementById('usage-history-container');
+    container.innerHTML = '<div class="flex justify-center p-8"><i class="fas fa-spinner fa-spin text-3xl text-primary-600"></i></div>';
+    
+    // Make AJAX request
+    fetch(url, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.text();
+    })
+    .then(html => {
+        // Update container with new content
+        container.innerHTML = html;
+        
+        // Rebind event listeners to the new pagination links
+        bindPaginationEvents();
+        
+        // Scroll to top of usage history section
+        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    })
+    .catch(error => {
+        console.error('Error loading page:', error);
+        container.innerHTML = `
+            <div class="rounded-lg bg-red-50 p-4 hover:bg-red-100 transition-colors duration-300">
+                <div class="flex">
+                    <div class="flex-shrink-0 transform transition-all duration-300 hover:scale-110">
+                        <i class="fas fa-exclamation-circle text-red-500 text-lg"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-red-700">Failed to load usage history. Please try again.</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,581 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block page_title %}Dashboard Overview{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Dashboard</li>
+{% endblock %}
+
+{% block content %}
+<div class="row dashboard-stats-row">
+    <!-- Summary Cards -->
+    <div class="col-md-3 mb-4">
+        <div class="stat-card">
+            <div class="stat-card-body">
+                <div class="icon icon-users">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-title">Total Users</div>
+                    <div class="stat-value">{{ total_users }}</div>
+                    <div class="stat-desc">{{ active_users }} active, {{ unconfirmed_users }} unconfirmed</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="stat-card">
+            <div class="stat-card-body">
+                <div class="icon icon-subscriptions">
+                    <i class="fas fa-tag"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-title">Subscriptions</div>
+                    <div class="stat-value">{{ active_subscriptions }}</div>
+                    <div class="stat-desc">{{ expired_subscriptions }} expired</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="stat-card">
+            <div class="stat-card-body">
+                <div class="icon icon-revenue">
+                    <i class="fas fa-rupee-sign"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-title">Monthly Revenue</div>
+                    <div class="stat-value">₹{{ "{:,.2f}".format(monthly_revenue) }}</div>
+                    <div class="stat-desc">Total: ₹{{ "{:,.2f}".format(total_revenue) }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="stat-card">
+            <div class="stat-card-body">
+                <div class="icon icon-expiring">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-title">Expiring Soon</div>
+                    <div class="stat-value">{{ expiring_soon|length }}</div>
+                    <div class="stat-desc">Subscriptions in next 7 days</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Auto-Renewal Statistics -->
+    <div class="col-md-4 mb-4">
+        <div class="card chart-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Auto-Renewal Status</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <canvas id="renewalChart" width="400" height="200"></canvas>
+                </div>
+                <div class="d-flex justify-content-around mt-3">
+                    <div class="text-center">
+                        <h5>{{ auto_renewal_count }}</h5>
+                        <p class="text-muted">Auto-Renewal</p>
+                    </div>
+                    <div class="text-center">
+                        <h5>{{ non_renewal_count }}</h5>
+                        <p class="text-muted">Manual Renewal</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Payment Types Distribution -->
+    <div class="col-md-4 mb-4">
+        <div class="card chart-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Payment Methods</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <canvas id="paymentTypeChart" width="400" height="200"></canvas>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>Payment Type</th>
+                                <th>Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for payment_type in payment_types %}
+                            <tr>
+                                <td>{{ payment_type.payment_type|default('N/A')|title }}</td>
+                                <td>{{ payment_type.count }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="2" class="text-center">No payment data available</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Subscription Actions -->
+    <div class="col-md-4 mb-4">
+        <div class="card chart-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Subscription Activities (30 days)</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <canvas id="subscriptionActionsChart" width="400" height="200"></canvas>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>Action</th>
+                                <th>Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for action in subscription_actions %}
+                            <tr>
+                                <td>{{ action.action|title }}</td>
+                                <td>{{ action.count }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="2" class="text-center">No activity data available</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Recent Payments -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Recent Payments</h5>
+                <a href="{{ url_for('admin.admin_payments') }}" class="btn btn-sm btn-primary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Plan</th>
+                                <th>Amount</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in recent_payments %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('admin.admin_user_details', user_id=item.user.id) }}">{{ item.user.name }}</a>
+                                </td>
+                                <td>{{ item.subscription.plan }}</td>
+                                <td>₹{{ item.format_amount() }}</td>
+                                <td>{{ item.payment.created_at.strftime('%d %b, %Y') }}</td>
+                                <td>
+                                    {% if item.payment.status == 'completed' %}
+                                        <span class="badge bg-success">Completed</span>
+                                    {% elif item.payment.status == 'failed' %}
+                                        <span class="badge bg-danger">Failed</span>
+                                    {% elif item.payment.status == 'created' %}
+                                        <span class="badge bg-warning">Pending</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ item.payment.status }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center">No recent payments</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Popular Plans -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Popular Subscription Plans</h5>
+                <a href="{{ url_for('admin.admin_subscriptions') }}" class="btn btn-sm btn-primary">Manage Plans</a>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <canvas id="plansChart" width="400" height="200"></canvas>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Plan</th>
+                                <th>Subscribers</th>
+                                <th>Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% set total_subscribers = popular_plans|sum(attribute='subscribers') %}
+                            {% for plan in popular_plans %}
+                            <tr>
+                                <td>{{ plan.plan }}</td>
+                                <td>{{ plan.subscribers }}</td>
+                                <td>
+                                    {% if total_subscribers > 0 %}
+                                        {{ "{:.1f}%".format((plan.subscribers / total_subscribers) * 100) }}
+                                    {% else %}
+                                        0%
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="3" class="text-center">No subscription data available</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Subscriptions Expiring Soon -->
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Subscriptions Expiring in Next 7 Days</h5>
+                <a href="{{ url_for('admin.admin_subscribed_users') }}" class="btn btn-sm btn-primary">View All Subscriptions</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Email</th>
+                                <th>Plan</th>
+                                <th>Expiry Date</th>
+                                <th>Days Left</th>
+                                <th>Auto-Renewal</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user, subscription, subscribed_user in expiring_soon %}
+                            {% set modal_id = 'extendModal' ~ subscribed_user.id %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('admin.admin_user_details', user_id=user.id) }}">{{ user.name }}</a>
+                                </td>
+                                <td>{{ user.company_email }}</td>
+                                <td>{{ subscription.plan }}</td>
+                                <td>{{ subscribed_user.end_date.strftime('%d %b, %Y') }}</td>
+                                <td>
+                                    {% if subscribed_user.end_date.tzinfo is none %}
+                                        {% set end_date = subscribed_user.end_date.replace(tzinfo=now.tzinfo) %}
+                                    {% else %}
+                                        {% set end_date = subscribed_user.end_date %}
+                                    {% endif %}
+                                    {% set days_left = (end_date - now).days %}
+                                    {% if days_left <= 2 %}
+                                        <span class="badge bg-danger">{{ days_left }} days</span>
+                                    {% elif days_left <= 5 %}
+                                        <span class="badge bg-warning">{{ days_left }} days</span>
+                                    {% else %}
+                                        <span class="badge bg-info">{{ days_left }} days</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if subscribed_user.is_auto_renew %}
+                                        <span class="badge bg-success">Enabled</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Disabled</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ url_for('admin.admin_edit_subscribed_user', id=subscribed_user.id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#{{ modal_id }}">
+                                            <i class="fas fa-clock"></i>
+                                        </button>
+                                        {% if not subscribed_user.is_auto_renew %}
+                                        <form action="{{ url_for('admin.admin_send_renewal_reminder', id=subscribed_user.id) }}" 
+                                              method="post" 
+                                              style="display: inline;">
+                                            <button type="submit" 
+                                                    class="btn btn-sm btn-outline-info" 
+                                                    title="Send Reminder">
+                                                <i class="fas fa-bell"></i>
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- Extend Subscription Modal -->
+                                    <div class="modal fade" id="{{ modal_id }}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Extend Subscription</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <form action="{{ url_for('admin.admin_extend_subscription', id=subscribed_user.id) }}" method="post">
+                                                    <div class="modal-body">
+                                                        <p>Extend subscription for <strong>{{ user.name }}</strong> ({{ subscription.plan }} plan)</p>
+                                                        <div class="mb-3">
+                                                            <label for="extension_days_{{ subscribed_user.id }}" class="form-label">Days to extend</label>
+                                                            <input type="number" class="form-control" id="extension_days_{{ subscribed_user.id }}" name="extension_days" min="1" max="365" value="30" required>
+                                                        </div>
+                                                        <div class="form-check mb-3">
+                                                            <input class="form-check-input" type="checkbox" name="notify_user" id="notify_user_{{ subscribed_user.id }}" checked>
+                                                            <label class="form-check-label" for="notify_user_{{ subscribed_user.id }}">
+                                                                Notify user about extension
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                        <button type="submit" class="btn btn-success">Extend Subscription</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center">No subscriptions expiring in the next 7 days</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Plans chart
+        var plansData = [
+            {% for plan in popular_plans %}
+                {
+                    name: {{ plan.plan|tojson }},
+                    value: {{ plan.subscribers|default(0) }}
+                }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ];
+        
+        if (plansData.length > 0) {
+            var ctx = document.getElementById('plansChart').getContext('2d');
+            
+            // Prepare data for chart
+            var labels = plansData.map(function(item) { return item.name; });
+            var data = plansData.map(function(item) { return item.value; });
+            
+            // Generate colors
+            var backgroundColors = [
+                'rgba(67, 97, 238, 0.7)',
+                'rgba(76, 201, 164, 0.7)',
+                'rgba(249, 199, 79, 0.7)',
+                'rgba(239, 71, 111, 0.7)',
+                'rgba(72, 149, 239, 0.7)'
+            ];
+            
+            var planChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: backgroundColors.slice(0, data.length),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Subscription Distribution'
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Auto-renewal chart
+        var renewalCtx = document.getElementById('renewalChart').getContext('2d');
+        var renewalChart = new Chart(renewalCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Auto-Renewal', 'Manual Renewal'],
+                datasets: [{
+                    data: [{{ auto_renewal_count }}, {{ non_renewal_count }}],
+                    backgroundColor: [
+                        'rgba(67, 97, 238, 0.7)',
+                        'rgba(239, 71, 111, 0.7)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                    }
+                }
+            }
+        });
+        
+        // Payment types chart
+        var paymentTypeData = [
+            {% for payment_type in payment_types %}
+                {
+                    name: {{ payment_type.payment_type|default('N/A')|title|tojson }},
+                    value: {{ payment_type.count|default(0) }}
+                }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ];
+        
+        if (paymentTypeData.length > 0) {
+            var paymentCtx = document.getElementById('paymentTypeChart').getContext('2d');
+            
+            // Prepare data for chart
+            var paymentLabels = paymentTypeData.map(function(item) { return item.name; });
+            var paymentData = paymentTypeData.map(function(item) { return item.value; });
+            
+            // Generate colors
+            var paymentColors = [
+                'rgba(76, 201, 164, 0.7)',
+                'rgba(249, 199, 79, 0.7)',
+                'rgba(239, 71, 111, 0.7)',
+                'rgba(67, 97, 238, 0.7)',
+                'rgba(72, 149, 239, 0.7)'
+            ];
+            
+            var paymentChart = new Chart(paymentCtx, {
+                type: 'pie',
+                data: {
+                    labels: paymentLabels,
+                    datasets: [{
+                        data: paymentData,
+                        backgroundColor: paymentColors.slice(0, paymentData.length),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Subscription actions chart
+        var actionsData = [
+            {% for action in subscription_actions %}
+                {
+                    name: {{ action.action|title|tojson }},
+                    value: {{ action.count|default(0) }}
+                }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ];
+        
+        if (actionsData.length > 0) {
+            var actionsCtx = document.getElementById('subscriptionActionsChart').getContext('2d');
+            
+            // Prepare data for chart
+            var actionLabels = actionsData.map(function(item) { return item.name; });
+            var actionData = actionsData.map(function(item) { return item.value; });
+            
+            // Generate colors
+            var actionColors = [
+                'rgba(67, 97, 238, 0.7)',
+                'rgba(76, 201, 164, 0.7)',
+                'rgba(249, 199, 79, 0.7)',
+                'rgba(239, 71, 111, 0.7)',
+                'rgba(72, 149, 239, 0.7)'
+            ];
+            
+            var actionsChart = new Chart(actionsCtx, {
+                type: 'bar',
+                data: {
+                    labels: actionLabels,
+                    datasets: [{
+                        label: 'Number of Actions',
+                        data: actionData,
+                        backgroundColor: actionColors.slice(0, actionData.length),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

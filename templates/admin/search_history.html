@@ -1,0 +1,510 @@
+{% extends "admin/base.html" %}
+
+{% block title %}User Search History{% endblock %}
+
+{% block page_title %}
+<div class="d-flex justify-content-between align-items-center">
+    <h1 class="h3 mb-0">
+        <i class="fas fa-history me-2"></i> User Search History
+    </h1>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="icon-wrapper bg-primary-subtle rounded p-3 me-3">
+                        <i class="fas fa-search fa-2x text-primary"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1">Total Searches</h6>
+                        <h3 class="mb-0">{{ "{:,}".format(total_searches|default(0)) }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="icon-wrapper bg-success-subtle rounded p-3 me-3">
+                        <i class="fas fa-users fa-2x text-success"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1">Active Users</h6>
+                        <h3 class="mb-0">{{ "{:,}".format(active_users|default(0)) }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="icon-wrapper bg-info-subtle rounded p-3 me-3">
+                        <i class="fas fa-tools fa-2x text-info"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1">Most Used Tool</h6>
+                        <h3 class="mb-0">{{ most_popular_tool|default("N/A") }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="icon-wrapper bg-warning-subtle rounded p-3 me-3">
+                        <i class="fas fa-calendar-day fa-2x text-warning"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1">Searches Today</h6>
+                        <h3 class="mb-0">{{ "{:,}".format(searches_today|default(0)) }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter & Analysis Card -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-transparent border-0">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-filter me-2"></i>Filter Search History
+            </h5>
+        </div>
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('admin.admin_search_history') }}" id="search-filter-form">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="start_date" class="form-label text-muted">Start Date</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-transparent">
+                                <i class="fas fa-calendar-alt"></i>
+                            </span>
+                            <input type="date" id="start_date" name="start_date" class="form-control" value="{{ start_date or '' }}">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="end_date" class="form-label text-muted">End Date</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-transparent">
+                                <i class="fas fa-calendar-alt"></i>
+                            </span>
+                            <input type="date" id="end_date" name="end_date" class="form-control" value="{{ end_date or '' }}">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="tool_filter" class="form-label text-muted">Tool</label>
+                        <select name="tool_filter" id="tool_filter" class="form-select">
+                            <option value="all" {% if tool_filter == 'all' %}selected{% endif %}>All Tools</option>
+                            {% for tool in available_tools %}
+                                <option value="{{ tool }}" {% if tool_filter == tool %}selected{% endif %}>{{ tool }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="user_filter" class="form-label text-muted">User</label>
+                        <select name="user_filter" id="user_filter" class="form-select">
+                            <option value="all" {% if user_filter == 'all' %}selected{% endif %}>All Users</option>
+                            {% for user in available_users %}
+                                <option value="{{ user.id }}" {% if user_filter|string == user.id|string %}selected{% endif %}>{{ user.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="query_filter" class="form-label text-muted">Search Query</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-transparent">
+                                <i class="fas fa-search"></i>
+                            </span>
+                            <input type="text" name="query_filter" id="query_filter" class="form-control" 
+                                placeholder="Filter by URL or keyword..."
+                                value="{{ query_filter or '' }}">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="sort_by" class="form-label text-muted">Sort By</label>
+                        <select name="sort_by" id="sort_by" class="form-select">
+                            <option value="date_desc" {% if sort_by == 'date_desc' %}selected{% endif %}>Date (Newest First)</option>
+                            <option value="date_asc" {% if sort_by == 'date_asc' %}selected{% endif %}>Date (Oldest First)</option>
+                            <option value="count_desc" {% if sort_by == 'count_desc' %}selected{% endif %}>Search Count (High to Low)</option>
+                            <option value="count_asc" {% if sort_by == 'count_asc' %}selected{% endif %}>Search Count (Low to High)</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-filter me-1"></i> Apply Filters
+                            </button>
+                            <a href="{{ url_for('admin.admin_search_history') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-redo me-1"></i> Reset Filters
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Search History Table Card -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-list-alt me-2"></i>Search Entries
+                {% if start_date or end_date or tool_filter != 'all' or user_filter != 'all' or query_filter %}
+                <span class="badge bg-primary ms-2">Filtered</span>
+                {% endif %}
+            </h5>
+            <div>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#columnSettingsModal">
+                    <i class="fas fa-columns me-1"></i> Columns
+                </button>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>
+                                <div class="d-flex align-items-center">
+                                    User
+                                    <a href="#" class="ms-1 text-muted sort-btn" data-sort="user">
+                                        <i class="fas fa-sort"></i>
+                                    </a>
+                                </div>
+                            </th>
+                            <th>
+                                <div class="d-flex align-items-center">
+                                    Tool
+                                    <a href="#" class="ms-1 text-muted sort-btn" data-sort="tool">
+                                        <i class="fas fa-sort"></i>
+                                    </a>
+                                </div>
+                            </th>
+                            <th>Search Query/URL</th>
+                            <th>
+                                <div class="d-flex align-items-center">
+                                    Count
+                                    <a href="#" class="ms-1 text-muted sort-btn" data-sort="count">
+                                        <i class="fas fa-sort"></i>
+                                    </a>
+                                </div>
+                            </th>
+                            <th>Most Used Tool</th>
+                            <th>
+                                <div class="d-flex align-items-center">
+                                    Date & Time
+                                    <a href="#" class="ms-1 text-muted sort-btn" data-sort="date">
+                                        <i class="fas fa-sort"></i>
+                                    </a>
+                                </div>
+                            </th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if history %}
+                            {% for entry in history %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-circle bg-primary-subtle text-primary me-2">
+                                            {{ entry.user.name[:1]|upper }}
+                                        </div>
+                                        <div>
+                                            <div class="fw-medium">{{ entry.user.name }}</div>
+                                            <div class="small text-muted">ID: {{ entry.u_id }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge {% if entry.usage_tool == 'URL Search' %}bg-info{% elif entry.usage_tool == 'Keyword Search' %}bg-success{% else %}bg-secondary{% endif %}">
+                                        <i class="fas {% if entry.usage_tool == 'URL Search' %}fa-globe{% elif entry.usage_tool == 'Keyword Search' %}fa-key{% else %}fa-tools{% endif %} me-1"></i>
+                                        {{ entry.usage_tool }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="search-url text-truncate" style="max-width: 300px;" data-bs-toggle="tooltip" title="{{ entry.search_history }}">
+                                        {% if entry.usage_tool == 'URL Search' %}
+                                            <a href="{{ entry.search_history }}" target="_blank" class="text-decoration-none">
+                                                {{ entry.search_history }}
+                                                <i class="fas fa-external-link-alt ms-1 small"></i>
+                                            </a>
+                                        {% else %}
+                                            {{ entry.search_history }}
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary rounded-pill">{{ entry.search_count }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">{{ user_most_used_tools.get(entry.u_id, "N/A") }}</span>
+                                </td>
+                                <td>
+                                    <div>{{ entry.created_at.strftime('%d %b %Y') }}</div>
+                                    <div class="small text-muted">{{ entry.created_at.strftime('%I:%M %p') }}</div>
+                                </td>
+                                <td class="text-end">
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-icon btn-outline-secondary rounded-circle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <!-- View Details option removed as endpoint doesn't exist -->
+                                            <!-- Uncomment when you implement the route
+                                            <li>
+                                                <a class="dropdown-item" href="{{ url_for('admin_search_history') }}">
+                                                    <i class="fas fa-eye me-2 text-primary"></i> View Details
+                                                </a>
+                                            </li>
+                                            -->
+                                            <li>
+                                                <a class="dropdown-item" href="{{ url_for('admin_user_details', user_id=entry.u_id) }}">
+                                                    <i class="fas fa-user me-2 text-info"></i> View User
+                                                </a>
+                                            </li>
+                                            {% if entry.usage_tool == 'URL Search' %}
+                                            <li>
+                                                <a class="dropdown-item" href="{{ entry.search_history }}" target="_blank">
+                                                    <i class="fas fa-external-link-alt me-2 text-success"></i> Open URL
+                                                </a>
+                                            </li>
+                                            {% endif %}
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center py-4">
+                                    <div class="py-5">
+                                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                                        <h5>No search history found</h5>
+                                        <p class="text-muted">Try adjusting your search or filter criteria</p>
+                                        <a href="{{ url_for('admin_search_history') }}" class="btn btn-outline-primary">
+                                            <i class="fas fa-redo me-1"></i> Reset Filters
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        {% if history and pagination and pagination.pages > 1 %}
+        <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
+            <div class="text-muted">
+                Showing <span class="fw-medium">{{ pagination.page }}</span> of <span class="fw-medium">{{ pagination.pages }}</span> pages
+                ({{ "{:,}".format(pagination.total) }} entries total)
+            </div>
+            <nav aria-label="Search history pagination">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('admin_search_history', page=pagination.prev_num, start_date=start_date, end_date=end_date, tool_filter=tool_filter, user_filter=user_filter, query_filter=query_filter, sort_by=sort_by) if pagination.has_prev else '#' }}">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    
+                    {% set start_page = [pagination.page - 2, 1]|max %}
+                    {% set end_page = [start_page + 4, pagination.pages + 1]|min %}
+                    {% set start_page = [end_page - 5, 1]|max %}
+                    
+                    {% if start_page > 1 %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin_search_history', page=1, start_date=start_date, end_date=end_date, tool_filter=tool_filter, user_filter=user_filter, query_filter=query_filter, sort_by=sort_by) }}">1</a>
+                    </li>
+                    {% if start_page > 2 %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                    {% endif %}
+                    {% endif %}
+                    
+                    {% for page_num in range(start_page, end_page) %}
+                    <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('admin_search_history', page=page_num, start_date=start_date, end_date=end_date, tool_filter=tool_filter, user_filter=user_filter, query_filter=query_filter, sort_by=sort_by) }}">{{ page_num }}</a>
+                    </li>
+                    {% endfor %}
+                    
+                    {% if end_page <= pagination.pages %}
+                    {% if end_page < pagination.pages %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                    {% endif %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin_search_history', page=pagination.pages, start_date=start_date, end_date=end_date, tool_filter=tool_filter, user_filter=user_filter, query_filter=query_filter, sort_by=sort_by) }}">{{ pagination.pages }}</a>
+                    </li>
+                    {% endif %}
+                    
+                    <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('admin_search_history', page=pagination.next_num, start_date=start_date, end_date=end_date, tool_filter=tool_filter, user_filter=user_filter, query_filter=query_filter, sort_by=sort_by) if pagination.has_next else '#' }}">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Column Settings Modal -->
+<div class="modal fade" id="columnSettingsModal" tabindex="-1" aria-labelledby="columnSettingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="columnSettingsModalLabel">Customize Table Columns</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="col-user" checked>
+                    <label class="form-check-label" for="col-user">User</label>
+                </div>
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="col-tool" checked>
+                    <label class="form-check-label" for="col-tool">Tool</label>
+                </div>
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="col-query" checked>
+                    <label class="form-check-label" for="col-query">Search Query/URL</label>
+                </div>
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="col-count" checked>
+                    <label class="form-check-label" for="col-count">Count</label>
+                </div>
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="col-most-used" checked>
+                    <label class="form-check-label" for="col-most-used">Most Used Tool</label>
+                </div>
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="col-date" checked>
+                    <label class="form-check-label" for="col-date">Date & Time</label>
+                </div>
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="col-user-email">
+                    <label class="form-check-label" for="col-user-email">User Email</label>
+                </div>
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="col-ip-address">
+                    <label class="form-check-label" for="col-ip-address">IP Address</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="save-column-settings">Apply Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // Add animation to cards
+        const cards = document.querySelectorAll('.card');
+        cards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            
+            setTimeout(() => {
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, 100 + (index * 50));
+        });
+        
+        // Column visibility toggle functionality
+        document.getElementById('save-column-settings')?.addEventListener('click', function() {
+            const columns = {
+                'col-user': 0,
+                'col-tool': 1,
+                'col-query': 2,
+                'col-count': 3,
+                'col-most-used': 4,
+                'col-date': 5
+            };
+            
+            // Get all table rows
+            const table = document.querySelector('table');
+            if (!table) return;
+            
+            const headerRow = table.querySelector('thead tr');
+            const bodyRows = table.querySelectorAll('tbody tr');
+            
+            // Toggle column visibility based on checkbox state
+            Object.keys(columns).forEach(colId => {
+                const checkbox = document.getElementById(colId);
+                if (!checkbox) return;
+                
+                const colIndex = columns[colId];
+                
+                if (colIndex >= 0) { // Only toggle existing columns
+                    const isVisible = checkbox.checked;
+                    
+                    // Toggle header cell
+                    if (headerRow.cells[colIndex]) {
+                        headerRow.cells[colIndex].style.display = isVisible ? '' : 'none';
+                    }
+                    
+                    // Toggle body cells
+                    bodyRows.forEach(row => {
+                        if (row.cells[colIndex]) {
+                            row.cells[colIndex].style.display = isVisible ? '' : 'none';
+                        }
+                    });
+                }
+            });
+            
+            // Close the modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('columnSettingsModal'));
+            if (modal) modal.hide();
+        });
+        
+        // Handle date range validation
+        const startDateInput = document.getElementById('start_date');
+        const endDateInput = document.getElementById('end_date');
+        const filterForm = document.getElementById('search-filter-form');
+        
+        if (filterForm && startDateInput && endDateInput) {
+            filterForm.addEventListener('submit', function(event) {
+                if (startDateInput.value && endDateInput.value) {
+                    const startDate = new Date(startDateInput.value);
+                    const endDate = new Date(endDateInput.value);
+                    
+                    if (startDate > endDate) {
+                        event.preventDefault();
+                        alert('Start date cannot be later than end date.');
+                        return false;
+                    }
+                }
+            });
+        }
+        
+        // Automatic form submission on select changes
+        const autoSubmitSelects = document.querySelectorAll('#tool_filter, #user_filter, #sort_by');
+        autoSubmitSelects.forEach(select => {
+            select.addEventListener('change', function() {
+                filterForm.submit();
+            });
+        });
+    });
+</script>
+{% endblock %}

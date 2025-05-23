@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ detail.title|default('Secure Message') }}</title>
+    <style>
+        /* Futuristic Variables */
+        :root {
+            /* Primary Palette */
+            --primary-color: #0070f3;
+            --primary-glow: rgba(0, 112, 243, 0.35);
+            --secondary-color: #00c8ff;
+            --accent-color: #7928ca;
+            --accent-glow: rgba(121, 40, 202, 0.4);
+            
+            /* Neutral Colors */
+            --text-color: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --background-primary: #111827;
+            --background-secondary: #1f2937;
+            --card-bg: rgba(31, 41, 55, 0.8);
+            
+            /* Elements */
+            --border-radius-sm: 8px;
+            --border-radius-md: 12px;
+            --border-radius-lg: 20px;
+            --box-shadow: 0 10px 30px -5px rgba(2, 12, 27, 0.7);
+            --glow-shadow: 0 0 20px var(--primary-glow);
+            
+            /* Borders & Lines */
+            --border-light: 1px solid rgba(255, 255, 255, 0.1);
+            --border-highlight: 1px solid rgba(255, 255, 255, 0.15);
+            --border-glow: 1px solid var(--primary-glow);
+            
+            /* Light Mode Overrides */
+            --light-text-color: #111827;
+            --light-text-secondary: rgba(17, 24, 39, 0.7);
+            --light-background-primary: #f1f5f9;
+            --light-background-secondary: #ffffff;
+            --light-card-bg: rgba(255, 255, 255, 0.85);
+        }
+        
+        /* Light Mode Detection */
+        @media (prefers-color-scheme: light) {
+            :root {
+                --text-color: var(--light-text-color);
+                --text-secondary: var(--light-text-secondary);
+                --background-primary: var(--light-background-primary);
+                --background-secondary: var(--light-background-secondary);
+                --card-bg: var(--light-card-bg);
+            }
+        }
+        
+        /* Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, var(--background-primary), var(--background-secondary));
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            line-height: 1.6;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* Background Animation */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 10% 20%, var(--primary-glow) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, var(--accent-glow) 0%, transparent 40%);
+            opacity: 0.4;
+            z-index: -1;
+        }
+        
+        /* Floating Particles */
+        .particles-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            opacity: 0.2;
+            animation: float 15s infinite linear;
+        }
+        
+        .particle:nth-child(1) {
+            top: 10%;
+            left: 20%;
+            width: 3px;
+            height: 3px;
+            animation-duration: 25s;
+            background: var(--accent-color);
+        }
+        
+        .particle:nth-child(2) {
+            top: 40%;
+            left: 80%;
+            width: 7px;
+            height: 7px;
+            animation-duration: 30s;
+            animation-delay: 2s;
+        }
+        
+        .particle:nth-child(3) {
+            top: 80%;
+            left: 15%;
+            animation-duration: 20s;
+            animation-delay: 1s;
+            background: var(--secondary-color);
+        }
+        
+        .particle:nth-child(4) {
+            top: 25%;
+            left: 90%;
+            width: 4px;
+            height: 4px;
+            animation-duration: 22s;
+            animation-delay: 4s;
+            background: var(--accent-color);
+        }
+        
+        .particle:nth-child(5) {
+            top: 70%;
+            left: 75%;
+            width: 6px;
+            height: 6px;
+            animation-duration: 18s;
+            animation-delay: 3s;
+        }
+        
+        @keyframes float {
+            0% {
+                transform: translateX(0) translateY(0);
+            }
+            25% {
+                transform: translateX(30px) translateY(-30px);
+            }
+            50% {
+                transform: translateX(60px) translateY(0);
+            }
+            75% {
+                transform: translateX(30px) translateY(30px);
+            }
+            100% {
+                transform: translateX(0) translateY(0);
+            }
+        }
+        
+        /* Main Container */
+        .container {
+            width: 100%;
+            max-width: 700px;
+            background: var(--card-bg);
+            border-radius: var(--border-radius-lg);
+            overflow: hidden;
+            box-shadow: var(--box-shadow);
+            backdrop-filter: blur(12px);
+            border: var(--border-light);
+            animation: appear 0.7s ease-out forwards;
+            position: relative;
+        }
+        
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(to right, transparent, var(--primary-color), transparent);
+            opacity: 0.7;
+        }
+        
+        .container::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(to right, transparent, var(--primary-color), transparent);
+            opacity: 0.4;
+        }
+        
+        /* Header Section */
+        .content-header {
+            background: linear-gradient(135deg, var(--background-secondary), rgba(31, 41, 55, 0.95));
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            border-bottom: var(--border-light);
+        }
+        
+        .header-decoration {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow: hidden;
+            opacity: 0.15;
+            pointer-events: none;
+        }
+        
+        .header-decoration::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                linear-gradient(90deg, transparent 30%, rgba(255, 255, 255, 0.15) 50%, transparent 70%);
+            transform: rotate(30deg);
+            animation: lightSweep 8s infinite linear;
+        }
+        
+        @keyframes lightSweep {
+            0% { transform: translateX(-100%) rotate(30deg); }
+            100% { transform: translateX(100%) rotate(30deg); }
+        }
+        
+        .content-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            position: relative;
+            display: inline-block;
+            color: var(--text-color);
+            letter-spacing: 0.02em;
+        }
+        
+        .content-title::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 15%;
+            width: 70%;
+            height: 2px;
+            background: linear-gradient(to right, transparent, var(--primary-color), transparent);
+        }
+        
+        .timestamp {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 8px;
+            font-weight: 400;
+        }
+        
+        /* Main Content */
+        .main-content {
+            padding: 40px 35px;
+            position: relative;
+        }
+        
+        .hexagon-decoration {
+            position: absolute;
+            width: 140px;
+            height: 140px;
+            opacity: 0.03;
+            z-index: 0;
+            background-repeat: no-repeat;
+            background-size: contain;
+            pointer-events: none;
+        }
+        
+        .hexagon-decoration:nth-child(1) {
+            top: 10%;
+            right: 5%;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140' viewBox='0 0 100 100'%3E%3Cpolygon points='50 0, 93.3 25, 93.3 75, 50 100, 6.7 75, 6.7 25' fill='%230070f3'/%3E%3C/svg%3E");
+            transform: rotate(30deg);
+        }
+        
+        .hexagon-decoration:nth-child(2) {
+            bottom: 15%;
+            left: 5%;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140' viewBox='0 0 100 100'%3E%3Cpolygon points='50 0, 93.3 25, 93.3 75, 50 100, 6.7 75, 6.7 25' fill='%237928ca'/%3E%3C/svg%3E");
+            transform: rotate(15deg) scale(0.8);
+        }
+        
+        .text-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: var(--text-color);
+            position: relative;
+            z-index: 2;
+            white-space: pre-wrap; /* Preserve line breaks */
+            letter-spacing: 0.01em;
+        }
+        
+        .text-content:empty::before {
+            content: "No content available";
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        /* Actions Panel */
+        .actions {
+            padding: 5px 35px 35px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        .action-btn {
+            flex: 1;
+            min-width: 160px;
+            padding: 14px 25px;
+            border: none;
+            border-radius: var(--border-radius-md);
+            font-weight: 500;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            letter-spacing: 0.02em;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .action-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.5s ease;
+        }
+        
+        .action-btn:hover::before {
+            transform: translateX(100%);
+        }
+        
+        .primary-btn {
+            background: var(--primary-color);
+            color: white;
+            box-shadow: 0 0 15px rgba(var(--primary-color), 0.3);
+            border: 1px solid rgba(0, 112, 243, 0.7);
+        }
+        
+        .primary-btn:hover {
+            background: rgba(0, 112, 243, 0.9);
+            transform: translateY(-3px);
+            box-shadow: 0 7px 20px rgba(var(--primary-color), 0.4);
+        }
+        
+        .secondary-btn {
+            background: transparent;
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+            box-shadow: 0 0 10px rgba(var(--primary-color), 0.15);
+        }
+        
+        .secondary-btn:hover {
+            background: rgba(0, 112, 243, 0.1);
+            transform: translateY(-3px);
+            box-shadow: 0 7px 15px rgba(var(--primary-color), 0.2);
+        }
+        
+        .accent-btn {
+            background: var(--accent-color);
+            color: white;
+            box-shadow: 0 0 15px rgba(var(--accent-color), 0.3);
+            border: 1px solid rgba(121, 40, 202, 0.7);
+        }
+        
+        .accent-btn:hover {
+            background: rgba(121, 40, 202, 0.9);
+            transform: translateY(-3px);
+            box-shadow: 0 7px 20px rgba(var(--accent-color), 0.4);
+        }
+        
+        .btn-icon {
+            margin-right: 10px;
+            font-size: 1.2rem;
+            transition: transform 0.3s ease;
+        }
+        
+        .action-btn:hover .btn-icon {
+            transform: scale(1.2);
+        }
+        
+        /* Security Badge */
+        .security-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 15px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            letter-spacing: 0.03em;
+        }
+        
+        .security-icon {
+            color: var(--primary-color);
+        }
+        
+        /* QR Code Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(10px);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .modal.active {
+            display: flex;
+            opacity: 1;
+        }
+        
+        .modal-content {
+            background: var(--background-secondary);
+            padding: 35px;
+            border-radius: var(--border-radius-lg);
+            max-width: 90%;
+            width: 380px;
+            text-align: center;
+            box-shadow: var(--box-shadow);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+            position: relative;
+            border: var(--border-light);
+        }
+        
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+        
+        .modal-header {
+            margin-bottom: 25px;
+            position: relative;
+        }
+        
+        .modal-header::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 15%;
+            width: 70%;
+            height: 1px;
+            background: linear-gradient(to right, transparent, var(--primary-color), transparent);
+        }
+        
+        .modal-title {
+            font-size: 1.5rem;
+            color: var(--text-color);
+            font-weight: 600;
+        }
+        
+        .modal-body {
+            margin-bottom: 30px;
+        }
+        
+        .qr-container {
+            width: 220px;
+            height: 220px;
+            margin: 0 auto;
+            background: white;
+            padding: 10px;
+            border-radius: 10px;
+            position: relative;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .qr-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 10px;
+            border: 2px solid var(--primary-color);
+            opacity: 0.3;
+            pointer-events: none;
+        }
+        
+        .modal-footer .action-btn {
+            width: 100%;
+            margin-top: 15px;
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: transparent;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-color);
+            cursor: pointer;
+            opacity: 0.7;
+            transition: all 0.3s ease;
+        }
+        
+        .close-btn:hover {
+            opacity: 1;
+            transform: rotate(90deg);
+        }
+        
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--background-secondary);
+            color: var(--text-color);
+            padding: 12px 25px;
+            border-radius: var(--border-radius-md);
+            font-size: 0.95rem;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            box-shadow: var(--box-shadow);
+            border: var(--border-light);
+        }
+        
+        .toast.success {
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .toast.error {
+            border-left: 4px solid var(--danger-color);
+        }
+        
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        
+        /* Animations */
+        @keyframes appear {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(0, 112, 243, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 112, 243, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 112, 243, 0); }
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .container {
+                border-radius: var(--border-radius-md);
+            }
+            
+            .content-header {
+                padding: 25px;
+            }
+            
+            .content-title {
+                font-size: 1.7rem;
+            }
+            
+            .main-content {
+                padding: 30px 25px;
+            }
+            
+            .text-content {
+                font-size: 1rem;
+            }
+            
+            .actions {
+                padding: 5px 25px 25px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                border-radius: var(--border-radius-sm);
+            }
+            
+            .content-header {
+                padding: 20px;
+            }
+            
+            .content-title {
+                font-size: 1.5rem;
+            }
+            
+            .main-content {
+                padding: 25px 20px;
+            }
+            
+            .text-content {
+                font-size: 0.95rem;
+                line-height: 1.7;
+            }
+            
+            .actions {
+                padding: 5px 20px 20px;
+                flex-direction: column;
+            }
+            
+            .action-btn {
+                width: 100%;
+                min-width: unset;
+            }
+            
+            .security-badge {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating Particles Background -->
+    <div class="particles-container">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+    
+    <div class="container">
+        <div class="content-header">
+            <div class="header-decoration"></div>
+            <h1 class="content-title">{{ detail.title|default('Secure Message') }}</h1>
+            <div class="timestamp">{{ now }}</div>
+
+        </div>
+        
+        <div class="main-content">
+            <div class="hexagon-decoration"></div>
+            <div class="hexagon-decoration"></div>
+            
+            <div class="text-content">
+                {{ detail.text|default('')|safe }}
+            </div>
+        </div>
+        
+        <div class="actions">
+            <button class="action-btn primary-btn" id="copyBtn">
+                <span class="btn-icon">📋</span> Copy Text
+            </button>
+            <button class="action-btn secondary-btn" id="shareBtn">
+                <span class="btn-icon">📤</span> Share
+            </button>
+            <button class="action-btn accent-btn" id="qrcodeBtn">
+                <span class="btn-icon">📱</span> QR Code
+            </button>
+        </div>
+        
+        <div class="security-badge">
+            <span class="security-icon">🔐</span>
+            <span>End-to-end encrypted message</span>
+        </div>
+    </div>
+    
+    <!-- QR Code Modal -->
+    <div class="modal" id="qrModal">
+        <div class="modal-content">
+            <button class="close-btn" id="closeModal">&times;</button>
+            <div class="modal-header">
+                <h2 class="modal-title">Scan to View</h2>
+            </div>
+            <div class="modal-body">
+                <div class="qr-container" id="qrcode"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn primary-btn" id="downloadQrBtn">
+                    <span class="btn-icon">💾</span> Download QR
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast notification -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Include QR code library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <script>
+        // DOM elements
+        const copyBtn = document.getElementById('copyBtn');
+        const shareBtn = document.getElementById('shareBtn');
+        const qrcodeBtn = document.getElementById('qrcodeBtn');
+        const qrModal = document.getElementById('qrModal');
+        const closeModal = document.getElementById('closeModal');
+        const downloadQrBtn = document.getElementById('downloadQrBtn');
+        const toast = document.getElementById('toast');
+        const textContent = document.querySelector('.text-content');
+        
+        // Current timestamp for the message
+        const currentTimestamp = new Date().toLocaleString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        
+        // Update the timestamp display
+        document.querySelector('.timestamp').textContent = currentTimestamp;
+        
+        // Function to show toast notification
+        function showToast(message, type = 'success', duration = 3000) {
+            toast.textContent = message;
+            toast.className = 'toast ' + type;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, duration);
+        }
+        
+        // Copy text to clipboard with fallbacks
+        function copyText() {
+            const text = textContent.innerText;
+            
+            if (navigator.clipboard && window.isSecureContext) {
+                // Use modern clipboard API when available
+                navigator.clipboard.writeText(text).then(() => {
+                    copyBtn.innerHTML = '<span class="btn-icon">✓</span> Copied!';
+                    showToast('Message copied to clipboard');
+                    
+                    setTimeout(() => {
+                        copyBtn.innerHTML = '<span class="btn-icon">📋</span> Copy Text';
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Clipboard write failed:', err);
+                    showToast('Failed to copy. Please try again.', 'error');
+                });
+            } else {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.style.position = 'fixed';
+                textArea.style.opacity = '0';
+                document.body.appendChild(textArea);
+                textArea.select();
+                
+                try {
+                    const successful = document.execCommand('copy');
+                    if (successful) {
+                        copyBtn.innerHTML = '<span class="btn-icon">✓</span> Copied!';
+                        showToast('Message copied to clipboard');
+                        
+                        setTimeout(() => {
+                            copyBtn.innerHTML = '<span class="btn-icon">📋</span> Copy Text';
+                        }, 2000);
+                    } else {
+                        showToast('Failed to copy. Please try again.', 'error');
+                    }
+                } catch (err) {
+                    console.error('execCommand error:', err);
+                    showToast('Failed to copy. Please try again.', 'error');
+                }
+                
+                document.body.removeChild(textArea);
+            }
+        }
+        
+        // Share text if supported
+        function shareText() {
+            const text = textContent.innerText;
+            const title = document.querySelector('.content-title').textContent;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: title,
+                    text: text,
+                    url: window.location.href
+                }).then(() => {
+                    showToast('Message shared successfully');
+                }).catch(err => {
+                    console.error('Share failed:', err);
+                    
+                    // Fallback to copy if share was canceled or failed
+                    if (err.name !== 'AbortError') {
+                        copyText();
+                    }
+                });
+            } else {
+                // Fallback for browsers that don't support Web Share API
+                copyText();
+                shareBtn.innerHTML = '<span class="btn-icon">✓</span> Copied!';
+                
+                setTimeout(() => {
+                    shareBtn.innerHTML = '<span class="btn-icon">📤</span> Share';
+                }, 2000);
+            }
+        }
+        
+        // Generate and display QR code
+        function generateQRCode() {
+            const qrContainer = document.getElementById('qrcode');
+            qrContainer.innerHTML = ''; // Clear previous QR code
+            
+            new QRCode(qrContainer, {
+                text: window.location.href,
+                width: 200,
+                height: 200,
+                colorDark: "#111827",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+            
+            qrModal.classList.add('active');
+        }
+        
+        // Download QR code as image
+        function downloadQRCode() {
+            const qrCanvas = document.querySelector('#qrcode canvas');
+            if (!qrCanvas) return;
+            
+            const link = document.createElement('a');
+            link.download = 'secure-message-qr.png';
+            link.href = qrCanvas.toDataURL('image/png');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showToast('QR code downloaded');
+        }
+        
+        // Close modal when clicking outside or on close button
+        function closeQRModal() {
+            qrModal.classList.remove('active');
+        }
+        
+        // Event listeners
+        copyBtn.addEventListener('click', copyText);
+        shareBtn.addEventListener('click', shareText);
+        qrcodeBtn.addEventListener('click', generateQRCode);
+        closeModal.addEventListener('click', closeQRModal);
+        downloadQrBtn.addEventListener('click', downloadQRCode);
+        
+        // Close modal when clicking outside
+        qrModal.addEventListener('click', function(e) {
+            if (e.target === qrModal) {
+                closeQRModal();
+            }
+        });
+        
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && qrModal.classList.contains('active')) {
+                closeQRModal();
+            }
+        });
+        
+        // Check if text content is empty and display fallback message
+        if (!textContent.textContent.trim()) {
+            textContent.classList.add('empty');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Template - {{ qr_code.name }}{% endblock %}
+
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.63.0/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.63.0/theme/dracula.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.63.0/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.63.0/mode/xml/xml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.63.0/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.63.0/mode/css/css.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.63.0/mode/htmlmixed/htmlmixed.min.js"></script>
+<style>
+    .CodeMirror {
+        height: 400px;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.375rem;
+        font-family: 'Fira Code', monospace;
+        font-size: 14px;
+    }
+    #preview-frame {
+        width: 100%;
+        min-height: 400px;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.375rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 min-h-screen py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Page Header -->
+        <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
+            <div>
+                <div class="flex items-center">
+                    <a href="{{ url_for('view_qr', qr_id=qr_code.unique_id) }}" class="text-secondary-600 hover:text-secondary-700 flex items-center group">
+                        <i class="fas fa-arrow-left mr-2 transform group-hover:-translate-x-1 transition-transform"></i> 
+                        <span>Back to QR Code</span>
+                    </a>
+                </div>
+                <h1 class="mt-2 text-3xl font-bold text-gray-900">Edit HTML Template</h1>
+                <p class="mt-1 text-sm text-gray-500">Customize the HTML that will be displayed when users scan your QR code.</p>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="bg-white shadow rounded-lg mb-8">
+            <div class="px-6 py-5 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-lg font-medium text-gray-900">{{ qr_code.qr_type|capitalize }} Template</h2>
+                    <span class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm inline-flex items-center">
+                        <i class="fas fa-code mr-1.5"></i> HTML Editor
+                    </span>
+                </div>
+            </div>
+            
+            <form id="template-form" action="{{ url_for('update_template', qr_id=qr_code.unique_id) }}" method="POST">
+                <div class="p-6">
+                    <div class="mb-5">
+                        <label for="template_name" class="block text-sm font-medium text-gray-700 mb-1">Template Name</label>
+                        <input type="text" id="template_name" name="template_name" value="{{ template.name if template else qr_code.name ~ ' Template' }}" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-secondary-500 focus:border-secondary-500 sm:text-sm">
+                    </div>
+                    
+                    <div class="mb-5">
+                        <div class="flex justify-between items-center mb-1">
+                            <label for="template_html" class="block text-sm font-medium text-gray-700">HTML Template</label>
+                            <div class="flex space-x-2">
+                                <button type="button" id="reset-template" class="text-xs text-red-600 hover:text-red-800">
+                                    <i class="fas fa-undo mr-1"></i> Reset to Default
+                                </button>
+                                <button type="button" id="beautify-code" class="text-xs text-secondary-600 hover:text-secondary-800">
+                                    <i class="fas fa-magic mr-1"></i> Format Code
+                                </button>
+                            </div>
+                        </div>
+                        <textarea id="template_html" name="template_html" class="hidden">{{ template.html_content if template else default_template }}</textarea>
+                        <div id="editor"></div>
+                        <p class="mt-1 text-xs text-gray-500">Use HTML to design how your QR code content will be displayed when scanned. Available variables: {% for var in template_vars %}{{ '{{' ~ var ~ '}}' }}{% if not loop.last %}, {% endif %}{% endfor %}</p>
+                    </div>
+                    
+                    <div class="mb-5">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Preview</label>
+                        <div class="border border-gray-200 rounded-md overflow-hidden bg-gray-100">
+                            <div class="bg-gray-50 py-2 px-4 border-b border-gray-200 flex justify-between items-center">
+                                <span class="text-xs text-gray-600">QR Code Result Preview</span>
+                                <button type="button" id="refresh-preview" class="text-xs text-blue-600 hover:text-blue-800">
+                                    <i class="fas fa-sync-alt mr-1"></i> Refresh Preview
+                                </button>
+                            </div>
+                            <div class="p-4">
+                                <iframe id="preview-frame" sandbox="allow-scripts"></iframe>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3">
+                      <a href="{{ url_for('view_qr', qr_id=qr_code.unique_id) }}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary-500 transition-colors">
+                        Cancel
+                    </a>
+                    <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-secondary-600 hover:bg-secondary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary-500 transition-colors">
+                        <i class="fas fa-save mr-1.5"></i> Save Template
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Template Variables Reference -->
+    <div class="bg-white shadow rounded-lg mb-8">
+        <div class="px-6 py-5 border-b border-gray-200">
+            <h2 class="text-lg font-medium text-gray-900">Template Variables Reference</h2>
+        </div>
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-700 mb-3">Available Variables</h3>
+                    <div class="bg-gray-50 p-4 rounded-md border border-gray-200 overflow-auto max-h-60">
+                        <ul class="space-y-2">
+                            {% for var in template_vars %}
+                            <li class="text-sm">
+                                <code class="bg-gray-200 px-2 py-1 rounded text-pink-600">{{ '{{' ~ var ~ '}}' }}</code>
+                                <span class="text-gray-600 ml-2">{{ var_descriptions.get(var, 'Content from the QR code') }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-700 mb-3">Template Tips</h3>
+                    <div class="bg-blue-50 p-4 rounded-md border border-blue-200 text-sm text-blue-800 space-y-2">
+                        <p><i class="fas fa-info-circle mr-1.5"></i> Use valid HTML to ensure your template works correctly on all devices.</p>
+                        <p><i class="fas fa-mobile-alt mr-1.5"></i> Make your template responsive for mobile devices.</p>
+                        <p><i class="fas fa-paint-brush mr-1.5"></i> Use CSS to style your template - inline styles or style tags are supported.</p>
+                        <p><i class="fas fa-code mr-1.5"></i> You can include JavaScript for interactive elements.</p>
+                        <p><i class="fas fa-sync-alt mr-1.5"></i> Use the preview to see how your template will look.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize CodeMirror editor
+    const editor = CodeMirror.fromTextArea(document.getElementById('template_html'), {
+        mode: 'htmlmixed',
+        theme: 'dracula',
+        lineNumbers: true,
+        lineWrapping: true,
+        autoCloseTags: true,
+        matchBrackets: true,
+        indentUnit: 4,
+        tabSize: 4,
+        indentWithTabs: false
+    });
+    
+    // Update preview on editor changes
+    editor.on('change', function() {
+        updatePreview();
+    });
+    
+    // Reset to default template
+    document.getElementById('reset-template').addEventListener('click', function() {
+        if (confirm('Are you sure you want to reset to the default template? All changes will be lost.')) {
+            editor.setValue(`{{ default_template|tojson }}`);
+            updatePreview();
+        }
+    });
+    
+    // Beautify code
+    document.getElementById('beautify-code').addEventListener('click', function() {
+        const beautified = formatHTML(editor.getValue());
+        editor.setValue(beautified);
+    });
+    
+    // Refresh preview
+    document.getElementById('refresh-preview').addEventListener('click', function() {
+        updatePreview();
+    });
+    
+    // Form submission - update textarea with editor content
+    document.getElementById('template-form').addEventListener('submit', function() {
+        document.getElementById('template_html').value = editor.getValue();
+    });
+    
+    // Initial preview update
+    updatePreview();
+    
+    // Function to update preview iframe
+    function updatePreview() {
+        const iframe = document.getElementById('preview-frame');
+        const content = editor.getValue();
+        
+        // Process template variables with sample data
+        const processedContent = processTemplateWithSampleData(content);
+        
+        // Update iframe content
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+        iframeDoc.open();
+        iframeDoc.write(processedContent);
+        iframeDoc.close();
+    }
+    
+    // Process template with sample data for preview
+    function processTemplateWithSampleData(template) {
+        // Define sample data based on QR type
+        const sampleData = {
+            {% if qr_code.qr_type == 'vcard' %}
+            'name': '{{ content.name|default("John Doe") }}',
+            'phone': '{{ content.phone|default("+1 (555) 123-4567") }}',
+            'email': '{{ content.email|default("john.doe@example.com") }}',
+            'company': '{{ content.company|default("Acme Corporation") }}',
+            'title': '{{ content.title|default("Product Manager") }}',
+            'address': '{{ content.address|default("123 Main St, New York, NY 10001") }}',
+            'website': '{{ content.website|default("https://example.com") }}'
+            {% elif qr_code.qr_type == 'event' %}
+            'title': '{{ content.title|default("Company Annual Meeting") }}',
+            'location': '{{ content.location|default("Conference Center, 123 Main St") }}',
+            'start_date': '{{ content.start_date|default("2023-12-15 13:00:00") }}',
+            'end_time': '{{ content.end_time|default("2023-12-15 16:00:00") }}',
+            'description': '{{ content.description|default("Annual company meeting to discuss progress and plans for the next year.") }}',
+            'organizer': '{{ content.organizer|default("HR Department") }}'
+            {% elif qr_code.qr_type == 'wifi' %}
+            'ssid': '{{ content.ssid|default("WiFi Network") }}',
+            'password': '{{ content.password|default("password123") }}',
+            'encryption': '{{ content.encryption|default("WPA") }}'
+            {% elif qr_code.qr_type == 'text' %}
+            'text': '{{ content.text|default("This is a sample text content for the QR code. It can include multiple paragraphs or sentences.") }}'
+            {% else %}
+            'content': 'Sample content for QR code preview'
+            {% endif %}
+        };
+        
+        // Replace all template variables with sample data
+        let result = template;
+        Object.keys(sampleData).forEach(key => {
+            // FIXED: Properly escape the regex to avoid Jinja conflict
+            const regex = new RegExp('\\{\\{\\s*' + key + '\\s*\\}\\}', 'g');
+            result = result.replace(regex, sampleData[key]);
+        });
+        
+        return result;
+    }
+    
+    // HTML formatting function
+    function formatHTML(html) {
+        let formatted = '';
+        let indent = '';
+        
+        // Define elements that don't need inner indentation
+        const noIndentElements = ['script', 'style', 'pre', 'textarea'];
+        let noIndentContent = false;
+        let currentElement = '';
+        
+        html.split(/>\s*</).forEach(function(element) {
+            if (element.match(/^\/\s*([^>]+)$/)) {
+                // Closing tag
+                indent = indent.substring(2);
+                if (noIndentElements.includes(currentElement)) {
+                    noIndentContent = false;
+                }
+                currentElement = '';
+            }
+            
+            if (!noIndentContent) {
+                formatted += indent;
+            }
+            
+            if (element.match(/^[^\/]+\/*$/)) {
+                // Opening tag
+                currentElement = element.split(/\s+/)[0];
+                if (noIndentElements.includes(currentElement)) {
+                    noIndentContent = true;
+                }
+                
+                if (!element.match(/\/\s*$/) && !element.match(/^(img|input|br|hr|link|meta)/)) {
+                    indent += '  ';
+                }
+            }
+            
+            formatted += '<' + element + '>\n';
+        });
+        
+        return formatted.trim();
+    }
+});
+</script>
+{% endblock %}

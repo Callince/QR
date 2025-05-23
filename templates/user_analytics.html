@@ -1,0 +1,744 @@
+{% extends "base.html" %}
+{% block title %}User Analytics Dashboard | QR Craft{% endblock %}
+{% block head %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+{% endblock %}
+{% block content %}
+<!-- Hero Section with QR Pattern Background -->
+<div class="relative overflow-hidden">
+    <div class="qr-pattern h-40 relative">
+        <div class="absolute inset-0 bg-gradient-to-r from-primary-500/10 to-secondary-600/10"></div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center">
+            <div class="animate-fade-in">
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Analytics Dashboard</h1>
+                <p class="text-gray-600 mt-2">Track the performance of all your QR codes in one place</p>
+            </div>
+        </div>
+        <!-- Animated QR element in corner -->
+        <div class="absolute top-4 right-4 w-16 h-16 animate-qr animate-float"></div>
+    </div>
+</div>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10 mb-12">
+    <!-- Stats Summary Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Total Scans Card -->
+        <div class="glass backdrop-blur-lg bg-white/90 rounded-2xl shadow-xl p-6 animate-fade-in">
+            <div class="flex items-center">
+                <div class="h-12 w-12 bg-primary-100 rounded-lg flex items-center justify-center text-primary-700">
+                    <i class="fas fa-qrcode text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm text-gray-500">Total Scans</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ total_scans }}</p>
+                </div>
+            </div>
+            <div class="mt-4">
+                <div class="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
+                    <div class="h-1 bg-primary-500 rounded-full" style="width: 100%"></div>
+                </div>
+            </div>
+        </div>
+    <!-- Total QR Codes Card -->
+    <div class="glass backdrop-blur-lg bg-white/90 rounded-2xl shadow-xl p-6 animate-fade-in">
+        <div class="flex items-center">
+            <div class="h-12 w-12 bg-secondary-100 rounded-lg flex items-center justify-center text-secondary-700">
+                <i class="fas fa-layer-group text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm text-gray-500">Total QR Codes</p>
+                <p class="text-2xl font-bold text-gray-900">{{ qr_codes|length }}</p>
+            </div>
+        </div>
+        <div class="mt-4 flex items-center text-xs">
+            <a href="{{ url_for('create_qr') }}" class="text-secondary-600 hover:text-secondary-800 font-medium transition-colors duration-200">
+                Create new QR code <i class="fas fa-plus ml-1"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- Average Daily Scans Card -->
+    <div class="glass backdrop-blur-lg bg-white/90 rounded-2xl shadow-xl p-6 animate-fade-in">
+        <div class="flex items-center">
+            <div class="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center text-green-700">
+                <i class="fas fa-chart-line text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm text-gray-500">Daily Avg. Scans</p>
+                {% if scan_timeline.keys()|list|length > 0 and total_scans > 0 %}
+                <p class="text-2xl font-bold text-gray-900">{{ (total_scans / scan_timeline.keys()|list|length)|round(1) }}</p>
+                {% else %}
+                <p class="text-2xl font-bold text-gray-900">0</p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="mt-4 flex items-center text-xs">
+            <span class="text-green-600 mr-1"><i class="fas fa-arrow-up"></i></span>
+            <span class="text-green-600 font-medium">2.5%</span>
+            <span class="text-gray-500 ml-1">from last week</span>
+        </div>
+    </div>
+
+    <!-- Peak Hour Card -->
+    <div class="glass backdrop-blur-lg bg-white/90 rounded-2xl shadow-xl p-6 animate-fade-in">
+        <div class="flex items-center">
+            <div class="h-12 w-12 bg-orange-100 rounded-lg flex items-center justify-center text-orange-700">
+                <i class="fas fa-clock text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm text-gray-500">Peak Hour</p>
+                {% if hourly_data and hourly_data|sum > 0 %}
+                {% set peak_hour = hourly_data.index(hourly_data|max) if hourly_data|max > 0 else 0 %}
+                {% set format_hour = peak_hour % 12 or 12 %}
+                {% set ampm = 'AM' if peak_hour < 12 else 'PM' %}
+                <p class="text-2xl font-bold text-gray-900">{{ format_hour }}{{ ampm }}</p>
+                {% else %}
+                <p class="text-2xl font-bold text-gray-900">--</p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="mt-4 flex items-center text-xs text-gray-500">
+            <i class="fas fa-info-circle mr-1"></i> When your QR codes get the most scans
+        </div>
+    </div>
+</div>
+
+{% if total_scans == 0 %}
+<!-- No data state -->
+<div class="glass backdrop-blur-lg bg-white/90 rounded-2xl shadow-xl p-8 text-center animate-fade-in">
+    <div class="mx-auto h-24 w-24 bg-gradient-to-br from-primary-500/20 to-secondary-600/20 rounded-full flex items-center justify-center mb-4">
+        <i class="fas fa-chart-line text-4xl text-gray-400"></i>
+    </div>
+    <h2 class="text-xl font-semibold text-gray-800 mb-2">No analytics data yet</h2>
+    <p class="text-gray-600 mb-6">Start by sharing your QR codes to collect scan data and see analytics here.</p>
+    <a href="{{ url_for('create_qr') }}" class="gradient-bg text-white font-medium py-3 px-6 rounded-lg transition-all duration-300 hover:shadow-glow inline-flex items-center gap-2">
+        <i class="fas fa-plus"></i> Create New QR Code
+    </a>
+</div>
+{% else %}
+
+<!-- Main Charts -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+    <!-- Timeline Chart -->
+    <div class="glass backdrop-blur-lg bg-white/90 rounded-2xl shadow-xl lg:col-span-3 p-6 animate-fade-in">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+            <i class="fas fa-chart-line text-secondary-600 mr-2"></i> Scan Timeline
+        </h2>
+        <div class="h-80">
+            <canvas id="timelineChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Device Distribution Chart -->
+    <div class="glass backdrop-blur-lg bg-white/90 rounded-2xl shadow-xl p-6 animate-fade-in">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+            <i class="fas fa-mobile-alt text-secondary-600 mr-2"></i> Device Distribution
+        </h2>
+        <div class="h-64">
+            <canvas id="deviceChart"></canvas>
+        </div>
+    </div>
+
+    <!-- OS Distribution Chart -->
+    <div class="glass backdrop-blur-lg bg-white/90 rounded-2xl shadow-xl p-6 animate-fade-in">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+            <i class="fas fa-laptop text-secondary-600 mr-2"></i> Operating System
+        </h2>
+        <div class="h-64">
+            <canvas id="osChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Hourly Activity -->
+    <div class="glass backdrop-blur-lg bg-white/90 rounded-2xl shadow-xl p-6 animate-fade-in">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+            <i class="fas fa-clock text-secondary-600 mr-2"></i> Hourly Activity
+        </h2>
+        <div class="h-64">
+            <canvas id="hourlyChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Top Performing QR Codes -->
+<div class="glass backdrop-blur-lg bg-white/90 rounded-2xl shadow-xl overflow-hidden animate-fade-in mb-6">
+    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-primary-500/5 to-secondary-600/5">
+        <h2 class="text-lg font-semibold text-gray-800 flex items-center">
+            <i class="fas fa-trophy text-secondary-600 mr-2"></i> Top Performing QR Codes
+        </h2>
+        <span class="text-secondary-600 hover:text-secondary-800 text-sm font-medium">
+            Total: {{ qr_performance|length }} QR Codes
+        </span>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        QR Code
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Type
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Created
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Total Scans
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for qr in top_qr_codes %}
+                <tr class="hover:bg-gray-50 transition-colors duration-150">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="h-10 w-10 flex-shrink-0 bg-gradient-to-br from-primary-500/10 to-secondary-600/10 rounded-lg flex items-center justify-center text-primary-600">
+                                <i class="fas fa-qrcode"></i>
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-gray-900">{{ qr.name }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                        {% if qr.type == 'link' %}bg-blue-100 text-blue-800
+                        {% elif qr.type == 'email' %}bg-green-100 text-green-800
+                        {% elif qr.type == 'vcard' %}bg-purple-100 text-purple-800
+                        {% elif qr.type == 'wifi' %}bg-yellow-100 text-yellow-800
+                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ qr.type|capitalize }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-600">{{ qr.created }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-gray-900">{{ qr.scans }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div class="flex space-x-2">
+                            <a href="{{ url_for('view_qr', qr_id=qr.id) }}" class="text-secondary-600 hover:text-secondary-800 transition-colors duration-200">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{{ url_for('qr_analytics', qr_id=qr.id) }}" class="text-primary-600 hover:text-primary-800 transition-colors duration-200">
+                                <i class="fas fa-chart-bar"></i>
+                            </a>
+                            <a href="{{ url_for('download_qr', qr_id=qr.id) }}" class="text-green-600 hover:text-green-800 transition-colors duration-200">
+                                <i class="fas fa-download"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if qr_performance|length > 5 %}
+        <div class="bg-gray-50 px-6 py-3 text-right">
+            <button id="viewAllQRs" class="text-sm font-medium text-secondary-600 hover:text-secondary-800 transition-colors duration-200">
+                View all {{ qr_performance|length }} QR codes <i class="fas fa-arrow-right ml-1"></i>
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Location Map & Data -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+    <div class="glass backdrop-blur-lg bg-white/90 rounded-2xl shadow-xl p-6 lg:col-span-3 animate-fade-in">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+            <i class="fas fa-map-marker-alt text-secondary-600 mr-2"></i> Geographic Distribution
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="p-4 rounded-lg bg-gradient-to-br from-primary-500/5 to-secondary-600/5">
+                <canvas id="locationChart" class="h-64"></canvas>
+            </div>
+            <div class="overflow-hidden">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Location
+                            </th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Scans
+                            </th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                %
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for loc in location_data %}
+                        <tr class="hover:bg-gray-50 transition-colors duration-150">
+                            <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {{ loc.location }}
+                            </td>
+                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600">
+                                {{ loc.scans }}
+                            </td>
+                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600">
+                                {{ ((loc.scans / total_scans) * 100)|round(1) }}%
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- All QR Codes Modal (hidden by default) -->
+<div id="allQRsModal" class="fixed inset-0 z-50 hidden">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="w-full max-w-4xl glass backdrop-blur-lg bg-white/90 rounded-xl shadow-xl transform transition-all">
+                <div class="flex justify-between items-center border-b border-gray-200 px-6 py-4">
+                    <h3 class="text-lg font-semibold text-gray-900">All QR Codes</h3>
+                    <button id="closeModal" class="text-gray-400 hover:text-gray-500 transition-colors duration-200">
+                        <i class="fas fa-times fa-lg"></i>
+                    </button>
+                </div>
+                <div class="overflow-auto max-h-96 p-6">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">QR Code</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scans</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for qr in qr_performance|sort(attribute='scans', reverse=True) %}
+                            <tr class="hover:bg-gray-50 transition-colors duration-150">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="h-8 w-8 flex-shrink-0 bg-gradient-to-br from-primary-500/10 to-secondary-600/10 rounded-lg flex items-center justify-center text-primary-600">
+                                            <i class="fas fa-qrcode"></i>
+                                        </div>
+                                        <div class="ml-4">
+                                            <div class="text-sm font-medium text-gray-900">{{ qr.name }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                    {% if qr.type == 'link' %}bg-blue-100 text-blue-800
+                                    {% elif qr.type == 'email' %}bg-green-100 text-green-800
+                                    {% elif qr.type == 'vcard' %}bg-purple-100 text-purple-800
+                                    {% elif qr.type == 'wifi' %}bg-yellow-100 text-yellow-800
+                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                        {{ qr.type|capitalize }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-600">{{ qr.created }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900">{{ qr.scans }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <div class="flex space-x-2">
+                                        <a href="{{ url_for('view_qr', qr_id=qr.id) }}" class="text-secondary-600 hover:text-secondary-800 transition-colors duration-200">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ url_for('qr_analytics', qr_id=qr.id) }}" class="text-primary-600 hover:text-primary-800 transition-colors duration-200">
+                                            <i class="fas fa-chart-bar"></i>
+                                        </a>
+                                        <a href="{{ url_for('download_qr', qr_id=qr.id) }}" class="text-green-600 hover:text-green-800 transition-colors duration-200">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="bg-gray-50 px-6 py-4 flex justify-end">
+                    <button id="cancelModal" class="px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary-500 transition-colors duration-200">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+// Only initialize charts if we have data
+{% if total_scans > 0 %}
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        // Set Chart.js defaults
+        Chart.defaults.font.family = 'Inter, sans-serif';
+        Chart.defaults.color = '#64748b';
+        
+        // Define common colors
+        const primaryColor = '#8b5cf6';
+        const secondaryColor = '#0ea5e9';
+        const tertiaryColor = '#f97316';
+        const quaternaryColor = '#10b981';
+        const quinaryColor = '#0f766e';
+        const grayColor = '#cbd5e1';
+        
+        // Helper function for RGBA conversion
+        function hexToRGBA(hex, alpha) {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+        
+        // Timeline Chart
+        const timelineDates = [];
+        const timelineCounts = [];
+        
+        {% for date, count in scan_timeline.items() %}
+        timelineDates.push('{{ date }}');
+        timelineCounts.push({{ count }});
+        {% endfor %}
+        
+        // Sort dates chronologically
+        const dateIndices = timelineDates.map((date, i) => i);
+        dateIndices.sort((a, b) => new Date(timelineDates[a]) - new Date(timelineDates[b]));
+        
+        const sortedDates = dateIndices.map(i => timelineDates[i]);
+        const sortedCounts = dateIndices.map(i => timelineCounts[i]);
+        
+        const timelineCtx = document.getElementById('timelineChart').getContext('2d');
+        const timelineChart = new Chart(timelineCtx, {
+            type: 'line',
+            data: {
+                labels: sortedDates,
+                datasets: [{
+                    label: 'Scans',
+                    data: sortedCounts,
+                    fill: true,
+                    backgroundColor: hexToRGBA(primaryColor, 0.2),
+                    borderColor: primaryColor,
+                    borderWidth: 2,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointBackgroundColor: primaryColor
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            parser: 'yyyy-MM-dd',
+                            tooltipFormat: 'MMM d, yyyy',
+                            unit: 'day'
+                        },
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        },
+                        grid: {
+                            color: '#e2e8f0'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.8)',
+                        padding: 12,
+                        cornerRadius: 6
+                    }
+                }
+            }
+        });
+        
+        // Device Chart
+        const deviceLabels = [];
+        const deviceCounts = [];
+        
+        {% for device in device_data %}
+        deviceLabels.push('{{ device.device }}');
+        deviceCounts.push({{ device.scans }});
+        {% endfor %}
+        
+        const deviceColors = [secondaryColor, primaryColor, tertiaryColor, grayColor];
+        
+        const deviceCtx = document.getElementById('deviceChart').getContext('2d');
+        const deviceChart = new Chart(deviceCtx, {
+            type: 'doughnut',
+            data: {
+                labels: deviceLabels,
+                datasets: [{
+                    data: deviceCounts,
+                    backgroundColor: deviceColors.slice(0, deviceLabels.length),
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '60%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 15,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.8)',
+                        padding: 12,
+                        cornerRadius: 6,
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round(value / total * 100);
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // OS Chart
+        const osLabels = [];
+        const osCounts = [];
+        
+        {% for os in os_data %}
+        osLabels.push('{{ os.os }}');
+        osCounts.push({{ os.scans }});
+        {% endfor %}
+        
+        const osColors = [primaryColor, secondaryColor, quaternaryColor, tertiaryColor, quinaryColor, grayColor];
+        
+        const osCtx = document.getElementById('osChart').getContext('2d');
+        const osChart = new Chart(osCtx, {
+            type: 'doughnut',
+            data: {
+                labels: osLabels,
+                datasets: [{
+                    data: osCounts,
+                    backgroundColor: osColors.slice(0, osLabels.length),
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '60%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 15,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.8)',
+                        padding: 12,
+                        cornerRadius: 6,
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round(value / total * 100);
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Hourly Chart
+        const hourlyData = {{ hourly_data|tojson }};
+        
+        const hourLabels = Array.from({length: 24}, (_, i) => {
+            const hour = i % 12 || 12;
+            const ampm = i < 12 ? 'AM' : 'PM';
+            return `${hour}${ampm}`;
+        });
+        
+        const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
+        const hourlyChart = new Chart(hourlyCtx, {
+            type: 'bar',
+            data: {
+                labels: hourLabels,
+                datasets: [{
+                    label: 'Scans',
+                    data: hourlyData,
+                    backgroundColor: secondaryColor,
+                    borderRadius: 4,
+                    barPercentage: 0.6,
+                    categoryPercentage: 0.8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        },
+                        grid: {
+                            color: '#e2e8f0'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.8)',
+                        padding: 12,
+                        cornerRadius: 6
+                    }
+                }
+            }
+        });
+        
+        // Location Chart
+        const locationLabels = [];
+        const locationCounts = [];
+        
+        {% for loc in location_data %}
+        locationLabels.push('{{ loc.location }}');
+        locationCounts.push({{ loc.scans }});
+        {% endfor %}
+        
+        const locationCtx = document.getElementById('locationChart').getContext('2d');
+        const locationChart = new Chart(locationCtx, {
+            type: 'bar',
+            data: {
+                labels: locationLabels,
+                datasets: [{
+                    label: 'Scans',
+                    data: locationCounts,
+                    backgroundColor: primaryColor,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        },
+                        grid: {
+                            color: '#e2e8f0'
+                        }
+                    },
+                    y: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.8)',
+                        padding: 12,
+                        cornerRadius: 6
+                    }
+                }
+            }
+        });
+        
+        // Modal functionality
+        const modal = document.getElementById('allQRsModal');
+        const openModalBtn = document.getElementById('viewAllQRs');
+        const closeModalBtn = document.getElementById('closeModal');
+        const cancelModalBtn = document.getElementById('cancelModal');
+        
+        if (openModalBtn) {
+            openModalBtn.addEventListener('click', function() {
+                modal.classList.remove('hidden');
+                document.body.classList.add('overflow-hidden');
+            });
+        }
+        
+        function closeModal() {
+            modal.classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+        }
+        
+        if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
+        if (cancelModalBtn) cancelModalBtn.addEventListener('click', closeModal);
+        
+        // Close modal on outside click
+        modal.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                closeModal();
+            }
+        });
+        
+    } catch (error) {
+        console.error("Error initializing charts:", error);
+        
+        // Create error message elements
+        const chartContainers = document.querySelectorAll('#timelineChart, #deviceChart, #osChart, #hourlyChart, #locationChart');
+        chartContainers.forEach(container => {
+            const parent = container.parentElement;
+            parent.innerHTML = `
+                <div class="flex items-center justify-center h-full">
+                    <div class="text-center p-4">
+                        <div class="text-red-500 mb-2"><i class="fas fa-exclamation-circle text-xl"></i></div>
+                        <p class="text-gray-500">Could not load chart data</p>
+                    </div>
+                </div>
+            `;
+        });
+    }
+});
+{% endif %}
+</script>
+{% endblock %}

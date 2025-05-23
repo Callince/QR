@@ -1,0 +1,1052 @@
+{% extends "base.html" %}
+
+{% block title %}QR Craft - Advanced QR Code Generator{% endblock %}
+
+{% block head %}
+{{ super() }}
+<!-- Add AOS CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" />
+<!-- Custom animation styles -->
+<style>
+    /* Enhanced background patterns */
+    .qr-pattern {
+        background-image: url('data:image/svg+xml;utf8,<svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" width="10" height="10" fill="rgba(99, 102, 241, 0.05)"/></svg>');
+        opacity: 0.7;
+    }
+    
+    /* Improved gradient backgrounds */
+    .gradient-bg {
+        background: linear-gradient(135deg, #6366F1 0%, #3B82F6 100%);
+    }
+    
+    .gradient-subtle {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%);
+    }
+    
+    /* Enhanced floating animation for QR code */
+    .animate-float {
+        animation: float 6s ease-in-out infinite;
+        transform-origin: center center;
+    }
+    
+    @keyframes float {
+        0% { transform: translateY(0px) rotate(0deg); }
+        50% { transform: translateY(-15px) rotate(1deg); }
+        100% { transform: translateY(0px) rotate(0deg); }
+    }
+    
+    /* Improved QR scanning animation */
+    .animate-qr {
+        position: relative;
+        background-image: linear-gradient(45deg, #f3f4f6 25%, transparent 25%), 
+                          linear-gradient(-45deg, #f3f4f6 25%, transparent 25%), 
+                          linear-gradient(45deg, transparent 75%, #f3f4f6 75%), 
+                          linear-gradient(-45deg, transparent 75%, #f3f4f6 75%);
+        background-size: 20px 20px;
+        background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        animation: qrScan 3s linear infinite;
+    }
+
+    @keyframes qrScan {
+        0% {
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+        100% {
+            background-position: 20px 0, 20px 10px, 30px -10px, 10px 0px;
+        }
+    }
+    
+    /* Improved animation delays for sequence */
+    .fade-up-delay-1 { animation-delay: 0.1s; }
+    .fade-up-delay-2 { animation-delay: 0.2s; }
+    .fade-up-delay-3 { animation-delay: 0.3s; }
+    .fade-up-delay-4 { animation-delay: 0.4s; }
+    .fade-up-delay-5 { animation-delay: 0.5s; }
+    
+    /* Better QR code container positioning */
+    .qr-container {
+        position: relative;
+        width: 100%;
+        max-width: 320px;
+        margin: 0 auto;
+        z-index: 5;
+    }
+    
+    /* Enhanced floating animation with proper overflow handling */
+    .animate-float {
+        position: relative;
+        overflow: visible;
+        z-index: 5;
+        max-width: 100%;
+        will-change: transform;
+    }
+
+    /* Optimized QR code animation container */
+    .animate-qr {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+        border-radius: inherit;
+    }
+
+    /* Improved QR icon positioning */
+    .qr-icon {
+        position: absolute;
+        right: -10px;
+        bottom: -10px;
+        z-index: 6;
+        transition: all 0.3s ease;
+    }
+    
+    .qr-container:hover .qr-icon {
+        transform: scale(1.1) rotate(10deg);
+    }
+
+    /* Enhanced wave divider between sections */
+    .wave-divider {
+        position: relative;
+        height: 5rem;
+        overflow: hidden;
+    }
+    
+    .wave-divider svg {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        transform: translateY(50%);
+    }
+    
+    /* Feature card enhancements */
+    .feature-card {
+        transition: all 0.3s ease;
+        border-radius: 1rem;
+        overflow: hidden;
+        border: 1px solid rgba(229, 231, 235, 0.5);
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    
+    .feature-icon {
+        transition: all 0.3s ease;
+    }
+    
+    .feature-card:hover .feature-icon {
+        transform: scale(1.1);
+    }
+    
+    /* QR type card enhancements */
+    .qr-type-card {
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .qr-type-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(59, 130, 246, 0) 60%);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .qr-type-card:hover::before {
+        opacity: 1;
+    }
+    
+    .qr-type-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    
+    /* Enhanced responsive styles for all screen sizes */
+    @media (max-width: 1024px) {
+        .hero-content {
+            padding-bottom: 2rem;
+        }
+        
+        /* Reduce animation complexity for mid-sized devices */
+        .animate-float {
+            animation: simplefloat 4s ease-in-out infinite;
+        }
+        
+        @keyframes simplefloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .qr-container {
+            max-width: 260px;
+            margin: 0 auto;
+        }
+        
+        /* Fix QR animation on mobile */
+        .animate-qr {
+            animation: qrScanMobile 3s linear infinite;
+        }
+        
+        @keyframes qrScanMobile {
+            0% { background-position: 0 0, 0 10px, 10px -10px, -10px 0px; }
+            100% { background-position: 15px 0, 15px 10px, 25px -10px, 5px 0px; }
+        }
+        
+        /* Fix QR icon positioning */
+        .qr-icon {
+            right: -5px;
+            bottom: -5px;
+            width: 64px !important;
+            height: 64px !important;
+        }
+        
+        /* Improve testimonial layout */
+        .testimonial-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        /* Adjust steps layout */
+        .steps-container {
+            grid-template-columns: 1fr;
+        }
+        
+        .connection-line {
+            display: none;
+        }
+        
+        /* Optimize AOS for mobile */
+        [data-aos-delay] {
+            transition-delay: 0ms !important;
+        }
+        
+        /* Simplify QR grid */
+        #interactive-qr-grid {
+            gap: 3px;
+        }
+    }
+    
+    @media (max-width: 640px) {
+        h1.hero-title {
+            font-size: 2.25rem;
+            line-height: 1.2;
+        }
+        
+        /* Simplify QR grid for better performance */
+        .qr-grid {
+            grid-template-columns: repeat(6, 1fr);
+            grid-template-rows: repeat(6, 1fr);
+            gap: 2px;
+        }
+        
+        /* Adjust type cards */
+        .qr-types-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        /* Stack feature cards */
+        .feature-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        /* Reduce animations for better performance */
+        .animate-float {
+            animation: none;
+            transform: none;
+        }
+        
+        .scan-line {
+            animation-duration: 3s;
+        }
+        
+        .qr-container:hover .qr-icon {
+            transform: none;
+        }
+        
+        /* Disable 3D effects on mobile */
+        .tilt-on-hover:hover {
+            transform: none;
+        }
+        
+        /* Reduce animated elements */
+        .feature-card:hover .feature-icon {
+            transform: none;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .qr-container {
+            max-width: 220px;
+        }
+        
+        .cta-container {
+            padding: 2rem 1rem;
+        }
+        
+        .qr-types-grid {
+            gap: 0.75rem;
+        }
+        
+        /* Further reduce animations */
+        .animate-qr {
+            background-size: 15px 15px;
+        }
+        
+        /* Simplify backgrounds */
+        .gradient-subtle {
+            background: rgba(124, 58, 237, 0.05);
+        }
+    }
+    
+    /* Scroll indicator animation */
+    .scroll-indicator {
+        animation: bounce 2s infinite;
+    }
+    
+    @keyframes bounce {
+        0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+        40% { transform: translateY(-20px); }
+        60% { transform: translateY(-10px); }
+    }
+    
+    /* QR scanning line animation */
+    .scan-line {
+        position: absolute;
+        height: 2px;
+        background: linear-gradient(90deg, rgba(124, 58, 237, 0) 0%, rgba(124, 58, 237, 0.8) 50%, rgba(124, 58, 237, 0) 100%);
+        width: 100%;
+        left: 0;
+        top: 0;
+        animation: scanMove 2s linear infinite;
+        z-index: 5;
+    }
+    
+    @keyframes scanMove {
+        0% { transform: translateY(0); }
+        100% { transform: translateY(100%); }
+    }
+    
+    /* Interactive QR grid */
+    .qr-grid {
+        display: grid;
+        grid-template-columns: repeat(10, 1fr);
+        grid-template-rows: repeat(10, 1fr);
+        gap: 4px;
+        height: 100%;
+        width: 100%;
+    }
+    
+    .qr-cell {
+        aspect-ratio: 1/1;
+        background-color: rgba(229, 231, 235, 0.5);
+        transition: all 0.3s ease;
+        border-radius: 2px;
+    }
+    
+    .qr-cell.active {
+        background-color: rgba(124, 58, 237, 0.8);
+    }
+    
+    /* Enhanced testimonial cards */
+    .testimonial-card {
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        z-index: 1;
+    }
+    
+    .testimonial-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(124, 58, 237, 0.1) 0%, rgba(124, 58, 237, 0) 70%);
+        z-index: -1;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .testimonial-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .testimonial-card:hover::before {
+        opacity: 1;
+    }
+    
+    /* Custom step indicator styling */
+    .step-indicator {
+        position: relative;
+        z-index: 2;
+    }
+    
+    .step-indicator::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 150%;
+        height: 150%;
+        background: radial-gradient(circle, rgba(124, 58, 237, 0.2) 0%, rgba(124, 58, 237, 0) 70%);
+        z-index: -1;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.8; }
+        70% { transform: translate(-50%, -50%) scale(1.2); opacity: 0; }
+        100% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+    }
+    
+    /* Custom badge styling */
+    .badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.025em;
+        text-transform: uppercase;
+    }
+    
+    .badge-primary {
+        background-color: rgba(124, 58, 237, 0.1);
+        color: rgb(124, 58, 237);
+    }
+    
+    /* 3D Tilt animation on hover */
+    .tilt-on-hover {
+        transition: transform 0.2s ease;
+        transform-style: preserve-3d;
+        will-change: transform;
+    }
+    
+    .tilt-on-hover:hover {
+        transform: perspective(1000px) rotateX(2deg) rotateY(2deg);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="relative py-16 md:py-24 overflow-hidden">
+    <div class="absolute inset-0 z-0 qr-pattern"></div>
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div class="hero-content space-y-8" data-aos="fade-right" data-aos-duration="1000">
+                <div class="inline-block mb-2">
+                    <span class="badge badge-primary">The Ultimate QR Solution</span>
+                </div>
+                <h1 class="hero-title text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight">
+                    Create <span class="bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-secondary-600">stunning QR codes</span> that stand out
+                </h1>
+                <p class="text-xl text-gray-600 leading-relaxed" data-aos="fade-up" data-aos-delay="100" data-aos-duration="1000">
+                    QR Craft gives you the power to design beautiful, customizable QR codes that capture attention and drive engagement.
+                </p>
+                <div class="flex flex-wrap gap-4 pt-2" data-aos="fade-up" data-aos-delay="200" data-aos-duration="1000">
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('create_qr') }}" class="px-6 py-3 bg-secondary-600 hover:bg-secondary-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center space-x-2 font-medium transform hover:-translate-y-1">
+                            <i class="fas fa-plus-circle"></i>
+                            <span>Create QR Code</span>
+                        </a>
+                        <a href="{{ url_for('dashboard') }}" class="px-6 py-3 bg-white hover:bg-gray-50 text-gray-800 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 flex items-center space-x-2 font-medium transform hover:-translate-y-1">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('signup') }}" class="px-6 py-3 bg-secondary-600 hover:bg-secondary-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center space-x-2 font-medium transform hover:-translate-y-1">
+                            <i class="fas fa-user-plus"></i>
+                            <span>Sign Up Free</span>
+                        </a>
+                        <a href="{{ url_for('login') }}" class="px-6 py-3 bg-white hover:bg-gray-50 text-gray-800 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 flex items-center space-x-2 font-medium transform hover:-translate-y-1">
+                            <i class="fas fa-sign-in-alt"></i>
+                            <span>Login</span>
+                        </a>
+                    {% endif %}
+                </div>
+                <div class="hidden md:flex items-center pt-8" data-aos="fade-up" data-aos-delay="300">
+                    <span class="text-gray-500 text-sm animate-pulse">Scroll to explore</span>
+                    <i class="fas fa-chevron-down ml-2 text-secondary-500 scroll-indicator"></i>
+                </div>
+            </div>
+            <div class="flex justify-center" data-aos="zoom-in" data-aos-duration="1000">
+                <div class="qr-container">
+                    <div class="animate-float">
+                        <div class="absolute inset-0 bg-gradient-to-br from-primary-500/20 to-secondary-600/20 rounded-3xl blur-xl"></div>
+                        <div class="relative bg-white shadow-xl rounded-3xl p-4 sm:p-6 h-64 w-64 sm:h-72 sm:w-72 md:h-80 md:w-80 flex items-center justify-center overflow-hidden">
+                            <div class="animate-qr w-full h-full rounded-2xl">
+                                <div id="interactive-qr-grid" class="qr-grid w-full h-full"></div>
+                                
+                            </div>
+                        </div>
+                        <div class="qr-icon w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-gradient-to-br from-primary-500 to-secondary-600 rounded-2xl flex items-center justify-center text-white text-3xl sm:text-4xl shadow-lg">
+                            <i class="fas fa-qrcode"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Animated stats row -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 mt-16 md:mt-24" data-aos="fade-up" data-aos-delay="400">
+            <div class="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-gray-100">
+                <div class="text-4xl font-bold text-secondary-600 mb-1">30K+</div>
+                <div class="text-gray-600 text-sm">Active Users</div>
+            </div>
+            <div class="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-gray-100">
+                <div class="text-4xl font-bold text-secondary-600 mb-1">5M+</div>
+                <div class="text-gray-600 text-sm">QR Codes Created</div>
+            </div>
+            <div class="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-gray-100">
+                <div class="text-4xl font-bold text-secondary-600 mb-1">98%</div>
+                <div class="text-gray-600 text-sm">Customer Satisfaction</div>
+            </div>
+            <div class="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-gray-100">
+                <div class="text-4xl font-bold text-secondary-600 mb-1">15+</div>
+                <div class="text-gray-600 text-sm">QR Types</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Wave divider -->
+<div class="wave-divider">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" preserveAspectRatio="none">
+        <path fill="#ffffff" fill-opacity="1" d="M0,192L48,197.3C96,203,192,213,288,229.3C384,245,480,267,576,250.7C672,235,768,181,864,181.3C960,181,1056,235,1152,234.7C1248,235,1344,181,1392,154.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+    </svg>
+</div>
+
+<!-- Features Section -->
+<section class="py-16 md:py-24 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16" data-aos="fade-up" data-aos-duration="1000">
+            <span class="badge badge-primary mb-4">Powerful Features</span>
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Designed for the future</h2>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto">Our advanced QR code generator offers features you won't find anywhere else.</p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 feature-grid">
+            <!-- Feature 1 -->
+            <div class="feature-card bg-gradient-subtle p-8 shadow-sm tilt-on-hover" data-aos="fade-up" data-aos-duration="800" data-aos-delay="100">
+                <div class="w-16 h-16 bg-primary-100 rounded-2xl text-primary-600 flex items-center justify-center mb-6 feature-icon">
+                    <i class="fas fa-paint-brush text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-3">Custom Styling</h3>
+                <p class="text-gray-600">Create unique QR codes with custom colors, shapes, and frames that match your brand identity perfectly.</p>
+                <div class="mt-4 text-primary-600 flex items-center font-medium group cursor-pointer">
+                    <span>Learn more</span>
+                    <i class="fas fa-arrow-right ml-2 transition-transform group-hover:translate-x-1"></i>
+                </div>
+            </div>
+            
+            <!-- Feature 2 -->
+            <div class="feature-card bg-gradient-subtle p-8 shadow-sm tilt-on-hover" data-aos="fade-up" data-aos-duration="800" data-aos-delay="200">
+                <div class="w-16 h-16 bg-secondary-100 rounded-2xl text-secondary-600 flex items-center justify-center mb-6 feature-icon">
+                    <i class="fas fa-chart-line text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-3">Advanced Analytics</h3>
+                <p class="text-gray-600">Track scans, monitor user engagement, and optimize your QR code performance with detailed insights.</p>
+                <div class="mt-4 text-primary-600 flex items-center font-medium group cursor-pointer">
+                    <span>Learn more</span>
+                    <i class="fas fa-arrow-right ml-2 transition-transform group-hover:translate-x-1"></i>
+                </div>
+            </div>
+            
+            <!-- Feature 3 -->
+            <div class="feature-card bg-gradient-subtle p-8 shadow-sm tilt-on-hover" data-aos="fade-up" data-aos-duration="800" data-aos-delay="300">
+                <div class="w-16 h-16 bg-green-100 rounded-2xl text-green-600 flex items-center justify-center mb-6 feature-icon">
+                    <i class="fas fa-magic text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-3">Dynamic Content</h3>
+                <p class="text-gray-600">Update your QR code content anytime without changing the code itself — perfect for evolving campaigns.</p>
+                <div class="mt-4 text-primary-600 flex items-center font-medium group cursor-pointer">
+                    <span>Learn more</span>
+                    <i class="fas fa-arrow-right ml-2 transition-transform group-hover:translate-x-1"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Types Section with improved layout -->
+<section class="py-16 md:py-24 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16" data-aos="fade-up" data-aos-duration="1000">
+            <span class="badge badge-primary mb-4">Versatile Solutions</span>
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Create QR codes for anything</h2>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto">From simple links to complex data, QR Craft handles it all with style.</p>
+        </div>
+        
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6 qr-types-grid">
+            <div class="qr-type-card bg-white rounded-xl p-5 shadow-sm" data-aos="flip-left" data-aos-duration="800" data-aos-delay="100">
+                <div class="text-primary-500 text-3xl mb-3 transition-all duration-300 group-hover:scale-110"><i class="fas fa-link"></i></div>
+                <h3 class="text-lg font-bold text-gray-900">URL</h3>
+                <p class="text-gray-600 text-sm mt-1">Direct users to any website</p>
+            </div>
+            
+            <div class="qr-type-card bg-white rounded-xl p-5 shadow-sm" data-aos="flip-left" data-aos-duration="800" data-aos-delay="150">
+                <div class="text-primary-500 text-3xl mb-3"><i class="fas fa-envelope"></i></div>
+                <h3 class="text-lg font-bold text-gray-900">Email</h3>
+                <p class="text-gray-600 text-sm mt-1">Create email with pre-filled content</p>
+            </div>
+            
+            <div class="qr-type-card bg-white rounded-xl p-5 shadow-sm" data-aos="flip-left" data-aos-duration="800" data-aos-delay="200">
+                <div class="text-primary-500 text-3xl mb-3"><i class="fas fa-wifi"></i></div>
+                <h3 class="text-lg font-bold text-gray-900">WiFi</h3>
+                <p class="text-gray-600 text-sm mt-1">Connect to networks easily</p>
+            </div>
+            
+            <div class="qr-type-card bg-white rounded-xl p-5 shadow-sm" data-aos="flip-left" data-aos-duration="800" data-aos-delay="250">
+                <div class="text-primary-500 text-3xl mb-3"><i class="fas fa-phone"></i></div>
+                <h3 class="text-lg font-bold text-gray-900">Call</h3>
+                <p class="text-gray-600 text-sm mt-1">Dial phone numbers directly</p>
+            </div>
+            
+            <div class="qr-type-card bg-white rounded-xl p-5 shadow-sm" data-aos="flip-left" data-aos-duration="800" data-aos-delay="300">
+                <div class="text-primary-500 text-3xl mb-3"><i class="fas fa-comment"></i></div>
+                <h3 class="text-lg font-bold text-gray-900">SMS</h3>
+                <p class="text-gray-600 text-sm mt-1">Send text messages quickly</p>
+            </div>
+            
+            <div class="qr-type-card bg-white rounded-xl p-5 shadow-sm" data-aos="flip-left" data-aos-duration="800" data-aos-delay="350">
+                <div class="text-primary-500 text-3xl mb-3"><i class="fab fa-whatsapp"></i></div>
+                <h3 class="text-lg font-bold text-gray-900">WhatsApp</h3>
+                <p class="text-gray-600 text-sm mt-1">Start WhatsApp conversations</p>
+            </div>
+            
+            <div class="qr-type-card bg-white rounded-xl p-5 shadow-sm" data-aos="flip-left" data-aos-duration="800" data-aos-delay="400">
+                <div class="text-primary-500 text-3xl mb-3"><i class="fas fa-address-card"></i></div>
+                <h3 class="text-lg font-bold text-gray-900">vCard</h3>
+                <p class="text-gray-600 text-sm mt-1">Share contact information</p>
+            </div>
+            
+            <div class="qr-type-card bg-white rounded-xl p-5 shadow-sm" data-aos="flip-left" data-aos-duration="800" data-aos-delay="450">
+                <div class="text-primary-500 text-3xl mb-3"><i class="fas fa-calendar"></i></div>
+                <h3 class="text-lg font-bold text-gray-900">Event</h3>
+                <p class="text-gray-600 text-sm mt-1">Share event details & dates</p>
+            </div>
+        </div>
+        
+        <!-- View all types button -->
+        <div class="text-center mt-10" data-aos="fade-up" data-aos-delay="500">
+            <a href="#" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-secondary-600 hover:bg-secondary-700 transition-all duration-200 transform hover:-translate-y-1">
+                <span>View All QR Types</span>
+                <i class="fas fa-arrow-right ml-2"></i>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Enhanced CTA Section -->
+<section class="relative overflow-hidden">
+    <div class="absolute inset-0 gradient-bg"></div>
+    <div class="relative py-20 md:py-32 text-white" data-aos="fade" data-aos-duration="1500">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center cta-container">
+            <!-- Floating elements for visual appeal -->
+            <div class="absolute top-10 left-10 w-20 h-20 bg-white/10 rounded-full blur-2xl"></div>
+            <div class="absolute bottom-10 right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+            
+            <h2 class="text-3xl md:text-4xl font-bold mb-6 leading-tight" data-aos="zoom-in" data-aos-duration="1000">
+                Ready to create amazing QR codes?
+            </h2>
+            <p class="text-xl opacity-90 max-w-3xl mx-auto mb-10" data-aos="zoom-in" data-aos-delay="100" data-aos-duration="1000">
+                Join thousands of users who are already using QR Craft to engage their audience with beautiful, functional QR codes.
+            </p>
+            <div class="flex flex-wrap justify-center gap-4" data-aos="zoom-in" data-aos-delay="200" data-aos-duration="1000">
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('create_qr') }}" class="px-8 py-4 bg-white text-secondary-700 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 font-medium text-lg transform hover:-translate-y-1 hover:scale-105">
+                        Create Your First QR Code
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('signup') }}" class="px-8 py-4 bg-white text-secondary-700 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 font-medium text-lg transform hover:-translate-y-1 hover:scale-105">
+                        Start Creating For Free
+                    </a>
+                {% endif %}
+            </div>
+            
+            <!-- Social proof section -->
+            <div class="mt-16 text-center" data-aos="fade-up" data-aos-delay="300">
+                <p class="text-white/80 mb-4">Trusted by innovative companies worldwide</p>
+                <div class="flex flex-wrap justify-center gap-8 items-center opacity-80">
+                    <div class="h-8 w-auto">Brand 1</div>
+                    <div class="h-8 w-auto">Brand 2</div>
+                    <div class="h-8 w-auto">Brand 3</div>
+                    <div class="h-8 w-auto">Brand 4</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Improved How It Works -->
+<section class="py-16 md:py-24 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16" data-aos="fade-up" data-aos-duration="1000">
+            <span class="badge badge-primary mb-4">Simple Process</span>
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">How QR Craft Works</h2>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto">Create and manage custom QR codes in just a few simple steps.</p>
+        </div>
+        
+        <div class="relative">
+            <!-- Connection Line -->
+            <div class="absolute top-1/3 left-0 right-0 h-1 bg-secondary-100 hidden md:block connection-line" data-aos="fade-right" data-aos-duration="1500" data-aos-delay="500"></div>
+            
+            <!-- Steps -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12 steps-container">
+                <!-- Step 1 -->
+                <div class="relative" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="100">
+                    <div class="relative z-10 flex justify-center mb-6">
+                        <div class="step-indicator w-16 h-16 flex items-center justify-center rounded-full bg-primary-600 text-white text-xl font-bold shadow-lg">1</div>
+                    </div>
+                    <div class="bg-white rounded-xl p-8 text-center shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-2">
+                        <div class="w-16 h-16 mx-auto mb-4 text-primary-500 text-3xl">
+                            <i class="fas fa-list-ol"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-3">Choose QR Type</h3>
+                        <p class="text-gray-600">Select from URL, text, WiFi, contact, and many more content types for your QR code.</p>
+                    </div>
+                </div>
+                
+                <!-- Step 2 -->
+                <div class="relative" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="200">
+                    <div class="relative z-10 flex justify-center mb-6">
+                        <div class="step-indicator w-16 h-16 flex items-center justify-center rounded-full bg-primary-600 text-white text-xl font-bold shadow-lg">2</div>
+                    </div>
+                    <div class="bg-white rounded-xl p-8 text-center shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-2">
+                        <div class="w-16 h-16 mx-auto mb-4 text-primary-500 text-3xl">
+                            <i class="fas fa-palette"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-3">Customize Design</h3>
+                        <p class="text-gray-600">Personalize colors, shapes, and add logos to make your QR code uniquely yours.</p>
+                    </div>
+                </div>
+                
+                <!-- Step 3 -->
+                <div class="relative" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="300">
+                    <div class="relative z-10 flex justify-center mb-6">
+                        <div class="step-indicator w-16 h-16 flex items-center justify-center rounded-full bg-primary-600 text-white text-xl font-bold shadow-lg">3</div>
+                    </div>
+                    <div class="bg-white rounded-xl p-8 text-center shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-2">
+                        <div class="w-16 h-16 mx-auto mb-4 text-primary-500 text-3xl">
+                            <i class="fas fa-download"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-3">Download & Share</h3>
+                        <p class="text-gray-600">Get your QR code in multiple formats and track detailed performance analytics.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Demo Video Section -->
+        <div class="mt-20 text-center">
+            <div class="relative mx-auto max-w-4xl rounded-2xl overflow-hidden shadow-2xl" data-aos="zoom-in" data-aos-delay="400">
+                <!-- This would be a video, using a placeholder div -->
+                <div class="aspect-w-16 aspect-h-9 bg-gray-200 flex items-center justify-center">
+                    <div class="text-4xl text-gray-400">
+                        <i class="fas fa-play-circle"></i>
+                        <p class="text-lg mt-2">Watch how it works</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Improved Testimonials -->
+<section class="py-16 md:py-24 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16" data-aos="fade-up" data-aos-duration="1000">
+            <span class="badge badge-primary mb-4">Customer Stories</span>
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">What Our Users Say</h2>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto">Join thousands of satisfied users worldwide.</p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 testimonial-grid">
+            <!-- Testimonial 1 -->
+            <div class="testimonial-card bg-white rounded-xl p-8 shadow-md" data-aos="fade-right" data-aos-duration="1000" data-aos-delay="100">
+                <div class="flex items-center mb-4">
+                    <div class="text-secondary-500">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                </div>
+                <p class="text-gray-700 mb-6">"QR Craft completely transformed our marketing materials. The custom designs match our brand perfectly, and the analytics help us track campaign performance."</p>
+                <div class="flex items-center mt-auto">
+                    <div class="w-12 h-12 bg-secondary-100 rounded-full flex items-center justify-center text-secondary-700 font-bold text-lg">JD</div>
+                    <div class="ml-3">
+                        <h4 class="text-base font-bold text-gray-900">Jane Doe</h4>
+                        <p class="text-sm text-gray-500">Marketing Director</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Testimonial 2 -->
+            <div class="testimonial-card bg-white rounded-xl p-8 shadow-md" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="200">
+                <div class="flex items-center mb-4">
+                    <div class="text-secondary-500">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                </div>
+                <p class="text-gray-700 mb-6">"As a restaurant owner, we use QR Craft for our digital menus. The ability to update content without changing the code is a game-changer. Highly recommended!"</p>
+                <div class="flex items-center mt-auto">
+                    <div class="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center text-primary-700 font-bold text-lg">MS</div>
+                    <div class="ml-3">
+                        <h4 class="text-base font-bold text-gray-900">Mark Smith</h4>
+                        <p class="text-sm text-gray-500">Restaurant Owner</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Testimonial 3 -->
+            <div class="testimonial-card bg-white rounded-xl p-8 shadow-md" data-aos="fade-left" data-aos-duration="1000" data-aos-delay="300">
+                <div class="flex items-center mb-4">
+                    <div class="text-secondary-500">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star-half-alt"></i>
+                    </div>
+                </div>
+                <p class="text-gray-700 mb-6">"The variety of styles and customization options is impressive. We've received compliments on our QR codes, which is something I never thought I'd hear!"</p>
+                <div class="flex items-center mt-auto">
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-bold text-lg">AL</div>
+                    <div class="ml-3">
+                        <h4 class="text-base font-bold text-gray-900">Amy Lee</h4>
+                        <p class="text-sm text-gray-500">Event Coordinator</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Testimonial navigation -->
+        <div class="flex justify-center mt-10 space-x-2" data-aos="fade-up" data-aos-delay="400">
+            <button class="w-3 h-3 rounded-full bg-secondary-600"></button>
+            <button class="w-3 h-3 rounded-full bg-gray-300"></button>
+            <button class="w-3 h-3 rounded-full bg-gray-300"></button>
+        </div>
+    </div>
+</section>
+
+<!-- New FAQ Section -->
+<section class="py-16 md:py-24 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16" data-aos="fade-up" data-aos-duration="1000">
+            <span class="badge badge-primary mb-4">Common Questions</span>
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h2>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto">Everything you need to know about QR Craft.</p>
+        </div>
+        
+        <div class="max-w-4xl mx-auto" data-aos="fade-up" data-aos-delay="200">
+            <div class="space-y-6">
+                <!-- FAQ Item 1 -->
+                <div class="bg-gray-50 rounded-xl p-6 shadow-sm">
+                    <div class="flex justify-between items-center cursor-pointer">
+                        <h3 class="text-lg font-bold text-gray-900">How much does QR Craft cost?</h3>
+                        <i class="fas fa-chevron-down text-gray-500"></i>
+                    </div>
+                    <div class="mt-4 text-gray-600">
+                        QR Craft offers a free plan with essential features and premium plans starting at $9.99/month for businesses needing advanced customization and analytics.
+                    </div>
+                </div>
+                
+                <!-- FAQ Item 2 -->
+                <div class="bg-gray-50 rounded-xl p-6 shadow-sm">
+                    <div class="flex justify-between items-center cursor-pointer">
+                        <h3 class="text-lg font-bold text-gray-900">Can I change my QR code after creating it?</h3>
+                        <i class="fas fa-chevron-down text-gray-500"></i>
+                    </div>
+                    <div class="mt-4 text-gray-600">
+                        Yes! QR Craft offers dynamic QR codes that allow you to update the destination URL or content without needing to reprint or redistribute the QR code.
+                    </div>
+                </div>
+                
+                <!-- FAQ Item 3 -->
+                <div class="bg-gray-50 rounded-xl p-6 shadow-sm">
+                    <div class="flex justify-between items-center cursor-pointer">
+                        <h3 class="text-lg font-bold text-gray-900">What stats can I see for my QR codes?</h3>
+                        <i class="fas fa-chevron-down text-gray-500"></i>
+                    </div>
+                    <div class="mt-4 text-gray-600">
+                        Our analytics dashboard shows scans over time, geographic locations, devices used, and user engagement metrics to help you measure campaign performance.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-10">
+                <a href="#" class="text-secondary-600 font-medium flex items-center justify-center">
+                    <span>View all FAQs</span>
+                    <i class="fas fa-arrow-right ml-2"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Enhanced AOS Script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+<script>
+    // Initialize AOS with improved settings
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check for mobile device
+        const isMobile = window.innerWidth < 768;
+        
+        // Configure AOS with mobile-friendly settings
+        AOS.init({
+            once: isMobile ? true : false,         // Only animate once on mobile
+            mirror: !isMobile,                     // Disable mirror effect on mobile
+            duration: isMobile ? 800 : 1000,       // Shorter duration on mobile
+            easing: 'ease-out',                    // Less complex easing
+            delay: isMobile ? 0 : 100,             // No delay on mobile
+            disable: 'phone',                      // Disable on phone if too janky
+            throttleDelay: 99,                     // Reduce throttle delay
+            anchorPlacement: 'top-bottom'
+        });
+        
+        // Generate interactive QR grid with mobile optimizations
+        const qrGrid = document.getElementById('interactive-qr-grid');
+        if (qrGrid) {
+            // Clear existing content
+            qrGrid.innerHTML = '';
+            
+            // Configure grid size based on device
+            const gridSize = isMobile ? 6 : 10;
+            qrGrid.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+            qrGrid.style.gridTemplateRows = `repeat(${gridSize}, 1fr)`;
+            
+            // Create QR pattern
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'qr-cell';
+                    
+                    // Create fixed pattern (corners and center)
+                    if (
+                        // Top-left corner pattern
+                        (i < Math.ceil(gridSize * 0.3) && j < Math.ceil(gridSize * 0.3)) || 
+                        // Top-right corner pattern (if grid is big enough)
+                        (gridSize > 6 && i < Math.ceil(gridSize * 0.3) && j > gridSize - Math.ceil(gridSize * 0.3)) || 
+                        // Bottom-left corner pattern (if grid is big enough)
+                        (gridSize > 6 && i > gridSize - Math.ceil(gridSize * 0.3) && j < Math.ceil(gridSize * 0.3))
+                    ) {
+                        cell.classList.add('active');
+                    }
+                    
+                    qrGrid.appendChild(cell);
+                }
+            }
+            
+            // Animate random cells - simplified for mobile
+            function animateRandomCells() {
+                // Skip animation if not visible to save resources
+                if (document.hidden) {
+                    setTimeout(animateRandomCells, 1500);
+                    return;
+                }
+                
+                // Get non-active cells
+                const inactiveCells = qrGrid.querySelectorAll('.qr-cell:not(.active)');
+                if (inactiveCells.length === 0) return;
+                
+                // Select random cells to activate - fewer on mobile
+                const cellsToActivate = isMobile ? 
+                    Math.floor(Math.random() * 3) + 2 : // 2-5 cells on mobile
+                    Math.floor(Math.random() * 8) + 5;  // 5-13 cells on desktop
+                
+                // Randomly select cells to animate
+                const randomCells = Array.from(inactiveCells)
+                    .sort(() => 0.5 - Math.random())
+                    .slice(0, Math.min(cellsToActivate, inactiveCells.length));
+                
+                // Activate cells
+                randomCells.forEach(cell => {
+                    cell.classList.add('active');
+                    
+                    // Deactivate after random time - shorter on mobile
+                    setTimeout(() => {
+                        if (cell) cell.classList.remove('active');
+                    }, isMobile ? (Math.random() * 1000 + 500) : (Math.random() * 2000 + 500));
+                });
+                
+                // Schedule next animation - less frequent on mobile
+                setTimeout(animateRandomCells, isMobile ? 1200 : 800);
+            }
+            
+            // Start animation with a small delay to allow page to settle
+            setTimeout(animateRandomCells, 500);
+        }
+        
+        // Optimize animations on smaller screens
+        if (isMobile) {
+            // Remove floating animations which can be jerky on mobile
+            document.querySelectorAll('.animate-float').forEach(el => {
+                el.style.animation = 'none';
+            });
+            
+            // Adjust QR icon for better touch interaction
+            document.querySelectorAll('.qr-icon').forEach(el => {
+                el.style.right = '-5px';
+                el.style.bottom = '-5px';
+            });
+            
+            // Reduce animation complexity
+            document.querySelectorAll('.step-indicator::before').forEach(el => {
+                el.style.animation = 'none';
+            });
+        }
+        
+        // Handle FAQ toggles
+        const faqItems = document.querySelectorAll('.bg-gray-50.rounded-xl');
+        faqItems.forEach(item => {
+            const header = item.querySelector('.flex.justify-between');
+            const content = item.querySelector('.mt-4');
+            const icon = item.querySelector('.fas.fa-chevron-down');
+            
+            // Initialize: show first item, hide others
+            if (item !== faqItems[0]) {
+                content.style.display = 'none';
+            } else {
+                icon.classList.add('transform', 'rotate-180');
+            }
+            
+            header.addEventListener('click', () => {
+                // Toggle content visibility
+                if (content.style.display === 'none') {
+                    content.style.display = 'block';
+                    icon.classList.add('transform', 'rotate-180');
+                } else {
+                    content.style.display = 'none';
+                    icon.classList.remove('transform', 'rotate-180');
+                }
+            });
+        });
+        
+        // Listen for orientation changes and adjust animations
+        window.addEventListener('orientationchange', function() {
+            // Refresh AOS on orientation change
+            setTimeout(function() {
+                AOS.refresh();
+            }, 100);
+        });
+    });
+</script>
+{% endblock %}

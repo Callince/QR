@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+
+{% block title %}Checkout - QR Craft{% endblock %}
+
+{% block content %}
+<!-- Hero Section with QR Pattern Background -->
+<div class="relative overflow-hidden">
+    <div class="qr-pattern h-40 relative">
+        <div class="absolute inset-0 bg-gradient-to-r from-primary-500/10 to-secondary-600/10"></div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center">
+            <div class="animate-fade-in">
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Checkout</h1>
+                <p class="text-gray-600 mt-2">Complete your subscription to {{ subscription.plan }} Plan</p>
+            </div>
+        </div>
+        <!-- Animated QR element in corner -->
+        <div class="absolute top-4 right-4 w-16 h-16 animate-qr animate-float"></div>
+    </div>
+</div>
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10 mb-12">
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="{% if category == 'success' %}bg-secondary-100 text-secondary-700 border-secondary-300{% elif category == 'danger' %}bg-red-100 text-red-700 border-red-300{% elif category == 'warning' %}bg-yellow-100 text-yellow-700 border-yellow-300{% else %}bg-primary-100 text-primary-700 border-primary-300{% endif %} border rounded-lg px-5 py-4 mb-6 relative animate-fade-in" role="alert">
+                    {{ message }}
+                    <button type="button" class="absolute top-3 right-3 text-gray-400 hover:text-gray-900 transition-colors duration-200" onclick="this.parentElement.remove()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="md:col-span-2">
+            <!-- Billing Information -->
+            <div class="glass backdrop-blur-lg bg-white/90 rounded-2xl shadow-xl p-6 mb-6 animate-fade-in">
+                <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                    <i class="fas fa-file-invoice text-primary-600"></i>
+                    Billing Information
+                </h3>
+                
+                <form method="post" action="{{ url_for('subscription.checkout', order_id=payment.razorpay_order_id) }}">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="form-group">
+                            <label for="full_name" class="block text-sm font-medium text-gray-700 mb-2">
+                                Full Name *
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-user text-gray-400"></i>
+                                </div>
+                                <input type="text" 
+                                       name="full_name" 
+                                       id="full_name" 
+                                       value="{{ user.name }}" 
+                                       required
+                                       class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="company_name" class="block text-sm font-medium text-gray-700 mb-2">
+                                Company Name
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-building text-gray-400"></i>
+                                </div>
+                                <input type="text" 
+                                       name="company_name" 
+                                       id="company_name" 
+                                       class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group md:col-span-2">
+                            <label for="street_address" class="block text-sm font-medium text-gray-700 mb-2">
+                                Street Address *
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-map-marker-alt text-gray-400"></i>
+                                </div>
+                                <input type="text" 
+                                       name="street_address" 
+                                       id="street_address" 
+                                       required
+                                       class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="city" class="block text-sm font-medium text-gray-700 mb-2">
+                                City *
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-city text-gray-400"></i>
+                                </div>
+                                <input type="text" 
+                                       name="city" 
+                                       id="city" 
+                                       required
+                                       class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="state" class="block text-sm font-medium text-gray-700 mb-2">
+                                State *
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-map text-gray-400"></i>
+                                </div>
+                                <input type="text" 
+                                       name="state" 
+                                       id="state" 
+                                       required
+                                       class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="postal_code" class="block text-sm font-medium text-gray-700 mb-2">
+                                Postal Code *
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-mailbox text-gray-400"></i>
+                                </div>
+                                <input type="text" 
+                                       name="postal_code" 
+                                       id="postal_code" 
+                                       required
+                                       class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="country" class="block text-sm font-medium text-gray-700 mb-2">
+                                Country *
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-globe text-gray-400"></i>
+                                </div>
+                                <input type="text" 
+                                       name="country" 
+                                       id="country" 
+                                       value="India" 
+                                       required
+                                       class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                                Email *
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-envelope text-gray-400"></i>
+                                </div>
+                                <input type="email" 
+                                       name="email" 
+                                       id="email" 
+                                       value="{{ user.email if user.email else user.company_email }}" 
+                                       required
+                                       class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="phone_number" class="block text-sm font-medium text-gray-700 mb-2">
+                                Phone Number *
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-phone text-gray-400"></i>
+                                </div>
+                                <input type="tel" 
+                                       name="phone_number" 
+                                       id="phone_number" 
+                                       required
+                                       class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="gst_number" class="block text-sm font-medium text-gray-700 mb-2">
+                                GST Number
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-receipt text-gray-400"></i>
+                                </div>
+                                <input type="text" 
+                                       name="gst_number" 
+                                       id="gst_number"
+                                       class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="pan_number" class="block text-sm font-medium text-gray-700 mb-2">
+                                PAN Number
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-id-card text-gray-400"></i>
+                                </div>
+                                <input type="text" 
+                                       name="pan_number" 
+                                       id="pan_number"
+                                       class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6">
+                        <button type="submit" 
+                                class="w-full py-3 px-6 bg-gradient-to-r from-primary-500 to-secondary-600 hover:from-primary-600 hover:to-secondary-700 text-white font-medium rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-primary-200/50 flex items-center justify-center gap-2 transform hover:scale-105">
+                            <i class="fas fa-credit-card"></i>
+                            Proceed to Payment
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="md:col-span-1">
+            <!-- Order Summary -->
+            <div class="glass backdrop-blur-lg bg-white/90 rounded-2xl shadow-xl p-6 mb-6 animate-fade-in sticky top-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                    <i class="fas fa-shopping-cart text-primary-600"></i>
+                    Order Summary
+                </h3>
+                
+                <div class="space-y-4 mb-6">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Plan</span>
+                        <span class="font-medium text-gray-900">{{ subscription.plan }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Base Amount</span>
+                        <span class="font-medium text-gray-900">₹{{ base_amount|format_amount }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">GST ({{ gst_rate * 100 }}%)</span>
+                        <span class="font-medium text-gray-900">₹{{ gst_amount|format_amount }}</span>
+                    </div>
+                    <div class="border-t border-gray-200 pt-4 mt-4">
+                        <div class="flex justify-between">
+                            <span class="font-bold text-gray-900">Total Amount</span>
+                            <span class="font-bold text-primary-600">₹{{ total_amount|format_amount }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <div class="flex">
+                        <div class="flex-shrink-0 transform transition-all duration-300 hover:scale-110">
+                            <i class="fas fa-shield-alt text-green-500 text-lg"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-gray-600">Secure payment powered by</p>
+                            <img src="static/assert/Razorpay.png" alt="Razorpay" class="h-8 mt-2">
+                            <div class="mt-3">
+                                <img src="static/assert/payment_methods.png" alt="Payment Methods" class="max-w-full">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+{% endblock %}

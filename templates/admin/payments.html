@@ -1,0 +1,793 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Payment Management{% endblock %}
+
+{% block page_title %}
+<div class="d-flex justify-content-between align-items-center">
+    <h1 class="h3 mb-0">
+        <i class="fas fa-file-invoice-dollar me-2"></i> Payment Management
+    </h1>
+
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="icon-wrapper bg-primary-subtle rounded p-3 me-3">
+                        <i class="fas fa-file-invoice fa-2x text-primary"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1">Total Transactions</h6>
+                        <h3 class="mb-0">{{ "{:,}".format(stats.total_payments|default(0)) }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="icon-wrapper bg-success-subtle rounded p-3 me-3">
+                        <i class="fas fa-rupee-sign fa-2x text-success"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1">Total Revenue</h6>
+                        <h3 class="mb-0">₹{{ "{:,.2f}".format(stats.total_revenue|default(0)) }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="icon-wrapper bg-info-subtle rounded p-3 me-3">
+                        <i class="fas fa-check-circle fa-2x text-info"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1">Completed</h6>
+                        <h3 class="mb-0">{{ "{:,}".format(stats.completed_payments|default(0)) }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="icon-wrapper bg-warning-subtle rounded p-3 me-3">
+                        <i class="fas fa-chart-pie fa-2x text-warning"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1">Conversion Rate</h6>
+                        <h3 class="mb-0">{{ ((stats.completed_payments / stats.total_payments * 100) if stats.total_payments > 0 else 0)|round(1) }}%</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters & Analysis Cards -->
+    <div class="row mb-4">
+        <!-- Filters Card -->
+        <div class="col-lg-4 mb-4 mb-lg-0">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-filter me-2"></i>Filter Payments
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" action="{{ url_for('admin.admin_payments') }}" id="payment-filter-form">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Payment Status</label>
+                            <div class="d-flex flex-wrap gap-2">
+                                <input type="radio" class="btn-check" name="status" id="status-all" value="all" 
+                                       {% if filters.status == 'all' %}checked{% endif %} autocomplete="off">
+                                <label class="btn btn-outline-secondary" for="status-all">All</label>
+                                
+                                <input type="radio" class="btn-check" name="status" id="status-completed" value="completed" 
+                                       {% if filters.status == 'completed' %}checked{% endif %} autocomplete="off">
+                                <label class="btn btn-outline-success" for="status-completed">Completed</label>
+                                
+                                <input type="radio" class="btn-check" name="status" id="status-pending" value="created" 
+                                       {% if filters.status == 'created' %}checked{% endif %} autocomplete="off">
+                                <label class="btn btn-outline-warning" for="status-pending">Pending</label>
+                                
+                                <input type="radio" class="btn-check" name="status" id="status-failed" value="failed" 
+                                       {% if filters.status == 'failed' %}checked{% endif %} autocomplete="off">
+                                <label class="btn btn-outline-danger" for="status-failed">Failed</label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Time Period</label>
+                            <select name="date_range" class="form-select">
+                                <option value="7" {% if filters.date_range == '7' %}selected{% endif %}>Last 7 Days</option>
+                                <option value="30" {% if filters.date_range == '30' %}selected{% endif %}>Last 30 Days</option>
+                                <option value="90" {% if filters.date_range == '90' %}selected{% endif %}>Last 3 Months</option>
+                                <option value="180" {% if filters.date_range == '180' %}selected{% endif %}>Last 6 Months</option>
+                                <option value="365" {% if filters.date_range == '365' %}selected{% endif %}>Last Year</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Payment Type</label>
+                            <select name="payment_type" class="form-select">
+                                <option value="all" {% if filters.payment_type == 'all' %}selected{% endif %}>All Types</option>
+                                <option value="new" {% if filters.payment_type == 'new' %}selected{% endif %}>New Subscriptions</option>
+                                <option value="renewal" {% if filters.payment_type == 'renewal' %}selected{% endif %}>Renewals</option>
+                                <option value="upgrade" {% if filters.payment_type == 'upgrade' %}selected{% endif %}>Upgrades</option>
+                                <option value="manual" {% if filters.payment_type == 'manual' %}selected{% endif %}>Manual</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Search</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-transparent">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                                <input type="text" name="search" class="form-control" 
+                                       placeholder="Invoice #, Name, Email..." 
+                                       value="{{ filters.search }}">
+                            </div>
+                            <div class="form-text">Search by customer name, email, invoice number, or order ID</div>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-filter me-1"></i> Apply Filters
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Revenue Chart Card -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-line me-2"></i>Revenue Trends
+                    </h5>
+                    <div class="btn-group btn-group-sm" role="group" id="chart-period-selector">
+                        <button type="button" class="btn btn-outline-secondary active" data-period="week">Week</button>
+                        <button type="button" class="btn btn-outline-secondary" data-period="month">Month</button>
+                        <button type="button" class="btn btn-outline-secondary" data-period="quarter">Quarter</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="revenueTrendChart" height="250"></canvas>
+                </div>
+            </div>
+
+            <!-- Payment Type Distribution Card -->
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>Payment Distribution
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <canvas id="paymentTypeChart" height="200"></canvas>
+                        </div>
+                        <div class="col-md-6">
+                            <canvas id="paymentStatusChart" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transactions Table Card -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-list-alt me-2"></i>Payment Transactions
+                {% if filters.search or filters.status != 'all' or filters.payment_type != 'all' %}
+                <span class="badge bg-primary ms-2">Filtered</span>
+                {% endif %}
+            </h5>
+            <div>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#columnSettingsModal">
+                    <i class="fas fa-columns me-1"></i> Columns
+                </button>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>
+                                <div class="d-flex align-items-center">
+                                    Invoice #
+                                    <a href="#" class="ms-1 text-muted sort-btn" data-sort="invoice">
+                                        <i class="fas fa-sort"></i>
+                                    </a>
+                                </div>
+                            </th>
+                            <th>
+                                <div class="d-flex align-items-center">
+                                    Customer
+                                    <a href="#" class="ms-1 text-muted sort-btn" data-sort="customer">
+                                        <i class="fas fa-sort"></i>
+                                    </a>
+                                </div>
+                            </th>
+                            <th>
+                                <div class="d-flex align-items-center">
+                                    Plan
+                                    <a href="#" class="ms-1 text-muted sort-btn" data-sort="plan">
+                                        <i class="fas fa-sort"></i>
+                                    </a>
+                                </div>
+                            </th>
+                            <th>
+                                <div class="d-flex align-items-center">
+                                    Amount
+                                    <a href="#" class="ms-1 text-muted sort-btn" data-sort="amount">
+                                        <i class="fas fa-sort"></i>
+                                    </a>
+                                </div>
+                            </th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>
+                                <div class="d-flex align-items-center">
+                                    Date
+                                    <a href="#" class="ms-1 text-muted sort-btn" data-sort="date">
+                                        <i class="fas fa-sort"></i>
+                                    </a>
+                                </div>
+                            </th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in payments.items %}
+                        <tr>
+                            <td>
+                                <span class="fw-medium">{{ payment.Payment.invoice_number }}</span>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-circle bg-primary-subtle text-primary me-2">
+                                        {{ payment.User.name[:1]|upper }}
+                                    </div>
+                                    <div>
+                                        <div class="fw-medium">{{ payment.User.name }}</div>
+                                        <div class="small text-muted">{{ payment.User.company_email }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">{{ payment.Subscription.plan }}</span>
+                            </td>
+                            <td>
+                                <div class="fw-bold">₹{{ "{:,.2f}".format(payment.Payment.total_amount) }}</div>
+                                <div class="small text-muted">
+                                    Base: ₹{{ "{:,.2f}".format(payment.Payment.base_amount) }}
+                                </div>
+                            </td>
+                            <td>
+                                {% if payment.Payment.payment_type == 'new' %}
+                                <span class="badge bg-info">New</span>
+                                {% elif payment.Payment.payment_type == 'renewal' %}
+                                <span class="badge bg-success">Renewal</span>
+                                {% elif payment.Payment.payment_type == 'upgrade' %}
+                                <span class="badge bg-primary">Upgrade</span>
+                                {% elif payment.Payment.payment_type == 'manual' %}
+                                <span class="badge bg-secondary">Manual</span>
+                                {% else %}
+                                <span class="badge bg-light text-dark">{{ payment.Payment.payment_type|capitalize }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if payment.Payment.status == 'completed' %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check-circle me-1"></i>Completed
+                                </span>
+                                {% elif payment.Payment.status == 'created' %}
+                                <span class="badge bg-warning text-dark">
+                                    <i class="fas fa-clock me-1"></i>Pending
+                                </span>
+                                {% elif payment.Payment.status == 'failed' %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-times-circle me-1"></i>Failed
+                                </span>
+                                {% else %}
+                                <span class="badge bg-secondary">
+                                    <i class="fas fa-ban me-1"></i>{{ payment.Payment.status|capitalize }}
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div>{{ payment.Payment.created_at.strftime('%d %b %Y') }}</div>
+                                <div class="small text-muted">{{ payment.Payment.created_at.strftime('%I:%M %p') }}</div>
+                            </td>
+                            <td class="text-end">
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-icon btn-outline-secondary rounded-circle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('admin.admin_payment_details', order_id=payment.Payment.invoice_number) }}">
+                                                <i class="fas fa-eye me-2 text-primary"></i> View Details
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('admin.admin_payment_invoice', order_id=payment.Payment.razorpay_order_id) }}" target="_blank">
+                                                <i class="fas fa-file-pdf me-2 text-danger"></i> Download Invoice
+                                            </a>
+                                        </li>
+                                        {% if payment.Payment.status == 'created' %}
+                                        <li>
+                                            <a class="dropdown-item complete-payment" href="#" data-payment-id="{{ payment.Payment.invoice_number }}">
+                                                <i class="fas fa-check-circle me-2 text-success"></i> Mark as Completed
+                                            </a>
+                                        </li>
+                                        {% endif %}
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('admin.admin_users', user_id=payment.User.id) }}">
+                                                <i class="fas fa-user me-2 text-info"></i> View Customer
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center py-4">
+                                <div class="py-5">
+                                    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                                    <h5>No payments found</h5>
+                                    <p class="text-muted">Try adjusting your search or filter criteria</p>
+                                    <a href="{{ url_for('admin.admin_payments') }}" class="btn btn-outline-primary">
+                                        <i class="fas fa-redo me-1"></i> Reset Filters
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Pagination -->
+        {% if payments.items %}
+        <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
+            <div class="text-muted">
+                Showing <span class="fw-medium">{{ payments.page }}</span> of <span class="fw-medium">{{ payments.pages }}</span> pages
+                ({{ "{:,}".format(payments.total) }} payments total)
+            </div>
+            <nav aria-label="Page navigation">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item {% if not payments.has_prev %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('admin.admin_payments', page=payments.prev_num, **filters) if payments.has_prev else '#' }}">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    
+                    {% set start_page = [payments.page - 2, 1]|max %}
+                    {% set end_page = [start_page + 4, payments.pages + 1]|min %}
+                    {% set start_page = [end_page - 5, 1]|max %}
+                    
+                    {% if start_page > 1 %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin.admin_payments', page=1, **filters) }}">1</a>
+                    </li>
+                    {% if start_page > 2 %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                    {% endif %}
+                    {% endif %}
+                    
+                    {% for page_num in range(start_page, end_page) %}
+                    <li class="page-item {% if page_num == payments.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('admin.admin_payments', page=page_num, **filters) }}">{{ page_num }}</a>
+                    </li>
+                    {% endfor %}
+                    
+                    {% if end_page <= payments.pages %}
+                    {% if end_page < payments.pages %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                    {% endif %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin.admin_payments', page=payments.pages, **filters) }}">{{ payments.pages }}</a>
+                    </li>
+                    {% endif %}
+                    
+                    <li class="page-item {% if not payments.has_next %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('admin.admin_payments', page=payments.next_num, **filters) if payments.has_next else '#' }}">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Column Settings Modal -->
+<div class="modal fade" id="columnSettingsModal" tabindex="-1" aria-labelledby="columnSettingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="columnSettingsModalLabel">Customize Table Columns</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="col-invoice" checked>
+                    <label class="form-check-label" for="col-invoice">Invoice Number</label>
+                </div>
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="col-customer" checked>
+                    <label class="form-check-label" for="col-customer">Customer</label>
+                </div>
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="col-plan" checked>
+                    <label class="form-check-label" for="col-plan">Subscription Plan</label>
+                </div>
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="col-amount" checked>
+                    <label class="form-check-label" for="col-amount">Amount</label>
+                </div>
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="col-type" checked>
+                    <label class="form-check-label" for="col-type">Payment Type</label>
+                </div>
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="col-status" checked>
+                    <label class="form-check-label" for="col-status">Status</label>
+                </div>
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="col-date" checked>
+                    <label class="form-check-label" for="col-date">Date</label>
+                </div>
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="col-payment-id">
+                    <label class="form-check-label" for="col-payment-id">Payment ID</label>
+                </div>
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="col-gst">
+                    <label class="form-check-label" for="col-gst">GST Info</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="save-column-settings">Apply Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit form when radio buttons or selects change
+    const filterForm = document.getElementById('payment-filter-form');
+    const statusRadios = document.querySelectorAll('input[name="status"]');
+    const selectElements = document.querySelectorAll('select[name="date_range"], select[name="payment_type"]');
+    
+    statusRadios.forEach(radio => {
+        radio.addEventListener('change', () => filterForm.submit());
+    });
+    
+    selectElements.forEach(select => {
+        select.addEventListener('change', () => filterForm.submit());
+    });
+    
+    // Revenue Trend Chart
+    const ctx = document.getElementById('revenueTrendChart').getContext('2d');
+    
+    const revenueData = {
+        labels: [
+            {% for trend in revenue_trend %}
+                "{{ trend.day.strftime('%d %b') }}",
+            {% endfor %}
+        ],
+        datasets: [{
+            label: 'Daily Revenue (₹)',
+            data: [
+                {% for trend in revenue_trend %}
+                    {{ trend.total_revenue }},
+                {% endfor %}
+            ],
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4,
+            pointRadius: 3,
+            pointBackgroundColor: '#3b82f6',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2
+        }]
+    };
+
+    const revenueChart = new Chart(ctx, {
+        type: 'line',
+        data: revenueData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        label: function(context) {
+                            return '₹' + Number(context.raw).toLocaleString();
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '₹' + value.toLocaleString();
+                        }
+                    },
+                    grid: {
+                        drawBorder: false,
+                        borderDash: [5, 5]
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+    
+    // Payment Type Chart (Pie chart)
+    const paymentTypeCtx = document.getElementById('paymentTypeChart').getContext('2d');
+    const paymentTypeChart = new Chart(paymentTypeCtx, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys({{ stats.payment_type_breakdown|tojson }}),
+            datasets: [{
+                data: Object.values({{ stats.payment_type_breakdown|tojson }}),
+                backgroundColor: [
+                    '#3b82f6', // Blue
+                    '#10b981', // Green
+                    '#f59e0b', // Amber
+                    '#6366f1'  // Indigo
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                title: {
+                    display: true,
+                    text: 'Payment Types'
+                }
+            },
+            cutout: '60%'
+        }
+    });
+    
+    // Payment Status Chart
+    const paymentStatusCtx = document.getElementById('paymentStatusChart').getContext('2d');
+    
+    // This would need to be calculated from your backend
+    const paymentStatusData = {
+        completed: {{ stats.completed_payments|default(0) }},
+        pending: {{ stats.total_payments|default(0) - stats.completed_payments|default(0) }}
+    };
+    
+    const paymentStatusChart = new Chart(paymentStatusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Completed', 'Pending/Failed'],
+            datasets: [{
+                data: [paymentStatusData.completed, paymentStatusData.pending],
+                backgroundColor: [
+                    '#10b981', // Green
+                    '#f97316'  // Orange
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                title: {
+                    display: true,
+                    text: 'Payment Status'
+                }
+            },
+            cutout: '60%'
+        }
+    });
+    
+    // Mark as completed functionality
+    document.querySelectorAll('.complete-payment').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const paymentId = this.dataset.paymentId;
+            
+            if (confirm('Are you sure you want to mark this payment as completed?')) {
+                // Create a form and submit it to update the payment status
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `{{ url_for('admin.admin_update_payment', order_id='') }}${paymentId}`;
+                
+                const statusInput = document.createElement('input');
+                statusInput.type = 'hidden';
+                statusInput.name = 'status';
+                statusInput.value = 'completed';
+                
+                form.appendChild(statusInput);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    });
+    
+    // Column visibility toggle functionality
+    document.getElementById('save-column-settings').addEventListener('click', function() {
+        const columns = {
+            'col-invoice': 0,
+            'col-customer': 1,
+            'col-plan': 2,
+            'col-amount': 3,
+            'col-type': 4,
+            'col-status': 5,
+            'col-date': 6,
+            'col-payment-id': -1, // Not shown by default
+            'col-gst': -1 // Not shown by default
+        };
+        
+        // Get all table rows
+        const table = document.querySelector('table');
+        const headerRow = table.querySelector('thead tr');
+        const bodyRows = table.querySelectorAll('tbody tr');
+        
+        // Toggle column visibility based on checkbox state
+        Object.keys(columns).forEach(colId => {
+            const checkbox = document.getElementById(colId);
+            const colIndex = columns[colId];
+            
+            if (colIndex >= 0) { // Only toggle existing columns
+                const isVisible = checkbox.checked;
+                
+                // Toggle header cell
+                if (headerRow.cells[colIndex]) {
+                    headerRow.cells[colIndex].style.display = isVisible ? '' : 'none';
+                }
+                
+                // Toggle body cells
+                bodyRows.forEach(row => {
+                    if (row.cells[colIndex]) {
+                        row.cells[colIndex].style.display = isVisible ? '' : 'none';
+                    }
+                });
+            }
+        });
+        
+        // Close the modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('columnSettingsModal'));
+        modal.hide();
+    });
+    
+    // Chart period selector functionality
+    document.querySelectorAll('#chart-period-selector button').forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Remove active class from all buttons
+            document.querySelectorAll('#chart-period-selector button').forEach(b => {
+                b.classList.remove('active');
+            });
+            
+            // Add active class to clicked button
+            this.classList.add('active');
+            
+            // Update chart data based on selected period
+            const period = this.dataset.period;
+            
+            // This would typically fetch new data from the server
+            // For now we'll just simulate changing the data
+            let labels, data;
+            
+            switch (period) {
+                case 'week':
+                    labels = revenueData.labels.slice(-7);
+                    data = revenueData.datasets[0].data.slice(-7);
+                    break;
+                case 'month':
+                    labels = revenueData.labels;
+                    data = revenueData.datasets[0].data;
+                    break;
+                case 'quarter':
+                    // This would need actual quarterly data
+                    // For now just use what we have but update the title
+                    labels = revenueData.labels;
+                    data = revenueData.datasets[0].data;
+                    break;
+            }
+            
+            // Update chart data
+            revenueChart.data.labels = labels;
+            revenueChart.data.datasets[0].data = data;
+            revenueChart.update();
+        });
+    });
+    
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Table sorting functionality
+    document.querySelectorAll('.sort-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const sortBy = this.dataset.sort;
+            
+            // Add sort parameter to current URL and refresh
+            const url = new URL(window.location);
+            url.searchParams.set('sort_by', sortBy);
+            
+            // Toggle sort direction if already sorting by this column
+            if (url.searchParams.get('sort_dir') === 'asc' && 
+                url.searchParams.get('sort_by') === sortBy) {
+                url.searchParams.set('sort_dir', 'desc');
+            } else {
+                url.searchParams.set('sort_dir', 'asc');
+            }
+            
+            window.location = url;
+        });
+    });
+    
+    // Add animation effects to cards
+    const cards = document.querySelectorAll('.card');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+        
+        setTimeout(() => {
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, 100 + (index * 50));
+    });
+});
+</script>
+{% endblock %}

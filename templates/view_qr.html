@@ -1,0 +1,1403 @@
+{% extends "base.html" %}
+
+{% block title %}{{ qr_code.name }} - QR Code Details{% endblock %}
+
+{% block head %}
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<style>
+    /* Enhanced animations and transitions */
+    .details-card {
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .details-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    
+    /* Improved color preview style */
+    .color-preview {
+        @apply inline-block w-5 h-5 rounded-md border border-gray-200 mr-2 align-middle;
+        transition: transform 0.2s ease;
+    }
+    .color-preview:hover {
+        transform: scale(1.2);
+    }
+    
+    /* Enhanced tab styling */
+    .tab-button {
+        @apply py-4 px-6 text-center font-medium text-sm text-gray-500 hover:text-gray-700 border-b-2 border-transparent transition-all duration-300;
+    }
+    .tab-button.active {
+        @apply bg-secondary-50 text-secondary-700 border-secondary-500 font-semibold;
+    }
+    .tab-button:hover:not(.active) {
+        @apply bg-gray-50 border-gray-200;
+    }
+    
+    /* Enhanced QR code container */
+    .qr-display {
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+    .qr-display:hover {
+        transform: scale(1.02);
+        box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
+    }
+    
+    /* Glass effect for cards */
+    .glass-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+    }
+    
+    /* Improved modal styling */
+    .modal-content {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+        transform: scale(0.95);
+        opacity: 0;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .modal.show .modal-content {
+        transform: scale(1);
+        opacity: 1;
+    }
+    
+    /* Gradient background for headers */
+    .gradient-bg-light {
+        background: linear-gradient(to right, rgba(14, 165, 233, 0.1), rgba(139, 92, 246, 0.15));
+    }
+    
+    /* Button hover effects */
+    .btn-primary {
+        @apply py-2 px-4 bg-secondary-600 hover:bg-secondary-700 text-white rounded-md text-sm font-medium transition-colors duration-200;
+        position: relative;
+        overflow: hidden;
+    }
+    .btn-primary:hover::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.1);
+        transform: translateX(-100%);
+        animation: btn-shine 0.75s;
+    }
+    @keyframes btn-shine {
+        100% {
+            transform: translateX(100%);
+        }
+    }
+    
+    /* Enhanced scrollbar for content sections */
+    .custom-scrollbar {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(139, 92, 246, 0.5) rgba(226, 232, 240, 0.5);
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: rgba(226, 232, 240, 0.5);
+        border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(139, 92, 246, 0.5);
+        border-radius: 10px;
+    }
+    
+    /* QR pattern background */
+    .qr-pattern-bg {
+        background-color: #f8fafc;
+        background-image: 
+            radial-gradient(#e2e8f0 1.5px, transparent 1.5px),
+            radial-gradient(#e2e8f0 1.5px, transparent 1.5px);
+        background-size: 30px 30px;
+        background-position: 0 0, 15px 15px;
+        z-index: 10;
+    }
+    
+    /* Animations for modal */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeOutDown {
+        from {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        to {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+    }
+
+    /* Share modal pulse animation for the QR code */
+    @keyframes pulse-light {
+        0%, 100% {
+            box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4);
+        }
+        50% {
+            box-shadow: 0 0 0 10px rgba(139, 92, 246, 0);
+        }
+    }
+
+    .share-qr-preview {
+        animation: pulse-light 3s infinite;
+    }
+
+    /* Hover effects for share options */
+    .share-option:hover {
+        transform: translateY(-3px);
+    }
+    
+    /* Mobile optimizations */
+    @media (max-width: 640px) {
+        .details-card {
+            margin-bottom: 1rem;
+        }
+        
+        /* Hide scrollbars but allow scrolling */
+        .hide-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
+        }
+        
+        /* Larger touch targets for mobile */
+        .btn-primary, button, a.btn, .share-option {
+            min-height: 44px;
+        }
+        
+        /* Optimize modals for mobile */
+        .modal-content {
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        /* Better text truncation on mobile */
+        .truncate-mobile {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+        
+        /* Improved tap targets */
+        .copyable-text {
+            display: flex;
+            align-items: center;
+        }
+        
+        .copy-button {
+            min-width: 44px;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    }
+
+    /* Safe area insets for notched phones */
+    @supports (padding: max(0px)) {
+        .safe-area-inset {
+            padding-left: max(1rem, env(safe-area-inset-left));
+            padding-right: max(1rem, env(safe-area-inset-right));
+            padding-bottom: max(1rem, env(safe-area-inset-bottom));
+        }
+        
+        .modal {
+            padding-top: max(1rem, env(safe-area-inset-top));
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="qr-pattern-bg min-h-screen py-6 sm:py-8 safe-area-inset">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Responsive header section -->
+        <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center animate-fade-in">
+            <div>
+                <h1 class="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 flex items-center">
+                    <span class="bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-secondary-600">
+                        {{ qr_code.name }}
+                    </span>
+                </h1>
+                <p class="text-sm text-gray-500 mt-1">Created {{ qr_code.created_at.strftime('%b %d, %Y') }}</p>
+            </div>
+            <a href="{{ url_for('dashboard') }}" class="mt-2 sm:mt-0 text-secondary-600 hover:text-secondary-800 flex items-center transition-all duration-300 hover:translate-x-[-5px]">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Dashboard
+            </a>
+        </div>
+
+        <!-- Main content area with mobile-responsive grid -->
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8">
+            <!-- QR Code Display Section - Mobile optimized -->
+            <div class="lg:col-span-1">
+                <div class="glass-card rounded-xl shadow-xl p-4 sm:p-6 text-center qr-display" id="qr-container">
+                    <div class="relative mb-4">
+                        <div class="absolute inset-0 bg-gradient-to-br from-primary-500/10 to-secondary-600/10 rounded-xl -m-2 opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
+                        <img src="{{ qr_image }}" alt="{{ qr_code.name }}" class="mx-auto max-w-full h-auto drop-shadow-md max-h-[250px]" id="qr-image">
+                    </div>
+                    
+                    <div class="mt-4 sm:mt-6 flex flex-col space-y-3">
+                        <a href="{{ url_for('download_qr', qr_id=qr_code.unique_id) }}" class="btn-primary w-full py-3 sm:py-2 px-4 flex items-center justify-center group">
+                            <i class="fas fa-download mr-2 group-hover:animate-bounce"></i> Download QR Code
+                        </a>
+                        
+                        <button id="share-qr-btn" class="w-full py-3 sm:py-2 px-4 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center hover:border-secondary-300 hover:text-secondary-700">
+                            <i class="fas fa-share-alt mr-2"></i> Share QR Code
+                        </button>
+                        
+                        <div class="flex space-x-2">
+                            <a href="{{ url_for('edit_qr', qr_id=qr_code.unique_id) }}" class="flex-1 py-3 sm:py-2 px-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center hover:border-primary-300 hover:text-primary-700">
+                                <i class="fas fa-edit mr-1"></i> Edit
+                            </a>
+                            <button data-modal-target="delete-modal" class="flex-1 py-3 sm:py-2 px-3 bg-white border border-red-300 hover:bg-red-50 text-red-600 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center">
+                                <i class="fas fa-trash-alt mr-1"></i> Delete
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- QR Code URL with better overflow handling -->
+                    <div class="mt-4 sm:mt-6 pt-4 border-t border-gray-100">
+                        <p class="text-xs text-gray-500 mb-1">Scan URL</p>
+                        <div class="flex items-center justify-between bg-gray-50 p-2 rounded-md hover:bg-gray-100 transition-colors duration-200 copyable-text">
+                            <code class="text-xs text-gray-600 truncate truncate-mobile max-w-[80%]" id="qr-url">{{ url_for('redirect_qr', qr_id=qr_code.unique_id, _external=True) }}</code>
+                            <button onclick="copyToClipboard('qr-url')" class="ml-2 text-secondary-600 hover:text-secondary-800 transition-transform duration-200 hover:scale-110 p-2 copy-button" aria-label="Copy URL">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- QR Scan Stats (for dynamic QRs) -->
+                {% if qr_code.is_dynamic and scans %}
+                <div class="glass-card rounded-xl shadow-lg p-4 sm:p-6 mt-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <i class="fas fa-chart-bar text-secondary-600 mr-2"></i>
+                        Scan Statistics
+                    </h3>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-gradient-to-br from-gray-50 to-white rounded-lg p-4 text-center shadow-sm border border-gray-100">
+                            <p class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-secondary-600">{{ scans|length }}</p>
+                            <p class="text-sm text-gray-500">Total Scans</p>
+                        </div>
+                        
+                        <div class="bg-gradient-to-br from-gray-50 to-white rounded-lg p-4 text-center shadow-sm border border-gray-100">
+                            {% set last_scan = scans|sort(attribute='timestamp')|last %}
+                            <p class="text-sm font-medium text-gray-900">Last Scan</p>
+                            <p class="text-sm text-gray-500">{{ last_scan.timestamp.strftime('%b %d, %Y') }}</p>
+                        </div>
+                    </div>
+                    
+                    <a href="{{ url_for('qr_analytics', qr_id=qr_code.unique_id) }}" class="mt-4 w-full py-3 sm:py-2 px-4 bg-white border border-secondary-300 text-secondary-700 hover:bg-secondary-50 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center group">
+                        <i class="fas fa-chart-bar mr-2 group-hover:animate-pulse"></i> View Full Analytics
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- QR Details Section -->
+            <div class="lg:col-span-2">
+                <!-- Tabs for QR Details with horizontal scrolling for mobile -->
+                <div class="glass-card rounded-xl shadow-xl overflow-hidden">
+        
+                    
+                    <!-- Content Tab -->
+                    <div x-show="activeTab === 'content'" x-transition class="p-4 sm:p-6 custom-scrollbar" style="max-height: 600px; overflow-y: auto;">
+                        <div class="flex flex-wrap items-center gap-3 mb-4">
+                            <span class="px-3 py-1 text-xs font-medium rounded-full bg-secondary-100 text-secondary-800 border border-secondary-200 shadow-sm">{{ qr_code.qr_type|title }}</span>
+                            {% if qr_code.is_dynamic %}
+                                <span class="px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800 border border-green-200 shadow-sm">Dynamic</span>
+                            {% else %}
+                                <span class="px-3 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800 border border-gray-200 shadow-sm">Static</span>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Content details based on QR type -->
+                        <div class="bg-white/50 rounded-xl p-4 sm:p-5 shadow-sm border border-gray-100 mb-4">
+                            {% if qr_code.qr_type == 'link' %}
+                                <div class="mb-4">
+                                    <p class="text-sm font-medium text-gray-500 mb-1">URL</p>
+                                    {% if qr_code.link_detail %}
+                                        <a href="{{ qr_code.link_detail.url }}" target="_blank" class="text-blue-600 hover:text-blue-800 hover:underline break-all flex items-center truncate-mobile">
+                                            <i class="fas fa-link mr-2 text-blue-400"></i>
+                                            {{ qr_code.link_detail.url }}
+                                        </a>
+                                    {% elif content and content.url %}
+                                        <a href="{{ content.url }}" target="_blank" class="text-blue-600 hover:text-blue-800 hover:underline break-all flex items-center truncate-mobile">
+                                            <i class="fas fa-link mr-2 text-blue-400"></i>
+                                            {{ content.url }}
+                                        </a>
+                                    {% else %}
+                                        <p class="text-gray-600">No URL specified</p>
+                                    {% endif %}
+                                </div>
+                            
+                            {% elif qr_code.qr_type == 'email' %}
+                                <div class="space-y-4">
+                                    {% if qr_code.email_detail %}
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 mb-1">Email</p>
+                                            <p class="text-gray-900 flex items-center">
+                                                <i class="fas fa-envelope mr-2 text-gray-400"></i>
+                                                {{ qr_code.email_detail.email }}
+                                            </p>
+                                        </div>
+                                        {% if qr_code.email_detail.subject %}
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 mb-1">Subject</p>
+                                            <p class="text-gray-900">{{ qr_code.email_detail.subject }}</p>
+                                        </div>
+                                        {% endif %}
+                                        {% if qr_code.email_detail.body %}
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 mb-1">Body</p>
+                                            <div class="bg-gray-50 rounded-md p-3 text-gray-800 whitespace-pre-line shadow-inner">{{ qr_code.email_detail.body }}</div>
+                                        </div>
+                                        {% endif %}
+                                    {% elif content %}
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 mb-1">Email</p>
+                                            <p class="text-gray-900 flex items-center">
+                                                <i class="fas fa-envelope mr-2 text-gray-400"></i>
+                                                {{ content.email }}
+                                            </p>
+                                        </div>
+                                        {% if content.subject %}
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 mb-1">Subject</p>
+                                            <p class="text-gray-900">{{ content.subject }}</p>
+                                        </div>
+                                        {% endif %}
+                                        {% if content.body %}
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 mb-1">Body</p>
+                                            <div class="bg-gray-50 rounded-md p-3 text-gray-800 whitespace-pre-line shadow-inner">{{ content.body }}</div>
+                                        </div>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            
+                            {% elif qr_code.qr_type == 'text' %}
+                                <div class="mb-4">
+                                    <p class="text-sm font-medium text-gray-500 mb-1">Text Content</p>
+                                    {% if qr_code.text_detail %}
+                                        <div class="bg-gray-50 rounded-md p-3 text-gray-800 whitespace-pre-line shadow-inner">{{ qr_code.text_detail.text }}</div>
+                                    {% elif content and content.text %}
+                                        <div class="bg-gray-50 rounded-md p-3 text-gray-800 whitespace-pre-line shadow-inner">{{ content.text }}</div>
+                                    {% else %}
+                                        <p class="text-gray-600">No text content available</p>
+                                    {% endif %}
+                                </div>
+                            
+                            {% elif qr_code.qr_type == 'call' %}
+                                <div class="mb-4">
+                                    <p class="text-sm font-medium text-gray-500 mb-1">Phone Number</p>
+                                    {% if qr_code.phone_detail %}
+                                        <p class="text-gray-900 flex items-center">
+                                            <i class="fas fa-phone-alt mr-2 text-gray-400"></i>
+                                            {{ qr_code.phone_detail.phone }}
+                                        </p>
+                                    {% elif content and content.phone %}
+                                        <p class="text-gray-900 flex items-center">
+                                            <i class="fas fa-phone-alt mr-2 text-gray-400"></i>
+                                            {{ content.phone }}
+                                        </p>
+                                    {% else %}
+                                        <p class="text-gray-600">No phone number available</p>
+                                    {% endif %}
+                                </div>
+                            
+                            {% elif qr_code.qr_type == 'sms' %}
+                                <div class="space-y-4">
+                                    {% if qr_code.sms_detail %}
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 mb-1">Phone Number</p>
+                                            <p class="text-gray-900 flex items-center">
+                                                <i class="fas fa-sms mr-2 text-gray-400"></i>
+                                                {{ qr_code.sms_detail.phone }}
+                                            </p>
+                                        </div>
+                                        {% if qr_code.sms_detail.message %}
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 mb-1">Message</p>
+                                            <div class="bg-gray-50 rounded-md p-3 text-gray-800 whitespace-pre-line shadow-inner">{{ qr_code.sms_detail.message }}</div>
+                                        </div>
+                                        {% endif %}
+                                    {% elif content %}
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 mb-1">Phone Number</p>
+                                            <p class="text-gray-900 flex items-center">
+                                                <i class="fas fa-sms mr-2 text-gray-400"></i>
+                                                {{ content.phone }}
+                                            </p>
+                                        </div>
+                                        {% if content.message %}
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 mb-1">Message</p>
+                                            <div class="bg-gray-50 rounded-md p-3 text-gray-800 whitespace-pre-line shadow-inner">{{ content.message }}</div>
+                                        </div>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            
+                            {% elif qr_code.qr_type == 'whatsapp' %}
+                                <div class="space-y-4">
+                                    {% if qr_code.whatsapp_detail %}
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 mb-1">Phone Number</p>
+                                            <p class="text-gray-900 flex items-center">
+                                                <i class="fab fa-whatsapp mr-2 text-green-500"></i>
+                                                {{ qr_code.whatsapp_detail.phone }}
+                                            </p>
+                                        </div>
+                                        {% if qr_code.whatsapp_detail.message %}
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 mb-1">Message</p>
+                                            <div class="bg-gray-50 rounded-md p-3 text-gray-800 whitespace-pre-line shadow-inner">{{ qr_code.whatsapp_detail.message }}</div>
+                                        </div>
+                                        {% endif %}
+                                    {% elif content %}
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 mb-1">Phone Number</p>
+                                            <p class="text-gray-900 flex items-center">
+                                                <i class="fab fa-whatsapp mr-2 text-green-500"></i>
+                                                {{ content.phone }}
+                                            </p>
+                                        </div>
+                                        {% if content.message %}
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 mb-1">Message</p>
+                                            <div class="bg-gray-50 rounded-md p-3 text-gray-800 whitespace-pre-line shadow-inner">{{ content.message }}</div>
+                                        </div>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            
+                            {% elif qr_code.qr_type == 'wifi' %}
+                                <div class="space-y-4">
+                                    {% if qr_code.wifi_detail %}
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 mb-1">Network Name (SSID)</p>
+                                            <p class="text-gray-900 flex items-center">
+                                                <i class="fas fa-wifi mr-2 text-blue-400"></i>
+                                                {{ qr_code.wifi_detail.ssid }}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 mb-1">Password</p>
+                                            <p class="text-gray-900 flex items-center">
+                                                <i class="fas fa-key mr-2 text-gray-400"></i>
+                                                {% if qr_code.wifi_detail.password %}
+                                                    •••••••••• <button onclick="togglePassword('wifi-password')" class="text-xs text-secondary-600 ml-2 hover:underline focus:outline-none p-2">
+                                                        <i class="fas fa-eye mr-1"></i>Show
+                                                    </button>
+                                                    <span id="wifi-password" class="hidden">{{ qr_code.wifi_detail.password }}</span>
+                                                {% else %}
+                                                    <span class="text-gray-400">No password (open network)</span>
+                                                {% endif %}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 mb-1">Encryption</p>
+                                            <p class="text-gray-900 flex items-center">
+                                                <i class="fas fa-shield-alt mr-2 text-gray-400"></i>
+                                                {{ qr_code.wifi_detail.encryption }}
+                                            </p>
+                                        </div>
+                                    {% elif content %}
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 mb-1">Network Name (SSID)</p>
+                                            <p class="text-gray-900 flex items-center">
+                                                <i class="fas fa-wifi mr-2 text-blue-400"></i>
+                                                {{ content.ssid }}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 mb-1">Password</p>
+                                            <p class="text-gray-900 flex items-center">
+                                                <i class="fas fa-key mr-2 text-gray-400"></i>
+                                                {% if content.password %}
+                                                    •••••••••• <button onclick="togglePassword('wifi-password')" class="text-xs text-secondary-600 ml-2 hover:underline focus:outline-none p-2">
+                                                        <i class="fas fa-eye mr-1"></i>Show
+                                                    </button>
+                                                    <span id="wifi-password" class="hidden">{{ content.password }}</span>
+                                                {% else %}
+                                                    <span class="text-gray-400">No password (open network)</span>
+                                                {% endif %}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 mb-1">Encryption</p>
+                                            <p class="text-gray-900 flex items-center">
+                                                <i class="fas fa-shield-alt mr-2 text-gray-400"></i>
+                                                {{ content.encryption }}
+                                            </p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            
+                            {% elif qr_code.qr_type == 'vcard' %}
+                                <div class="space-y-4">
+                                    {% if qr_code.vcard_detail %}
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 mb-1">Name</p>
+                                            <p class="text-gray-900 flex items-center">
+                                                <i class="fas fa-user mr-2 text-gray-400"></i>
+                                                {{ qr_code.vcard_detail.name }}
+                                            </p>
+                                        </div>
+                                        {% if qr_code.vcard_detail.phone %}
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 mb-1">Phone</p>
+                                            <p class="text-gray-900 flex items-center">
+                                                <i class="fas fa-phone-alt mr-2 text-gray-400"></i>
+                                                {{ qr_code.vcard_detail.phone }}
+                                            </p>
+                                        </div>
+                                        {% endif %}
+                                        {% if qr_code.vcard_detail.email %}
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 mb-1">Email</p>
+                                            <p class="text-gray-900 flex items-center truncate-mobile">
+                                                <i class="fas fa-envelope mr-2 text-gray-400"></i>
+                                                {{ qr_code.vcard_detail.email }}
+                                            </p>
+                                        </div>
+                                        {% endif %}
+                                        {% if qr_code.vcard_detail.company %}
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 mb-1">Company</p>
+                                            <p class="text-gray-900 flex items-center">
+                                                <i class="fas fa-building mr-2 text-gray-400"></i>
+                                                {{ qr_code.vcard_detail.company }}
+                                            </p>
+                                        </div>
+                                        {% endif %}
+                                        {% if qr_code.vcard_detail.title %}
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 mb-1">Title</p>
+                                            <p class="text-gray-900 flex items-center">
+                                                <i class="fas fa-id-badge mr-2 text-gray-400"></i>
+                                                {{ qr_code.vcard_detail.title }}
+                                            </p>
+                                        </div>
+                                        {% endif %}
+                                        {% if qr_code.vcard_detail.address %}
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 mb-1">Address</p>
+                                            <p class="text-gray-900 flex items-start">
+                                                <i class="fas fa-map-marker-alt mr-2 text-gray-400 mt-1"></i>
+                                                <span class="whitespace-pre-line">{{ qr_code.vcard_detail.address }}</span>
+                                            </p>
+                                        </div>
+                                        {% endif %}
+                                        {% if qr_code.vcard_detail.website %}
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 mb-1">Website</p>
+                                            <a href="{{ qr_code.vcard_detail.website }}" target="_blank" class="text-blue-600 hover:text-blue-800 hover:underline break-all flex items-center truncate-mobile">
+                                                <i class="fas fa-globe mr-2 text-blue-400"></i>
+                                                {{ qr_code.vcard_detail.website }}
+                                            </a>
+                                        </div>
+                                        {% endif %}
+                                    {% elif content %}
+                                        <!-- Similar structure for content-based vCard display -->
+                                    {% endif %}
+                                </div>
+                            
+                            {% elif qr_code.qr_type == 'event' %}
+                                <div class="space-y-4">
+                                    {% if qr_code.event_detail %}
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 mb-1">Title</p>
+                                            <p class="text-gray-900 flex items-center">
+                                                <i class="fas fa-calendar-day mr-2 text-gray-400"></i>
+                                                {{ qr_code.event_detail.title }}
+                                            </p>
+                                        </div>
+                                        {% if qr_code.event_detail.location %}
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 mb-1">Location</p>
+                                            <p class="text-gray-900 flex items-center">
+                                                <i class="fas fa-map-marker-alt mr-2 text-gray-400"></i>
+                                                {{ qr_code.event_detail.location }}
+                                            </p>
+                                        </div>
+                                        {% endif %}
+                                        {% if qr_code.event_detail.start_date %}
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 mb-1">Start Date & Time</p>
+                                            <p class="text-gray-900 flex items-center">
+                                                <i class="fas fa-clock mr-2 text-gray-400"></i>
+                                                {{ qr_code.event_detail.start_date.strftime('%b %d, %Y at %H:%M') }}
+                                            </p>
+                                        </div>
+                                        {% endif %}
+                                        {% if qr_code.event_detail.end_time %}
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 mb-1">End Date & Time</p>
+                                            <p class="text-gray-900 flex items-center">
+                                                <i class="fas fa-clock mr-2 text-gray-400"></i>
+                                                {{ qr_code.event_detail.end_time.strftime('%b %d, %Y at %H:%M') }}
+                                            </p>
+                                        </div>
+                                        {% endif %}
+                                        {% if qr_code.event_detail.description %}
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 mb-1">Description</p>
+                                            <p class="text-gray-900 whitespace-pre-line bg-gray-50 p-3 rounded-md shadow-inner">{{ qr_code.event_detail.description }}</p>
+                                        </div>
+                                        {% endif %}
+                                        {% if qr_code.event_detail.organizer %}
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500 mb-1">Organizer</p>
+                                            <p class="text-gray-900 flex items-center">
+                                                <i class="fas fa-user mr-2 text-gray-400"></i>
+                                                {{ qr_code.event_detail.organizer }}
+                                            </p>
+                                        </div>
+                                        {% endif %}
+                                    {% elif content %}
+                                        <!-- Similar structure for content-based event display -->
+                                    {% endif %}
+                                </div>
+                            
+                            {% else %}
+                                <div class="mb-4">
+                                    <p class="text-sm font-medium text-gray-500 mb-1">Content (JSON)</p>
+                                    <pre class="bg-gray-50 rounded-md p-3 text-xs text-gray-800 overflow-auto shadow-inner">{{ content|tojson(indent=2) }}</pre>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Additional content metadata -->
+                        <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                            <div class="bg-white/50 rounded-lg p-3 shadow-sm border border-gray-100 flex items-center">
+                                <i class="fas fa-calendar-plus text-primary-500 mr-2"></i>
+                                <div>
+                                    <p class="font-medium text-gray-500">Created</p>
+                                    <p class="text-gray-900">{{ qr_code.created_at.strftime('%b %d, %Y at %H:%M') }}</p>
+                                </div>
+                            </div>
+                            <div class="bg-white/50 rounded-lg p-3 shadow-sm border border-gray-100 flex items-center">
+                                <i class="fas fa-calendar-check text-secondary-500 mr-2"></i>
+                                <div>
+                                    <p class="font-medium text-gray-500">Last Updated</p>
+                                    <p class="text-gray-900">{{ qr_code.updated_at.strftime('%b %d, %Y at %H:%M') }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Styling Tab -->
+                    <div x-show="activeTab === 'styling'" x-transition class="p-4 sm:p-6 custom-scrollbar" style="max-height: 600px; overflow-y: auto;">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                            <div class="details-card bg-white/50 rounded-lg p-4 shadow-sm border border-gray-100">
+                                <h4 class="font-medium text-gray-900 mb-3 flex items-center">
+                                    <i class="fas fa-palette text-primary-500 mr-2"></i> Colors
+                                </h4>
+                                <div class="space-y-3">
+                                    <div class="flex items-center bg-white/70 p-2 rounded-md">
+                                        <span class="color-preview" style="background-color: {{ qr_code.color }};"></span>
+                                        <p class="text-sm">QR Color: <span class="font-mono">{{ qr_code.color }}</span></p>
+                                    </div>
+                                    <div class="flex items-center bg-white/70 p-2 rounded-md">
+                                        <span class="color-preview" style="background-color: {{ qr_code.background_color }};"></span>
+                                        <p class="text-sm">Background: <span class="font-mono">{{ qr_code.background_color }}</span></p>
+                                    </div>
+                                    {% if qr_code.gradient_start and qr_code.gradient_end %}
+                                    <div class="bg-white/70 p-2 rounded-md">
+                                        <p class="text-sm mb-1">Gradient</p>
+                                        <div class="h-6 w-full rounded-md shadow-inner" style="background: linear-gradient(to right, {{ qr_code.gradient_start }}, {{ qr_code.gradient_end }});"></div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="details-card bg-white/50 rounded-lg p-4 shadow-sm border border-gray-100">
+                                <h4 class="font-medium text-gray-900 mb-3 flex items-center">
+                                    <i class="fas fa-shapes text-primary-500 mr-2"></i> Shape & Style
+                                </h4>
+                                <div class="space-y-2 text-sm">
+                                    <div class="bg-white/70 p-2 rounded-md flex items-center">
+                                        <i class="fas fa-square mr-2 text-gray-400"></i>
+                                        <p>Shape: <span class="font-medium">{{ qr_code.shape|title }}</span></p>
+                                    </div>
+                                    {% if qr_code.custom_eyes %}
+                                    <div class="bg-white/70 p-2 rounded-md">
+                                        <p class="mb-1 flex items-center">
+                                            <i class="fas fa-eye mr-2 text-gray-400"></i>
+                                            Custom Eyes
+                                        </p>
+                                        <div class="flex space-x-3 mt-2">
+                                            <div>
+                                                <p class="text-xs text-gray-500">Inner: {{ qr_code.inner_eye_style|title }}</p>
+                                                <div class="color-preview mt-1" style="background-color: {{ qr_code.inner_eye_color or qr_code.color }};"></div>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-500">Outer: {{ qr_code.outer_eye_style|title }}</p>
+                                                <div class="color-preview mt-1" style="background-color: {{ qr_code.outer_eye_color or qr_code.color }};"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% else %}
+                                    <div class="bg-white/70 p-2 rounded-md flex items-center">
+                                        <i class="fas fa-eye mr-2 text-gray-400"></i>
+                                        <p>Standard QR eyes</p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            {% if qr_code.frame_type %}
+                            <div class="details-card bg-white/50 rounded-lg p-4 shadow-sm border border-gray-100">
+                                <h4 class="font-medium text-gray-900 mb-3 flex items-center">
+                                    <i class="fas fa-border-style text-primary-500 mr-2"></i> Frame
+                                </h4>
+                                <div class="space-y-2 text-sm">
+                                    <div class="bg-white/70 p-2 rounded-md flex items-center">
+                                        <i class="fas fa-border-all mr-2 text-gray-400"></i>
+                                        <p>Type: <span class="font-medium">{{ qr_code.frame_type|title }}</span></p>
+                                    </div>
+                                    {% if qr_code.frame_text %}
+                                    <div class="bg-white/70 p-2 rounded-md flex items-center">
+                                        <i class="fas fa-font mr-2 text-gray-400"></i>
+                                        <p>Text: <span class="font-medium">{{ qr_code.frame_text }}</span></p>
+                                    </div>
+                                    {% endif %}
+                                    {% if qr_code.frame_color %}
+                                    <div class="bg-white/70 p-2 rounded-md flex items-center">
+                                        <span class="color-preview" style="background-color: {{ qr_code.frame_color }};"></span>
+                                        <p>Frame Color: <span class="font-mono">{{ qr_code.frame_color }}</span></p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if qr_code.logo_path %}
+                            <div class="details-card bg-white/50 rounded-lg p-4 shadow-sm border border-gray-100">
+                                <h4 class="font-medium text-gray-900 mb-3 flex items-center">
+                                    <i class="fas fa-image text-primary-500 mr-2"></i> Logo
+                                </h4>
+                                <div class="flex items-center space-x-3">
+                                    <div class="bg-white p-2 border border-gray-200 rounded-md shadow-sm">
+                                        <img src="{{ url_for('static', filename=qr_code.logo_path) }}" alt="Logo" class="h-12 w-12 object-contain">
+                                    </div>
+                                    <div class="text-sm">
+                                        <p class="flex items-center mb-1">
+                                            <i class="fas fa-expand-arrows-alt mr-1 text-gray-400"></i>
+                                            Size: {{ qr_code.logo_size_percentage }}%
+                                        </p>
+                                        {% if qr_code.round_logo %}
+                                        <p class="flex items-center">
+                                            <i class="fas fa-circle mr-1 text-gray-400"></i>
+                                            Rounded corners
+                                        </p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Technical details -->
+                            <div class="details-card md:col-span-2 gradient-bg-light rounded-lg p-4 sm:p-5 shadow-sm border border-gray-100">
+                                <h4 class="font-medium text-gray-900 mb-3 flex items-center">
+                                    <i class="fas fa-cogs text-secondary-600 mr-2"></i> Technical Details
+                                </h4>
+                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                                    <div class="bg-white/80 p-3 rounded-md shadow-sm">
+                                        <p class="text-gray-500">QR Version</p>
+                                        <p class="font-medium text-gray-900 flex items-center">
+                                            <i class="fas fa-code-branch text-primary-400 mr-1"></i>
+                                            {{ qr_info.version }}
+                                        </p>
+                                    </div>
+                                    <div class="bg-white/80 p-3 rounded-md shadow-sm">
+                                        <p class="text-gray-500">Error Correction</p>
+                                        <p class="font-medium text-gray-900 flex items-center">
+                                            <i class="fas fa-shield-alt text-primary-400 mr-1"></i>
+                                            {{ qr_info.error_correction }}
+                                        </p>
+                                    </div>
+                                    <div class="bg-white/80 p-3 rounded-md shadow-sm">
+                                        <p class="text-gray-500">Module Size</p>
+                                        <p class="font-medium text-gray-900 flex items-center">
+                                            <i class="fas fa-th text-primary-400 mr-1"></i>
+                                            {{ qr_code.module_size }}
+                                        </p>
+                                    </div>
+                                    <div class="bg-white/80 p-3 rounded-md shadow-sm">
+                                        <p class="text-gray-500">Quiet Zone</p>
+                                        <p class="font-medium text-gray-900 flex items-center">
+                                            <i class="fas fa-expand text-primary-400 mr-1"></i>
+                                            {{ qr_code.quiet_zone }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Dynamic Settings Tab -->
+                    {% if qr_code.is_dynamic %}
+                    <div x-show="activeTab === 'dynamic'" x-transition class="p-4 sm:p-6 custom-scrollbar" style="max-height: 600px; overflow-y: auto;">
+                        <div class="bg-yellow-50 border border-yellow-100 rounded-lg p-4 mb-6">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 text-yellow-500">
+                                    <i class="fas fa-lightbulb"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <h3 class="text-sm font-medium text-yellow-800">Dynamic QR Code</h3>
+                                    <p class="mt-1 text-sm text-yellow-700">
+                                        This is a dynamic QR code, which means you can update its content without changing the QR code image.
+                                        Simply edit this QR code to modify where it redirects to.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-6">
+                            <div>
+                                <h4 class="font-medium text-gray-900 mb-2 flex items-center">
+                                    <i class="fas fa-chart-line text-secondary-600 mr-2"></i>
+                                    Tracking & Analytics
+                                </h4>
+                                <p class="text-sm text-gray-600 mb-3">
+                                    Each time your QR code is scanned, we record basic information to help you understand its performance.
+                                </p>
+                                {% if scans %}
+                                    <div class="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                                        <div class="px-4 py-3 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                                            <h5 class="text-sm font-medium text-gray-700">Recent Scans</h5>
+                                            <span class="text-xs text-gray-500">{{ scans|length }} total</span>
+                                        </div>
+                                        <ul class="divide-y divide-gray-200 max-h-60 overflow-auto custom-scrollbar">
+                                            {% set sorted_scans = scans|sort(attribute='timestamp', reverse=True) %}
+                                            {% for scan in sorted_scans %}
+                                                {% if loop.index <= 5 %}
+                                                    <li class="px-4 py-3 text-sm hover:bg-gray-50 transition-colors duration-200">
+                                                        <div class="flex justify-between">
+                                                            <span class="text-gray-900 font-medium">{{ scan.timestamp.strftime('%b %d, %Y') }}</span>
+                                                            <span class="text-gray-500">{{ scan.timestamp.strftime('%H:%M') }}</span>
+                                                        </div>
+                                                        <p class="text-gray-500 mt-1">
+                                                            {% if scan.location %}
+                                                                <span><i class="fas fa-map-marker-alt mr-1"></i> {{ scan.location }}</span>
+                                                            {% else %}
+                                                                <span><i class="fas fa-globe mr-1"></i> IP: {{ scan.ip_address }}</span>
+                                                            {% endif %}
+                                                        </p>
+                                                    </li>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </ul>
+                                        {% if scans|length > 5 %}
+                                            <div class="px-4 py-3 border-t border-gray-200 bg-gray-50 text-center">
+                                                <a href="{{ url_for('qr_analytics', qr_id=qr_code.unique_id) }}" class="text-sm text-secondary-600 hover:text-secondary-800 hover:underline flex items-center justify-center">
+                                                    View all {{ scans|length }} scans
+                                                    <i class="fas fa-arrow-right ml-1 text-xs"></i>
+                                                </a>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                {% else %}
+                                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+                                        <div class="w-16 h-16 mx-auto mb-3 bg-gray-100 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-search text-gray-400 text-xl"></i>
+                                        </div>
+                                        <p class="text-gray-500 mb-2">No scans recorded yet</p>
+                                        <p class="text-xs text-gray-400">When your QR code is scanned, data will appear here</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Additional options -->
+                <div class="mt-6 flex flex-wrap gap-3">
+                    <a href="{{ url_for('export_qr', qr_id=qr_code.unique_id, format='png') }}" class="py-3 sm:py-2 px-4 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-md text-sm font-medium transition-all duration-200 flex items-center hover:border-primary-300 hover:text-primary-700 shadow-sm">
+                        <i class="fas fa-file-export mr-2"></i> Export as PNG
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal - Mobile optimized -->
+<div id="delete-modal" class="fixed inset-0 flex items-center justify-center z-50 hidden modal">
+    <div class="modal-backdrop fixed inset-0 bg-black opacity-50 transition-opacity duration-300"></div>
+    <div class="modal-content bg-white rounded-lg w-[95%] max-w-md mx-auto z-50 overflow-hidden">
+        <div class="p-4 sm:p-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                <i class="fas fa-exclamation-triangle text-red-500 mr-2"></i>
+                Confirm Delete
+            </h3>
+            <p class="text-gray-500 mb-4">Are you sure you want to delete the QR code "{{ qr_code.name }}"? This action cannot be undone.</p>
+            <div class="flex flex-col sm:flex-row sm:justify-end space-y-2 sm:space-y-0 sm:space-x-3">
+                <button data-modal-close class="py-3 sm:py-2 px-4 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-md text-sm font-medium transition-all duration-200 w-full sm:w-auto">
+                    Cancel
+                </button>
+                <form action="{{ url_for('delete_qr', qr_id=qr_code.unique_id) }}" method="post" class="w-full sm:w-auto">
+                    <button type="submit" class="py-3 sm:py-2 px-4 bg-red-600 hover:bg-red-700 text-white rounded-md text-sm font-medium transition-all duration-200 w-full">
+                        Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Enhanced Share Modal - Mobile optimized -->
+<div id="share-modal" class="fixed inset-0 flex items-center justify-center z-50 hidden modal">
+    <div class="modal-backdrop fixed inset-0 bg-black opacity-50 transition-opacity duration-300"></div>
+    <div class="modal-content bg-white/95 backdrop-blur-xl rounded-xl w-[95%] max-w-md mx-auto z-50 overflow-hidden shadow-2xl border border-gray-100">
+        <!-- Header section with gradient background -->
+        <div class="bg-gradient-to-r from-primary-50 to-secondary-50 p-4 sm:p-5 border-b border-gray-100">
+            <div class="flex justify-between items-center">
+                <h3 class="text-xl font-semibold text-gray-900 flex items-center">
+                    <i class="fas fa-share-alt text-secondary-600 mr-3"></i>
+                    Share QR Code
+                </h3>
+                <button data-modal-close class="w-8 h-8 flex items-center justify-center rounded-full bg-white/80 hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors duration-200 shadow-sm">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <p class="text-gray-600 mt-2 text-sm">Share your QR code with others via link or social media</p>
+        </div>
+        
+        <div class="p-4 sm:p-6 overflow-y-auto max-h-[70vh]">
+            <!-- QR Code preview -->
+            <div class="mb-6 flex items-center justify-center">
+                <div class="relative p-3 bg-white rounded-lg shadow-md border border-gray-100 transition-all duration-300 hover:shadow-lg share-qr-preview">
+                    <img src="{{ qr_image }}" alt="{{ qr_code.name }}" class="w-32 h-32 object-contain">
+                    <div class="absolute -top-2 -right-2 bg-secondary-500 text-white text-xs px-2 py-1 rounded-full shadow-md">
+                        <i class="fas fa-qrcode mr-1"></i>{{ qr_code.qr_type|title }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- URL Share section -->
+            <div class="mb-6">
+                <label for="share-url" class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                    <i class="fas fa-link text-primary-500 mr-2"></i>QR Code Link
+                </label>
+                <div class="flex">
+                    <input type="text" id="share-url" value="{{ url_for('redirect_qr', qr_id=qr_code.unique_id, _external=True) }}" 
+                           class="flex-grow rounded-l-lg border border-gray-300 px-4 py-3 text-gray-900 text-sm focus:ring-2 focus:ring-secondary-500 focus:border-secondary-500 shadow-inner bg-white/80" readonly>
+                    <button id="copy-url-btn" onclick="copyToClipboard('share-url')" 
+                            class="bg-secondary-600 hover:bg-secondary-700 text-white px-4 rounded-r-lg transition-all duration-200 flex items-center font-medium">
+                        <i class="fas fa-copy mr-2"></i>
+                        <span>Copy</span>
+                    </button>
+                </div>
+                <p id="copy-feedback" class="mt-2 text-sm text-secondary-600 hidden">
+                    <i class="fas fa-check-circle mr-1"></i> Link copied to clipboard!
+                </p>
+            </div>
+            
+            <!-- Social sharing section - 2 columns on mobile -->
+            <div class="mb-6">
+                <h4 class="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                    <i class="fas fa-share-nodes text-primary-500 mr-2"></i>Share via
+                </h4>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <a href="https://wa.me/?text={{ url_for('redirect_qr', qr_id=qr_code.unique_id, _external=True)|urlencode }}" target="_blank" 
+                       class="share-option flex flex-col items-center p-4 border border-gray-200 rounded-lg bg-white hover:bg-green-50 hover:border-green-300 transition-all duration-200 shadow-sm hover:shadow group">
+                        <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center mb-2 group-hover:bg-green-200 transition-colors duration-200">
+                            <i class="fab fa-whatsapp text-green-600 text-xl"></i>
+                        </div>
+                        <span class="text-xs font-medium text-gray-700 group-hover:text-green-700">WhatsApp</span>
+                    </a>
+                    
+                    <a href="https://www.facebook.com/sharer/sharer.php?u={{ url_for('redirect_qr', qr_id=qr_code.unique_id, _external=True)|urlencode }}" target="_blank" 
+                       class="share-option flex flex-col items-center p-4 border border-gray-200 rounded-lg bg-white hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 shadow-sm hover:shadow group">
+                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mb-2 group-hover:bg-blue-200 transition-colors duration-200">
+                            <i class="fab fa-facebook text-blue-600 text-xl"></i>
+                        </div>
+                        <span class="text-xs font-medium text-gray-700 group-hover:text-blue-700">Facebook</span>
+                    </a>
+                    
+                    <a href="https://twitter.com/intent/tweet?url={{ url_for('redirect_qr', qr_id=qr_code.unique_id, _external=True)|urlencode }}" target="_blank" 
+                       class="share-option flex flex-col items-center p-4 border border-gray-200 rounded-lg bg-white hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 shadow-sm hover:shadow group">
+                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mb-2 group-hover:bg-blue-200 transition-colors duration-200">
+                            <i class="fab fa-twitter text-blue-400 text-xl"></i>
+                        </div>
+                        <span class="text-xs font-medium text-gray-700 group-hover:text-blue-700">Twitter</span>
+                    </a>
+                    
+                    <a href="mailto:?subject=Check out this QR code&body={{ url_for('redirect_qr', qr_id=qr_code.unique_id, _external=True)|urlencode }}" 
+                       class="share-option flex flex-col items-center p-4 border border-gray-200 rounded-lg bg-white hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 shadow-sm hover:shadow group">
+                        <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mb-2 group-hover:bg-gray-200 transition-colors duration-200">
+                            <i class="fas fa-envelope text-gray-600 text-xl"></i>
+                        </div>
+                        <span class="text-xs font-medium text-gray-700">Email</span>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Additional sharing options -->
+            <div class="space-y-3 mb-6">
+                <h4 class="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                    <i class="fas fa-plus-circle text-primary-500 mr-2"></i>More options
+                </h4>
+                
+                <button id="download-qr-btn" class="w-full flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all duration-200 group">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 rounded-full bg-secondary-100 flex items-center justify-center mr-3">
+                            <i class="fas fa-download text-secondary-600"></i>
+                        </div>
+                        <span class="text-sm font-medium text-gray-700">Download QR Code</span>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400 group-hover:text-secondary-500 group-hover:translate-x-1 transition-all duration-200"></i>
+                </button>
+                
+                <button id="embed-qr-btn" class="w-full flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all duration-200 group">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center mr-3">
+                            <i class="fas fa-code text-primary-600"></i>
+                        </div>
+                        <span class="text-sm font-medium text-gray-700">Embed on Website</span>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400 group-hover:text-primary-500 group-hover:translate-x-1 transition-all duration-200"></i>
+                </button>
+            </div>
+            
+            <!-- Mobile-friendly button layout -->
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
+                <a href="{{ url_for('download_qr', qr_id=qr_code.unique_id) }}" class="w-full sm:flex-1 py-3 sm:py-2.5 px-4 bg-secondary-600 hover:bg-secondary-700 text-white rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center shadow-sm mb-2 sm:mb-0">
+                    <i class="fas fa-download mr-2"></i> Save as Image
+                </a>
+                
+                <button data-modal-close class="w-full sm:flex-1 py-3 sm:py-2.5 px-4 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Copy to clipboard with enhanced feedback
+    function copyToClipboard(elementId) {
+        const element = document.getElementById(elementId);
+        const text = element.value || element.textContent;
+        const feedbackElement = document.getElementById('copy-feedback');
+        const copyButton = document.getElementById('copy-url-btn');
+        
+        navigator.clipboard.writeText(text).then(() => {
+            // Update button state
+            const originalButtonHTML = copyButton ? copyButton.innerHTML : null;
+            if (copyButton) {
+                copyButton.innerHTML = '<i class="fas fa-check mr-2"></i><span>Copied!</span>';
+                copyButton.classList.add('bg-green-600');
+            }
+            
+            // Show feedback message with animation or toast
+            if (feedbackElement) {
+                feedbackElement.classList.remove('hidden');
+                feedbackElement.style.animation = 'fadeInUp 0.3s forwards';
+            } else {
+                // Create and show toast notification
+                const toast = document.createElement('div');
+                toast.className = 'fixed top-4 right-4 bg-secondary-600 text-white px-4 py-2 rounded-md shadow-lg z-50 flex items-center';
+                toast.innerHTML = '<i class="fas fa-check-circle mr-2"></i> Copied to clipboard!';
+                document.body.appendChild(toast);
+                
+                // Animate the toast
+                toast.style.transform = 'translateY(-20px)';
+                toast.style.opacity = '0';
+                
+                setTimeout(() => {
+                    toast.style.transform = 'translateY(0)';
+                    toast.style.opacity = '1';
+                    toast.style.transition = 'all 0.3s ease';
+                }, 10);
+                
+                // Auto-remove after a delay
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    toast.style.transform = 'translateY(-20px)';
+                    setTimeout(() => toast.remove(), 300);
+                }, 2000);
+            }
+            
+            // Reset button after a delay
+            if (copyButton && originalButtonHTML) {
+                setTimeout(() => {
+                    copyButton.innerHTML = originalButtonHTML;
+                    copyButton.classList.remove('bg-green-600');
+                }, 2000);
+            }
+            
+            // Reset feedback after a delay
+            if (feedbackElement) {
+                setTimeout(() => {
+                    feedbackElement.style.animation = 'fadeOutDown 0.3s forwards';
+                    setTimeout(() => {
+                        feedbackElement.classList.add('hidden');
+                    }, 300);
+                }, 2000);
+            }
+        }).catch(err => {
+            // Handle errors
+            if (copyButton) {
+                const originalButtonHTML = copyButton.innerHTML;
+                copyButton.innerHTML = '<i class="fas fa-times mr-2"></i><span>Failed!</span>';
+                copyButton.classList.add('bg-red-600');
+                
+                setTimeout(() => {
+                    copyButton.innerHTML = originalButtonHTML;
+                    copyButton.classList.remove('bg-red-600');
+                }, 2000);
+            }
+            
+            console.error('Failed to copy text: ', err);
+        });
+    }
+    
+    // Toggle password visibility with animation
+    function togglePassword(elementId) {
+        const element = document.getElementById(elementId);
+        const isHidden = element.classList.contains('hidden');
+        
+        if (isHidden) {
+            element.classList.remove('hidden');
+            element.classList.add('animate-fade-in');
+            element.previousElementSibling.innerHTML = '<i class="fas fa-eye-slash mr-1"></i> Hide';
+        } else {
+            element.style.opacity = '0';
+            element.style.transition = 'opacity 0.3s ease';
+            setTimeout(() => {
+                element.classList.add('hidden');
+                element.style.opacity = '1';
+                element.previousElementSibling.innerHTML = '<i class="fas fa-eye mr-1"></i> Show';
+            }, 300);
+        }
+    }
+    
+    // Enhanced modal handling with animations
+    document.addEventListener('DOMContentLoaded', function() {
+        // Modal handling
+        const modals = document.querySelectorAll('.modal');
+        const deleteButtons = document.querySelectorAll('[data-modal-target="delete-modal"]');
+        const deleteModal = document.getElementById('delete-modal');
+        const shareButton = document.getElementById('share-qr-btn');
+        const shareModal = document.getElementById('share-modal');
+        const downloadQrBtn = document.getElementById('download-qr-btn');
+        const embedQrBtn = document.getElementById('embed-qr-btn');
+        
+        // Modal open/close animations
+        function openModal(modal) {
+            modal.classList.remove('hidden');
+            
+            // Get modal elements
+            const backdrop = modal.querySelector('.modal-backdrop');
+            const content = modal.querySelector('.modal-content');
+            
+            // Initial state
+            backdrop.style.opacity = '0';
+            content.style.opacity = '0';
+            content.style.transform = 'scale(0.95) translateY(10px)';
+            
+            // Trigger animations
+            setTimeout(() => {
+                backdrop.style.opacity = '0.5';
+                backdrop.style.transition = 'opacity 0.3s ease';
+                
+                content.style.opacity = '1';
+                content.style.transform = 'scale(1) translateY(0)';
+                content.style.transition = 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
+                
+                document.body.style.overflow = 'hidden'; // Prevent background scrolling
+            }, 10);
+        }
+        
+        function closeModal(modal) {
+            const backdrop = modal.querySelector('.modal-backdrop');
+            const content = modal.querySelector('.modal-content');
+            
+            // Animation for closing
+            backdrop.style.opacity = '0';
+            content.style.opacity = '0';
+            content.style.transform = 'scale(0.95) translateY(10px)';
+            
+            // Hide modal after animation completes
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                document.body.style.overflow = ''; // Restore scrolling
+            }, 300);
+        }
+        
+        function closeAllModals() {
+            modals.forEach(modal => {
+                closeModal(modal);
+            });
+        }
+        
+        // Set up buttons to open modals
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                openModal(deleteModal);
+            });
+        });
+        
+        if (shareButton) {
+            shareButton.addEventListener('click', () => {
+                openModal(shareModal);
+            });
+        }
+        
+        // Close buttons
+        const closeButtons = document.querySelectorAll('[data-modal-close]');
+        closeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const modal = button.closest('.modal');
+                closeModal(modal);
+            });
+        });
+        
+        // Close on backdrop click
+        modals.forEach(modal => {
+            const backdrop = modal.querySelector('.modal-backdrop');
+            backdrop.addEventListener('click', () => {
+                closeModal(modal);
+            });
+        });
+        
+        // Close on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeAllModals();
+        });
+        
+        // Handle additional buttons in share modal
+        if (downloadQrBtn) {
+            downloadQrBtn.addEventListener('click', () => {
+                window.location.href = "{{ url_for('download_qr', qr_id=qr_code.unique_id) }}";
+            });
+        }
+        
+        if (embedQrBtn) {
+            embedQrBtn.addEventListener('click', () => {
+                // Show embed code section (toggle if visible)
+                const embedSection = document.getElementById('embed-code-section');
+                if (embedSection) {
+                    embedSection.classList.toggle('hidden');
+                } else {
+                    // Create embed section dynamically
+                    const embedHTML = `
+                    <div id="embed-code-section" class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200 animate-fade-in">
+                        <h5 class="text-sm font-medium text-gray-700 mb-2">Embed Code</h5>
+                        <div class="relative">
+                            <textarea id="embed-code" rows="3" class="w-full p-3 text-sm font-mono bg-white border border-gray-300 rounded-md shadow-inner" readonly><img src="{{ url_for('redirect_qr', qr_id=qr_code.unique_id, _external=True) }}" alt="QR Code: {{ qr_code.name }}" width="200" height="200"></textarea>
+                            <button onclick="copyToClipboard('embed-code')" class="absolute top-2 right-2 bg-gray-200 hover:bg-gray-300 text-gray-700 p-1 rounded copy-button">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <p class="mt-2 text-xs text-gray-500">Copy this code and paste it into your website HTML.</p>
+                    </div>`;
+                    
+                    // Insert after the embed button
+                    embedQrBtn.insertAdjacentHTML('afterend', embedHTML);
+                }
+            });
+        }
+        
+        // Check for Web Share API support and use native sharing if available
+        if (navigator.share) {
+            shareButton.addEventListener('click', async (e) => {
+                e.preventDefault();
+                
+                try {
+                    await navigator.share({
+                        title: 'QR Code: {{ qr_code.name }}',
+                        text: 'Check out this QR code',
+                        url: '{{ url_for("redirect_qr", qr_id=qr_code.unique_id, _external=True) }}'
+                    });
+                    // Success - don't show the modal
+                } catch (error) {
+                    // User cancelled or share failed - show the modal
+                    openModal(shareModal);
+                }
+            });
+        }
+        
+        // Mobile-specific optimizations
+        const isMobile = window.innerWidth < 640;
+        
+        if (isMobile) {
+            // Add touch feedback for all buttons
+            const buttons = document.querySelectorAll('button, .btn-primary, [class*="btn-"]');
+            
+            buttons.forEach(button => {
+                button.addEventListener('touchstart', function() {
+                    this.style.transform = 'scale(0.98)';
+                });
+                
+                button.addEventListener('touchend', function() {
+                    this.style.transform = 'scale(1)';
+                });
+            });
+            
+            // Optimize modals for mobile
+            modals.forEach(modal => {
+                // Allow scrolling inside modal content but not on background
+                const modalContent = modal.querySelector('.modal-content');
+                
+                if (modalContent) {
+                    modalContent.addEventListener('touchmove', function(e) {
+                        e.stopPropagation();
+                    });
+                }
+            });
+            
+            // Handle iOS keyboard appearance
+            const inputs = document.querySelectorAll('input, textarea');
+            
+            inputs.forEach(input => {
+                input.addEventListener('focus', function() {
+                    document.body.classList.add('keyboard-open');
+                    // Add bottom padding when keyboard appears
+                    document.body.style.paddingBottom = '40vh';
+                });
+                
+                input.addEventListener('blur', function() {
+                    document.body.classList.remove('keyboard-open');
+                    document.body.style.paddingBottom = '';
+                });
+            });
+        }
+    });
+</script>
+{% endblock %}

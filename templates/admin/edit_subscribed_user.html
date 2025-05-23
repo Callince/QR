@@ -1,0 +1,173 @@
+{% extends 'admin/base.html' %}
+
+{% block title %}Edit User Subscription{% endblock %}
+
+{% block page_title %}Edit User Subscription{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="header-container mb-4">
+        <h1>
+            <i class="fas fa-user-edit me-2 text-primary"></i>
+            Edit User Subscription
+        </h1>
+    </div>
+    
+    <div class="action-buttons mb-4">
+        <a href="{{ url_for('admin.admin_subscribed_users') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to User Subscriptions
+        </a>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-pen-to-square me-2"></i> Subscription Details
+        </div>
+        <div class="card-body">
+            <form action="{{ url_for('admin.admin_edit_subscribed_user', id=subscribed_user.id) }}" method="POST">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">User Information</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                <input type="text" class="form-control" value="{{ user.name }} ({{ user.company_email }})" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="subscription_id" class="form-label">Subscription Plan</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-tag"></i></span>
+                                <select class="form-select" id="subscription_id" name="subscription_id" required>
+                                    {% for subscription in subscriptions %}
+                                    <option value="{{ subscription.S_ID }}" {% if subscription.S_ID == subscribed_user.S_ID %}selected{% endif %}>
+                                        {{ subscription.plan }} - ₹{{ subscription.price }} ({{ subscription.days }} days)
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="start_date" class="form-label">Start Date</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                                <input type="date" class="form-control" id="start_date" name="start_date" value="{{ subscribed_user.start_date.strftime('%Y-%m-%d') if subscribed_user.start_date else '' }}" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="end_date" class="form-label">End Date</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-calendar-check"></i></span>
+                                <input type="date" class="form-control" id="end_date" name="end_date" value="{{ subscribed_user.end_date.strftime('%Y-%m-%d') if subscribed_user.end_date else '' }}" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="current_usage" class="form-label">Current Daily Usage</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-chart-line"></i></span>
+                                <input type="number" class="form-control" id="current_usage" name="current_usage" value="{{ subscribed_user.current_usage }}" min="0" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="analytics_used" class="form-label">Analytics Usage</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-chart-bar"></i></span>
+                                <input type="number" class="form-control" id="analytics_used" name="analytics_used" value="{{ subscribed_user.analytics_used }}" min="0">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="qr_generated" class="form-label">QR Codes Generated</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-qrcode"></i></span>
+                                <input type="number" class="form-control" id="qr_generated" name="qr_generated" value="{{ subscribed_user.qr_generated }}" min="0">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Auto-renew checkbox -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" id="auto_renew" name="auto_renew" {% if subscribed_user.is_auto_renew %}checked{% endif %}>
+                            <label class="form-check-label" for="auto_renew">
+                                <i class="fas fa-sync-alt me-2 text-primary"></i>Enable Auto-Renewal
+                            </label>
+                            <div class="form-text">Subscription will automatically renew when it expires</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('admin.admin_subscribed_users') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to List
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Update Subscription
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add animation to the card
+    const card = document.querySelector('.card');
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(20px)';
+    card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+    
+    setTimeout(() => {
+        card.style.opacity = '1';
+        card.style.transform = 'translateY(0)';
+    }, 100);
+    
+    // Add select2 for better dropdowns if available
+    if (typeof $.fn.select2 !== 'undefined') {
+        $('#subscription_id').select2({
+            width: '100%'
+        });
+    }
+    
+    // Update the subscription details when plan changes
+    $('#subscription_id').on('change', function() {
+        // This would ideally fetch the plan details via AJAX
+        // For now, we'll just alert the user about the change
+        const planName = $(this).find('option:selected').text();
+        if (confirm('Changing the subscription plan to ' + planName + ' will update the features available to this user. Continue?')) {
+            // Additional logic could be added here
+        }
+    });
+});
+</script>
+{% endblock %}

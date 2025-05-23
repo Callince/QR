@@ -1,0 +1,801 @@
+{% extends "admin/base.html" %}
+
+{% block title %}User Details - {{ user.username }}{% endblock %}
+
+{% block page_title %}User Details: {{ user.username }}{% endblock %}
+
+{% block content %}
+<style>
+    /* QR Type badges */
+    .qr-type-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        line-height: 1;
+        text-align: center;
+        white-space: nowrap;
+        vertical-align: baseline;
+        border-radius: 0.375rem;
+    }
+    
+    /* Tab styling */
+    .nav-tabs .nav-link {
+        color: #495057;
+        border: 1px solid transparent;
+        border-top-left-radius: .25rem;
+        border-top-right-radius: .25rem;
+    }
+    
+    .nav-tabs .nav-link:hover {
+        border-color: #e9ecef #e9ecef #dee2e6;
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: #495057;
+        background-color: #fff;
+        border-color: #dee2e6 #dee2e6 #fff;
+    }
+    
+    /* QR preview styling */
+    .qr-preview {
+        width: 60px;
+        height: 60px;
+        object-fit: contain;
+    }
+</style>
+
+<div class="container-fluid">
+    <!-- User Information Card -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-user me-2"></i>User Information</h5>
+            <a href="{{ url_for('admin.admin_users') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Back to Users
+            </a>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th style="width: 150px;">User ID:</th>
+                            <td>{{ user.id }}</td>
+                        </tr>
+                        <tr>
+                            <th>Username:</th>
+                            <td>{{ user.name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Email:</th>
+                            <td>{{ user.company_email }}</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th style="width: 150px;">Account Created:</th>
+                            <td>{{ user.created_at.strftime('%B %d, %Y') }}</td>
+                        </tr>
+                        <tr>
+                            <th>Account Status:</th>
+                            <td>
+                                {% if user.is_active %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-danger">Inactive</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Role:</th>
+                            <td>
+                                {% if user.is_admin %}
+                                <span class="badge bg-primary">Admin</span>
+                                {% else %}
+                                <span class="badge bg-secondary">User</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            <div class="mt-3">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editUserModal">
+                    <i class="fas fa-edit me-1"></i> Edit User
+                </button>
+                {% if user.is_active %}
+                <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#deactivateUserModal">
+                    <i class="fas fa-user-slash me-1"></i> Deactivate Account
+                </button>
+                {% else %}
+                <a href="#" class="btn btn-success">
+                    <i class="fas fa-user-check me-1"></i> Activate Account
+                </a>
+                {% endif %}
+                <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#resetPasswordModal">
+                    <i class="fas fa-key me-1"></i> Reset Password
+                </button>
+                <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#removeUserModal">
+                    <i class="fas fa-trash me-1"></i> Remove User
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Nav tabs for subscription, payment history, and QR usage -->
+    <ul class="nav nav-tabs mb-4" id="userDataTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="subscriptions-tab" data-bs-toggle="tab" data-bs-target="#subscriptions" type="button" role="tab" aria-controls="subscriptions" aria-selected="true">
+                <i class="fas fa-tag me-1"></i> Subscription History
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="payments-tab" data-bs-toggle="tab" data-bs-target="#payments" type="button" role="tab" aria-controls="payments" aria-selected="false">
+                <i class="fas fa-credit-card me-1"></i> Payment History
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="qr-usage-tab" data-bs-toggle="tab" data-bs-target="#qr-usage" type="button" role="tab" aria-controls="qr-usage" aria-selected="false">
+                <i class="fas fa-qrcode me-1"></i> QR Usage
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab content -->
+    <div class="tab-content" id="userDataTabContent">
+        <!-- Subscription Tab -->
+        <div class="tab-pane fade show active" id="subscriptions" role="tabpanel" aria-labelledby="subscriptions-tab">
+            <div class="d-flex justify-content-end mb-3">
+                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addSubscriptionModal">
+                    <i class="fas fa-plus me-1"></i> Add Subscription
+                </button>
+            </div>
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Plan</th>
+                        <th>Price</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sub_user, sub_plan in subscriptions %}
+                    <tr>
+                        <td>{{ sub_plan.plan }}</td>
+                        <td>₹{{ sub_plan.price }}</td>
+                        <td>{{ sub_user.start_date.strftime('%b %d, %Y') }}</td>
+                        <td>{{ sub_user.end_date.strftime('%b %d, %Y') }}</td>
+                        <td>
+                            {% if sub_user.is_active %}
+                            <span class="badge bg-success">Active</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Expired</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#viewSubDetailsModal{{ sub_user.id }}">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Payment Tab -->
+        <div class="tab-pane fade" id="payments" role="tabpanel" aria-labelledby="payments-tab">
+            <div class="d-flex justify-content-end mb-3">
+                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addPaymentModal">
+                    <i class="fas fa-plus me-1"></i> Record Payment
+                </button>
+            </div>
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Date</th>
+                        <th>Subscription</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Payment Type</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment, sub_plan in payments %}
+                    <tr>
+                        <td>{{ payment.razorpay_order_id }}</td>
+                        <td>{{ payment.created_at.strftime('%b %d, %Y') }}</td>
+                        <td>{{ sub_plan.plan }}</td>
+                        <td>₹{{ payment.amount }}</td>
+                        <td>
+                            {% if payment.status == 'captured' %}
+                            <span class="badge bg-success">Captured</span>
+                            {% elif payment.status == 'created' %}
+                            <span class="badge bg-warning">Created</span>
+                            {% elif payment.status == 'authorized' %}
+                            <span class="badge bg-info">Authorized</span>
+                            {% elif payment.status == 'failed' %}
+                            <span class="badge bg-danger">Failed</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ payment.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ payment.payment_type }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#viewPaymentModal{{ payment.id }}">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- QR Usage Tab -->
+        <div class="tab-pane fade" id="qr-usage" role="tabpanel" aria-labelledby="qr-usage-tab">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0">Total QR Codes: {{ user_qr_codes|length }}</h6>
+                <div>
+                    <select class="form-select form-select-sm" id="qr-filter" style="width: 200px;">
+                        <option value="all">All Types</option>
+                        <option value="link">URL</option>
+                        <option value="email">Email</option>
+                        <option value="text">Text</option>
+                        <option value="call">Call</option>
+                        <option value="sms">SMS</option>
+                        <option value="whatsapp">WhatsApp</option>
+                        <option value="wifi">WiFi</option>
+                        <option value="vcard">vCard</option>
+                        <option value="event">Event</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>QR Code</th>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Scans</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="qr-table-body">
+                        {% if user_qr_codes %}
+                            {% for qr in user_qr_codes %}
+                            <tr data-type="{{ qr.qr_type }}">
+                                <td>
+                                    <img src="{{ url_for('preview_qr') }}?qr_type={{ qr.qr_type }}&color={{ qr.color|urlencode }}&background_color={{ qr.background_color|urlencode }}&shape={{ qr.shape }}&module_size={{ qr.module_size }}&id={{ qr.unique_id }}" 
+                                        alt="{{ qr.name }}" class="qr-preview">
+                                </td>
+                                <td>{{ qr.name }}</td>
+                                <td>
+                                    <span class="qr-type-badge 
+                                        {% if qr.qr_type == 'link' %}bg-primary text-white
+                                        {% elif qr.qr_type == 'email' %}bg-info text-white
+                                        {% elif qr.qr_type == 'text' %}bg-secondary text-white
+                                        {% elif qr.qr_type == 'call' %}bg-success text-white
+                                        {% elif qr.qr_type == 'sms' %}bg-warning text-dark
+                                        {% elif qr.qr_type == 'whatsapp' %}bg-success text-white
+                                        {% elif qr.qr_type == 'wifi' %}bg-warning text-dark
+                                        {% elif qr.qr_type == 'vcard' %}bg-danger text-white
+                                        {% elif qr.qr_type == 'event' %}bg-dark text-white
+                                        {% else %}bg-secondary text-white{% endif %}">
+                                        {{ qr.qr_type|upper }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if qr.is_dynamic %}
+                                    <span class="badge bg-success">Dynamic</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Static</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ qr.created_at.strftime('%Y-%m-%d') }}</td>
+                                <td>
+                                    {% if qr.is_dynamic %}
+                                        <span class="badge bg-info">{{ qr.scan_count|default(0) }}</span>
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('view_qr', qr_id=qr.unique_id) }}" class="btn btn-sm btn-outline-info" target="_blank" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('qr_analytics', qr_id=qr.unique_id) }}" class="btn btn-sm btn-outline-primary" target="_blank" title="Analytics">
+                                        <i class="fas fa-chart-bar"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted">No QR codes found for this user</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editUserModalLabel">Edit User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="{{ url_for('admin.admin_edit_user', user_id=user.id) }}" method="post">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Name</label>
+                            <input type="text" class="form-control" id="name" name="name" value="{{ user.name }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="company_email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="company_email" name="company_email" value="{{ user.company_email }}" required>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="email_confirmed" name="email_confirmed" {% if user.email_confirmed %}checked{% endif %}>
+                            <label class="form-check-label" for="email_confirmed">Account Active</label>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="is_admin" name="is_admin" {% if user.is_admin %}checked{% endif %}>
+                            <label class="form-check-label" for="is_admin">Admin Privileges</label>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Update User</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Password Modal -->
+    <div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-labelledby="resetPasswordModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="resetPasswordModalLabel">Reset User Password</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> This will generate a new random password for the user.
+                    </div>
+                    <p><strong>Username:</strong> {{ user.name }}</p>
+                    <p><strong>Email:</strong> {{ user.company_email }}</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form action="{{ url_for('admin.admin_reset_user_password', user_id=user.id) }}" method="post">
+                        <button type="submit" class="btn btn-primary">Reset Password</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deactivate User Modal -->
+    <div class="modal fade" id="deactivateUserModal" tabindex="-1" aria-labelledby="deactivateUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deactivateUserModalLabel">Deactivate User Account</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i> Are you sure you want to deactivate this user account? This will prevent the user from logging in.
+                    </div>
+                    <p><strong>Username:</strong> {{ user.name }}</p>
+                    <p><strong>Email:</strong> {{ user.company_email }}</p>
+                    <form id="deactivateForm" action="{{ url_for('admin.admin_edit_user', user_id=user.id) }}" method="post">
+                        <input type="hidden" name="name" value="{{ user.name }}">
+                        <input type="hidden" name="company_email" value="{{ user.company_email }}">
+                        <input type="hidden" name="is_admin" value="{% if user.is_admin %}on{% endif %}">
+                        <!-- Do not include email_confirmed to deactivate account -->
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" form="deactivateForm" class="btn btn-warning">Deactivate Account</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Remove User Modal -->
+    <div class="modal fade" id="removeUserModal" tabindex="-1" aria-labelledby="removeUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="removeUserModalLabel">Remove User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i> <strong>Warning!</strong> This action cannot be undone. All user data will be permanently deleted.
+                    </div>
+                    <p><strong>Username:</strong> {{ user.name }}</p>
+                    <p><strong>Email:</strong> {{ user.company_email }}</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form action="{{ url_for('admin.remove_user', user_id=user.id) }}" method="post">
+                        <button type="submit" class="btn btn-danger">Delete User</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Subscription Modal -->
+    <div class="modal fade" id="addSubscriptionModal" tabindex="-1" aria-labelledby="addSubscriptionModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addSubscriptionModalLabel">Add Subscription</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <form action="{{ url_for('admin.admin_edit_subscription', id=user.id) }}" method="post">
+                        <div class="mb-3">
+                            <label for="subscription_plan" class="form-label">Subscription Plan</label>
+                            <select class="form-select" id="subscription_plan" name="subscription_id" required>
+                                <option value="" selected disabled>Select a plan</option>
+                                <!-- Dynamically populate with subscription plans -->
+                                {% for subscription in subscription_plans %}
+                                <option value="{{ subscription.S_ID }}">{{ subscription.plan }} - ₹{{ subscription.price }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="start_date" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="end_date" class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date" required>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="is_auto_renew" name="is_auto_renew" checked>
+                            <label class="form-check-label" for="is_auto_renew">Auto Renew</label>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success">Add Subscription</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Payment Modal -->
+    <div class="modal fade" id="addPaymentModal" tabindex="-1" aria-labelledby="addPaymentModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addPaymentModalLabel">Record Payment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <form action="{{ url_for('admin.admin_payments', user_id=user.id) }}" method="post">
+                        <div class="mb-3">
+                            <label for="subscription_id" class="form-label">Subscription Plan</label>
+                            <select class="form-select" id="subscription_id" name="subscription_id" required>
+                                <option value="" selected disabled>Select a plan</option>
+                                <!-- Dynamically populate with subscription plans -->
+                                {% for subscription in subscription_plans %}
+                                <option value="{{ subscription.S_ID }}">{{ subscription.plan }} - ₹{{ subscription.price }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="amount" class="form-label">Amount</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                <input type="number" step="0.01" class="form-control" id="amount" name="amount" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="razorpay_order_id" class="form-label">Razorpay Order ID</label>
+                            <input type="text" class="form-control" id="razorpay_order_id" name="razorpay_order_id" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="razorpay_payment_id" class="form-label">Razorpay Payment ID</label>
+                            <input type="text" class="form-control" id="razorpay_payment_id" name="razorpay_payment_id">
+                        </div>
+                        <div class="mb-3">
+                            <label for="payment_type" class="form-label">Payment Type</label>
+                            <select class="form-select" id="payment_type" name="payment_type" required>
+                                <option value="new">New Subscription</option>
+                                <option value="upgrade">Upgrade</option>
+                                <option value="downgrade">Downgrade</option>
+                                <option value="renewal">Renewal</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status" required>
+                                <option value="created">Created</option>
+                                <option value="authorized">Authorized</option>
+                                <option value="captured">Captured</option>
+                                <option value="failed">Failed</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="previous_subscription_id" class="form-label">Previous Subscription (for upgrades/downgrades)</label>
+                            <select class="form-select" id="previous_subscription_id" name="previous_subscription_id">
+                                <option value="" selected>None</option>
+                                {% for subscription in subscription_plans %}
+                                <option value="{{ subscription.S_ID }}">{{ subscription.plan }} - ₹{{ subscription.price }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="credit_applied" class="form-label">Credit Applied</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                <input type="number" step="0.01" class="form-control" id="credit_applied" name="credit_applied" value="0.00">
+                            </div>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success">Record Payment</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Subscription Details Modals -->
+    {% for sub_user, sub_plan in subscriptions %}
+    <div class="modal fade" id="viewSubDetailsModal{{ sub_user.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Subscription Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <table class="table">
+                        <tr>
+                            <th>Plan Name:</th>
+                            <td>{{ sub_plan.plan }}</td>
+                        </tr>
+                        <tr>
+                            <th>Price:</th>
+                            <td>₹{{ sub_plan.price }}</td>
+                        </tr>
+                        <tr>
+                            <th>Start Date:</th>
+                            <td>{{ sub_user.start_date.strftime('%B %d, %Y') }}</td>
+                        </tr>
+                        <tr>
+                            <th>End Date:</th>
+                            <td>{{ sub_user.end_date.strftime('%B %d, %Y') }}</td>
+                        </tr>
+                        <tr>
+                            <th>Days Remaining:</th>
+                            <td>{{ sub_user.days_remaining }} days</td>
+                        </tr>
+                        <tr>
+                            <th>Auto Renew:</th>
+                            <td>
+                                {% if sub_user.is_auto_renew %}
+                                <span class="badge bg-success">Enabled</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Disabled</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Status:</th>
+                            <td>
+                                {% if sub_user.is_active %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Expired</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Daily Usage:</th>
+                            <td>
+                                <div class="progress">
+                                    <div class="progress-bar" role="progressbar" style="width: {{ sub_user.daily_usage_percent }}%;" 
+                                         aria-valuenow="{{ sub_user.daily_usage_percent }}" aria-valuemin="0" aria-valuemax="100">
+                                        {{ sub_user.current_usage }}/{{ sub_user.subscription.usage_per_day }}
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    {% if sub_user.is_active %}
+                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#cancelSubModal{{ sub_user.id }}">Cancel Subscription</button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    
+    <!-- Payment Details Modals -->
+    {% for payment, sub_plan in payments %}
+    <div class="modal fade" id="viewPaymentModal{{ payment.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Payment Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <table class="table">
+                        <tr>
+                            <th>Razorpay Order ID:</th>
+                            <td>{{ payment.razorpay_order_id }}</td>
+                        </tr>
+                        <tr>
+                            <th>Razorpay Payment ID:</th>
+                            <td>{{ payment.razorpay_payment_id if payment.razorpay_payment_id else 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Date:</th>
+                            <td>{{ payment.created_at.strftime('%B %d, %Y %H:%M') }}</td>
+                        </tr>
+                        <tr>
+                            <th>Subscription:</th>
+                            <td>{{ sub_plan.plan }}</td>
+                        </tr>
+                        <tr>
+                            <th>Amount:</th>
+                            <td>₹{{ payment.amount }}</td>
+                        </tr>
+                        <tr>
+                            <th>Credit Applied:</th>
+                            <td>₹{{ payment.credit_applied }}</td>
+                        </tr>
+                        <tr>
+                            <th>Payment Type:</th>
+                            <td>{{ payment.payment_type|capitalize }}</td>
+                        </tr>
+                        <tr>
+                            <th>Status:</th>
+                            <td>
+                                {% if payment.status == 'captured' %}
+                                <span class="badge bg-success">Captured</span>
+                                {% elif payment.status == 'created' %}
+                                <span class="badge bg-warning">Created</span>
+                                {% elif payment.status == 'authorized' %}
+                                <span class="badge bg-info">Authorized</span>
+                                {% elif payment.status == 'failed' %}
+                                <span class="badge bg-danger">Failed</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ payment.status }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% if payment.previous_subscription_id %}
+                        <tr>
+                            <th>Previous Plan:</th>
+                            <td>{{ payment.previous_subscription.plan }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    {% if payment.status != 'captured' %}
+                    <!-- And change it to: -->
+                      <a href="{{ url_for('admin.admin_update_payment', payment_id=payment.id, status='captured', order_id=payment.razorpay_order_id) }}" class="btn btn-success">Mark as Captured</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <!-- Cancel Subscription Modals -->
+    {% for sub_user, sub_plan in subscriptions %}
+    {% if sub_user.is_active %}
+    <div class="modal fade" id="cancelSubModal{{ sub_user.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Cancel Subscription</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i> Are you sure you want to cancel this subscription?
+                    </div>
+                    <p><strong>Plan:</strong> {{ sub_plan.plan }}</p>
+                    <p><strong>End Date:</strong> {{ sub_user.end_date.strftime('%B %d, %Y') }}</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <form action="{{ url_for('admin.admin_subscribed_users', id=sub_user.id) }}" method="post">
+                      <button type="submit" class="btn btn-danger">Cancel Subscription</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize date inputs with current date
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set default dates for the subscription form
+        const today = new Date();
+        const startDateInput = document.getElementById('start_date');
+        if (startDateInput) {
+            startDateInput.valueAsDate = today;
+        }
+        
+        // Set default end date to 1 month from today
+        const endDate = new Date();
+        endDate.setMonth(endDate.getMonth() + 1);
+        const endDateInput = document.getElementById('end_date');
+        if (endDateInput) {
+            endDateInput.valueAsDate = endDate;
+        }
+        
+        // QR Code filtering
+        const qrFilter = document.getElementById('qr-filter');
+        const qrTableBody = document.getElementById('qr-table-body');
+        
+        if (qrFilter && qrTableBody) {
+            qrFilter.addEventListener('change', function() {
+                const filterValue = this.value;
+                const rows = qrTableBody.querySelectorAll('tr[data-type]');
+                
+                rows.forEach(row => {
+                    if (filterValue === 'all' || row.dataset.type === filterValue) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+                
+                // Show no results message if all rows are hidden
+                const visibleRows = qrTableBody.querySelectorAll('tr[data-type]:not([style*="display: none"])');
+                const noResultsRow = qrTableBody.querySelector('tr:not([data-type])');
+                
+                if (visibleRows.length === 0 && !noResultsRow) {
+                    const newRow = document.createElement('tr');
+                    newRow.innerHTML = '<td colspan="7" class="text-center text-muted">No QR codes found for selected type</td>';
+                    qrTableBody.appendChild(newRow);
+                } else if (visibleRows.length > 0 && noResultsRow) {
+                    noResultsRow.remove();
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

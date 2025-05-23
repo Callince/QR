@@ -1,0 +1,197 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Add New Subscription Plan{% endblock %}
+
+{% block page_title %}Add New Subscription Plan{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="header-container mb-4">
+        <h1>
+            <i class="fas fa-tag me-2 text-primary"></i>
+            Add New Subscription Plan
+        </h1>
+    </div>
+    
+    <div class="action-buttons mb-4">
+        <a href="{{ url_for('admin.admin_subscriptions') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Subscription Plans
+        </a>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-plus-circle me-2"></i> Plan Details
+        </div>
+        <div class="card-body">
+            <form action="{{ url_for('admin.admin_new_subscription') }}" method="POST">
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <label for="plan" class="form-label">
+                            <i class="fas fa-tag me-2 text-primary"></i>Plan Name
+                        </label>
+                        <input type="text" class="form-control" id="plan" name="plan" placeholder="Enter plan name" required>
+                    </div>
+                    
+                    <div class="col-md-6 mb-4">
+                        <label for="price" class="form-label">
+                            <i class="fas fa-rupee-sign me-2 text-primary"></i>Price
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text">₹</span>
+                            <input type="number" class="form-control" id="price" name="price" step="0.01" min="0" placeholder="0.00" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <label for="days" class="form-label">
+                            <i class="fas fa-calendar-alt me-2 text-primary"></i>Duration (days)
+                        </label>
+                        <input type="number" class="form-control" id="days" name="days" min="1" placeholder="Enter number of days" required>
+                    </div>
+                    
+                    <div class="col-md-6 mb-4">
+                        <label for="tier" class="form-label">
+                            <i class="fas fa-layer-group me-2 text-primary"></i>Tier Level
+                        </label>
+                        <input type="number" class="form-control" id="tier" name="tier" min="1" placeholder="Enter tier level" required>
+                    </div>
+                </div>
+                
+                <!-- New Fields for analytics, qr_count, and design -->
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <label for="analytics" class="form-label">
+                            <i class="fas fa-chart-line me-2 text-primary"></i>Analytics Count
+                        </label>
+                        <input type="number" class="form-control" id="analytics" name="analytics" min="0" placeholder="Enter analytics count" required>
+                        <div class="form-text">Maximum number of analytics operations allowed for this plan</div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-4">
+                        <label for="qr_count" class="form-label">
+                            <i class="fas fa-qrcode me-2 text-primary"></i>QR Code Limit
+                        </label>
+                        <input type="number" class="form-control" id="qr_count" name="qr_count" min="0" placeholder="Enter QR code limit" required>
+                        <div class="form-text">Maximum number of QR codes that can be generated</div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-12 mb-4">
+                        <label for="design" class="form-label">
+                            <i class="fas fa-palette me-2 text-primary"></i>Allowed Designs
+                        </label>
+                        <input type="text" class="form-control" id="design" name="design" placeholder="Enter comma-separated design names">
+                        <div class="form-text">Enter design names separated by commas (e.g., "modern,corporate,playful")</div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <label for="plan_type" class="form-label">
+                            <i class="fas fa-cogs me-2 text-primary"></i>Plan Type
+                        </label>
+                        <select class="form-select" id="plan_type" name="plan_type" required>
+                            <option value="" disabled selected>Select plan type</option>
+                            <option value="normal">Normal</option>
+                            <option value="dynamic">Dynamic</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6 mb-4">
+                        <label for="features" class="form-label">
+                            <i class="fas fa-list me-2 text-primary"></i>Features (Optional)
+                        </label>
+                        <input type="text" class="form-control" id="features" name="features" placeholder="Enter features as JSON">
+                        <div class="form-text">Example: {"feature1": true, "feature2": false}</div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
+                            <label class="form-check-label" for="is_active">
+                                <i class="fas fa-toggle-on me-2 text-success"></i>Make plan active immediately
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{{ url_for('admin.admin_subscriptions') }}" class="btn btn-outline-secondary me-md-2">
+                        <i class="fas fa-times me-1"></i> Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> Create Plan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        // Add fade-in effect to the card
+        const card = document.querySelector('.card');
+        card.style.opacity = '0';
+        card.style.transition = 'opacity 0.5s ease';
+        
+        setTimeout(() => {
+            card.style.opacity = '1';
+        }, 100);
+        
+        // Validate JSON in features field
+        const featuresInput = document.getElementById('features');
+        featuresInput.addEventListener('blur', function() {
+            const value = this.value.trim();
+            if (value) {
+                try {
+                    JSON.parse(value);
+                    this.classList.remove('is-invalid');
+                    this.classList.add('is-valid');
+                } catch (e) {
+                    this.classList.remove('is-valid');
+                    this.classList.add('is-invalid');
+                    
+                    // Add or update feedback message
+                    let feedback = this.nextElementSibling;
+                    if (!feedback || !feedback.classList.contains('invalid-feedback')) {
+                        feedback = document.createElement('div');
+                        feedback.classList.add('invalid-feedback');
+                        this.parentNode.appendChild(feedback);
+                    }
+                    feedback.textContent = 'Please enter valid JSON format';
+                }
+            } else {
+                this.classList.remove('is-valid');
+                this.classList.remove('is-invalid');
+            }
+        });
+        
+        // Add form validation
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(event) {
+            const featuresInput = document.getElementById('features');
+            const value = featuresInput.value.trim();
+            
+            if (value) {
+                try {
+                    JSON.parse(value);
+                } catch (e) {
+                    event.preventDefault();
+                    alert('Please enter valid JSON in the Features field');
+                    featuresInput.focus();
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

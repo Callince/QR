@@ -1,0 +1,540 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Subscribed Users{% endblock %}
+
+{% block page_title %}Subscribed Users{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('admin.admin_dashboard') }}">Dashboard</a></li>
+<li class="breadcrumb-item active">Subscribed Users</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <!-- Stats cards -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body">
+                    <div class="stat-title">Total Subscriptions</div>
+                    <div class="stat-value">{{ subscribed_users|length }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body">
+                    <div class="stat-title">Active Subscriptions</div>
+                    <div class="stat-value">
+                        {% set active_count = 0 %}
+                        {% for sub_user, user, subscription in subscribed_users %}
+                            {% if is_active(sub_user) %}
+                                {% set active_count = active_count + 1 %}
+                            {% endif %}
+                        {% endfor %}
+                        {{ active_count }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-warning text-dark h-100">
+                <div class="card-body">
+                    <div class="stat-title">Expiring in 7 Days</div>
+                    <div class="stat-value">
+                        {% set expiring_soon = 0 %}
+                        {% for sub_user, user, subscription in subscribed_users %}
+                            {% if is_active(sub_user) and (sub_user.end_date - now).days <= 7 %}
+                                {% set expiring_soon = expiring_soon + 1 %}
+                            {% endif %}
+                        {% endfor %}
+                        {{ expiring_soon }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-danger text-white h-100">
+                <div class="card-body">
+                    <div class="stat-title">Expired Subscriptions</div>
+                    <div class="stat-value">
+                        {% set expired_count = 0 %}
+                        {% for sub_user, user, subscription in subscribed_users %}
+                            {% if not is_active(sub_user) %}
+                                {% set expired_count = expired_count + 1 %}
+                            {% endif %}
+                        {% endfor %}
+                        {{ expired_count }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters and Actions -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <i class="fas fa-filter me-2"></i> Filters
+            </div>
+            <a href="{{ url_for('admin.admin_new_subscribed_user') }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus-circle me-1"></i> Add New Subscription
+            </a>
+        </div>
+        <div class="card-body">
+            <form action="{{ url_for('admin.admin_subscribed_users') }}" method="GET" class="row align-items-end">
+                <div class="col-md-4 mb-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select name="status" id="status" class="form-select">
+                        <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
+                        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                        <option value="expired" {% if status_filter == 'expired' %}selected{% endif %}>Expired</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="plan" class="form-label">Subscription Plan</label>
+                    <select name="plan" id="plan" class="form-select">
+                        <option value="all" {% if plan_filter == 'all' %}selected{% endif %}>All Plans</option>
+                        {% for plan in all_plans %}
+                        <option value="{{ plan.S_ID }}" {% if plan_filter|int == plan.S_ID %}selected{% endif %}>
+                            {{ plan.plan }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search me-1"></i> Apply Filters
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Subscriptions Table -->
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-users me-2"></i> Subscribed Users
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Plan</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Status</th>
+                            <th>Daily Usage</th>
+                            <th>Analytics</th>
+                            <th>QR Codes</th>
+                            <th>Auto-Renew</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sub_user, user, subscription in subscribed_users %}
+                        <tr>
+                            <td>
+                                <div class="fw-bold">{{ user.name }}</div>
+                                <div class="small text-muted">{{ user.company_email }}</div>
+                            </td>
+                            <td>{{ subscription.plan }}</td>
+                            <td>{{ sub_user.start_date.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ sub_user.end_date.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                {% if is_active(sub_user) %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Expired</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="progress" style="height: 10px;">
+                                    <div class="progress-bar {{ 'bg-danger' if sub_user.daily_usage_percent > 90 else 'bg-success' }}" 
+                                         role="progressbar" 
+                                         style="width: {{ sub_user.daily_usage_percent }}%;" 
+                                         aria-valuenow="{{ sub_user.daily_usage_percent }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100"></div>
+                                </div>
+                                <div class="small mt-1">{{ sub_user.current_usage }} / {{ subscription.usage_per_day }} daily requests</div>
+                            </td>
+                            <td>
+                                {% if hasattr(subscription, 'analytics') and subscription.analytics > 0 %}
+                                <div class="progress" style="height: 10px;">
+                                    <div class="progress-bar {{ 'bg-danger' if sub_user.analytics_percent > 90 else 'bg-info' }}" 
+                                         role="progressbar" 
+                                         style="width: {{ sub_user.analytics_percent }}%;" 
+                                         aria-valuenow="{{ sub_user.analytics_percent }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100"></div>
+                                </div>
+                                <div class="small mt-1">{{ sub_user.analytics_used }} / {{ subscription.analytics }} analytics</div>
+                                {% else %}
+                                <span class="badge bg-secondary">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if hasattr(subscription, 'qr_count') and subscription.qr_count > 0 %}
+                                <div class="progress" style="height: 10px;">
+                                    <div class="progress-bar {{ 'bg-danger' if sub_user.qr_percent > 90 else 'bg-primary' }}" 
+                                         role="progressbar" 
+                                         style="width: {{ sub_user.qr_percent }}%;" 
+                                         aria-valuenow="{{ sub_user.qr_percent }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100"></div>
+                                </div>
+                                <div class="small mt-1">{{ sub_user.qr_generated }} / {{ subscription.qr_count }} QR codes</div>
+                                {% else %}
+                                <span class="badge bg-secondary">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if sub_user.is_auto_renew %}
+                                    <span class="badge bg-info">Yes</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">No</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex gap-1 justify-content-center">
+                                    <a href="{{ url_for('admin.admin_edit_subscribed_user', id=sub_user.id) }}" class="btn btn-sm btn-outline-primary" title="Edit Subscription">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-success open-modal-btn" data-modal-id="extendModal{{ sub_user.id }}" title="Extend Subscription">
+                                        <i class="fas fa-calendar-plus"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger open-modal-btn" data-modal-id="deleteModal{{ sub_user.id }}" title="Delete Subscription">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                                
+                                <!-- Extend Modal -->
+                                <div id="extendModal{{ sub_user.id }}" class="custom-modal">
+                                    <div class="custom-modal-overlay"></div>
+                                    <div class="custom-modal-container">
+                                        <div class="custom-modal-content">
+                                            <div class="custom-modal-header bg-success text-white">
+                                                <h5 class="custom-modal-title">
+                                                    <i class="fas fa-calendar-plus me-2"></i> Extend Subscription
+                                                </h5>
+                                                <button type="button" class="btn-close btn-close-white close-modal-btn" aria-label="Close"></button>
+                                            </div>
+                                            <form action="{{ url_for('admin.admin_extend_subscription', id=sub_user.id) }}" method="POST">
+                                                <div class="custom-modal-body">
+                                                    <div class="text-center mb-3">
+                                                        <p class="fw-bold mb-1">{{ user.name }}</p>
+                                                        <p class="text-muted small mb-1">{{ user.company_email }}</p>
+                                                        <span class="badge bg-info">{{ subscription.plan }}</span>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="extension_days{{ sub_user.id }}" class="form-label">Extension Period (Days)</label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="extension_days{{ sub_user.id }}" name="extension_days" min="1" value="30" required>
+                                                            <span class="input-group-text">days</span>
+                                                        </div>
+                                                        <div class="form-text small">Current expiration: {{ sub_user.end_date.strftime('%Y-%m-%d') }}</div>
+                                                    </div>
+                                                </div>
+                                                <div class="custom-modal-footer">
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary close-modal-btn">Cancel</button>
+                                                    <button type="submit" class="btn btn-sm btn-success">
+                                                        <i class="fas fa-check me-1"></i> Confirm
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Delete Modal -->
+                                <div id="deleteModal{{ sub_user.id }}" class="custom-modal">
+                                    <div class="custom-modal-overlay"></div>
+                                    <div class="custom-modal-container">
+                                        <div class="custom-modal-content">
+                                            <div class="custom-modal-header bg-danger text-white">
+                                                <h5 class="custom-modal-title">
+                                                    <i class="fas fa-exclamation-triangle me-2"></i> Confirm Deletion
+                                                </h5>
+                                                <button type="button" class="btn-close btn-close-white close-modal-btn" aria-label="Close"></button>
+                                            </div>
+                                            <div class="custom-modal-body text-center">
+                                                <div class="mb-4">
+                                                    <i class="fas fa-trash-alt fa-4x text-danger mb-3"></i>
+                                                    <h5>Delete Subscription?</h5>
+                                                    <p>You are about to delete the subscription for:</p>
+                                                    <p class="fw-bold">{{ user.name }} ({{ user.company_email }})</p>
+                                                    <p>Plan: <span class="badge bg-info">{{ subscription.plan }}</span></p>
+                                                </div>
+                                                <div class="alert alert-danger">
+                                                    <i class="fas fa-exclamation-circle me-2"></i>
+                                                    <strong>Warning:</strong> This action cannot be undone.
+                                                </div>
+                                            </div>
+                                            <div class="custom-modal-footer">
+                                                <button type="button" class="btn btn-outline-secondary close-modal-btn">Cancel</button>
+                                                <form action="{{ url_for('admin.admin_delete_subscribed_user', id=sub_user.id) }}" method="POST">
+                                                    <button type="submit" class="btn btn-danger">
+                                                        <i class="fas fa-trash-alt me-1"></i> Delete Subscription
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="10" class="text-center py-4">
+                                <div class="text-muted">No subscribed users found matching the filter criteria.</div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add select2 for better dropdowns if available
+    if (typeof $.fn.select2 !== 'undefined') {
+        $('#status, #plan').select2({
+            width: '100%'
+        });
+    }
+    
+    // Custom modal handling - completely independent from Bootstrap
+    const openModalButtons = document.querySelectorAll('.open-modal-btn');
+    const closeModalButtons = document.querySelectorAll('.close-modal-btn');
+    const modalOverlays = document.querySelectorAll('.custom-modal-overlay');
+    
+    // Open modal function
+    function openModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden'; // Prevent scrolling
+        }
+    }
+    
+    // Close modal function
+    function closeModal(modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = ''; // Restore scrolling
+    }
+    
+    // Event listeners for opening modals
+    openModalButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const modalId = this.getAttribute('data-modal-id');
+            openModal(modalId);
+        });
+    });
+    
+    // Event listeners for closing modals
+    closeModalButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const modal = this.closest('.custom-modal');
+            closeModal(modal);
+        });
+    });
+    
+    // Close modal when clicking on overlay
+    modalOverlays.forEach(overlay => {
+        overlay.addEventListener('click', function() {
+            const modal = this.closest('.custom-modal');
+            closeModal(modal);
+        });
+    });
+    
+    // Close modal when pressing ESC key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.custom-modal.active').forEach(modal => {
+                closeModal(modal);
+            });
+        }
+    });
+    
+    // Add animation to cards
+    const cards = document.querySelectorAll('.card');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        
+        setTimeout(() => {
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, 100 + (index * 50));
+    });
+});
+</script>
+
+<style>
+/* Custom Modal Styles - COMPACT VERSION */
+.custom-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1050;
+}
+
+.custom-modal.active {
+    display: block;
+}
+
+.custom-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1051;
+}
+
+.custom-modal-container {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1052;
+    width: 100%;
+    /* Reduced max-width for more compact appearance */
+    max-width: 350px; 
+}
+
+.custom-modal-content {
+    background-color: #fff;
+    border-radius: 0.3rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+}
+
+.custom-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    /* Reduced padding for more compact header */
+    padding: 0.5rem 0.75rem; 
+    border-bottom: 1px solid #dee2e6;
+}
+
+.custom-modal-title {
+    margin: 0;
+    /* Slightly smaller font size */
+    font-size: 1rem; 
+}
+
+.custom-modal-body {
+    /* Reduced padding for more compact body */
+    padding: 0.75rem; 
+    max-height: 60vh; /* Slightly reduced height */
+    overflow-y: auto;
+}
+
+.custom-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.5rem;
+    /* Reduced padding for more compact footer */
+    padding: 0.5rem 0.75rem; 
+    border-top: 1px solid #dee2e6;
+}
+
+/* Compact form elements within modals */
+.custom-modal .form-label {
+    margin-bottom: 0.25rem;
+    font-size: 0.9rem;
+}
+
+.custom-modal .form-control {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.9rem;
+    height: calc(1.5em + 0.5rem + 2px);
+}
+
+.custom-modal .form-text {
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+}
+
+.custom-modal .alert {
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.custom-modal .input-group-text {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.9rem;
+}
+
+/* Ensure all content in the delete modal is more compact */
+.custom-modal .mb-4 {
+    margin-bottom: 0.75rem !important;
+}
+
+.custom-modal h5 {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.custom-modal p {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.custom-modal .fa-4x {
+    font-size: 2.5em;
+    margin-bottom: 0.5rem !important;
+}
+
+.custom-modal .mb-3 {
+    margin-bottom: 0.5rem !important;
+}
+
+/* Button styles */
+.custom-modal .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.btn-flash {
+    animation: btn-flash 0.3s ease-out;
+}
+
+@keyframes btn-flash {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* Hover effects for action buttons */
+.btn-outline-primary:hover, .btn-outline-success:hover, .btn-outline-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transition: all 0.2s;
+}
+
+/* Responsive styles */
+@media (max-width: 576px) {
+    .custom-modal-container {
+        max-width: 85%;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>{% block title %}Fourth Dimension{% endblock %}</title>
+  <!-- Google Fonts - Montserrat and Poppins -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Custom CSS -->
+  {% block styles %}{% endblock %}
+</head>
+<body>
+  <!-- Toast container for flash messages -->
+  <div class="toast-container" id="toastContainer">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+        <div class="toast toast-{{ category }}">
+          <div class="toast-icon">
+            <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' or category == 'error' %}exclamation-circle{% else %}exclamation-triangle{% endif %}"></i>
+          </div>
+          <div class="toast-content">
+            <div class="toast-message">{{ message }}</div>
+          </div>
+          <button class="toast-close">&times;</button>
+        </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+  </div>
+
+  {% block content %}{% endblock %}
+
+  <script>
+    // Handle toast close button functionality
+    document.addEventListener('DOMContentLoaded', function() {
+      const toastContainer = document.getElementById('toastContainer');
+      if (toastContainer) {
+        toastContainer.addEventListener('click', function(e) {
+          if (e.target.classList.contains('toast-close')) {
+            const toast = e.target.closest('.toast');
+            if (toast) {
+              toast.style.animation = 'slideOutRight 0.3s ease forwards';
+              setTimeout(() => {
+                if (toast.parentNode === toastContainer) {
+                  toastContainer.removeChild(toast);
+                }
+              }, 300);
+            }
+          }
+        });
+
+        // Auto remove toasts after 5 seconds
+        document.querySelectorAll('.toast').forEach(toast => {
+          setTimeout(() => {
+            if (toast.parentNode === toastContainer) {
+              toast.style.animation = 'slideOutRight 0.3s ease forwards';
+              setTimeout(() => {
+                if (toast.parentNode === toastContainer) {
+                  toastContainer.removeChild(toast);
+                }
+              }, 300);
+            }
+          }, 5000);
+        });
+      }
+    });
+  </script>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

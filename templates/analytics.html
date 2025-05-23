@@ -1,0 +1,578 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics for {{ qr_code.name }} | QR Craft{% endblock %}
+
+{% block head %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 min-h-screen">
+    <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <!-- Back button and title -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between mb-8">
+            <div>
+                <a href="{{ url_for('view_qr', qr_id=qr_code.unique_id) }}" class="inline-flex items-center text-sm font-medium text-secondary-600 hover:text-secondary-800 mb-2">
+                    <i class="fas fa-arrow-left mr-2"></i> Back to QR Code
+                </a>
+                <h1 class="text-2xl font-bold text-gray-900">Analytics for "{{ qr_code.name }}"</h1>
+                <p class="text-gray-600 mt-1">Track performance and engagement metrics for your QR code</p>
+            </div>
+            <div class="flex items-center mt-4 md:mt-0">
+                <div class="bg-white rounded-lg shadow-sm p-3 flex items-center border border-gray-200">
+                    <div class="h-12 w-12 bg-primary-100 rounded-lg flex items-center justify-center text-primary-700">
+                        <i class="fas fa-qrcode text-2xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-500">Total Scans</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ total_scans }}</p>
+                    </div>
+                </div>
+                <div class="ml-4 bg-white rounded-lg shadow-sm p-3 flex items-center border border-gray-200">
+                    <div class="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center text-green-700">
+                        <i class="fas fa-calendar-alt text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-500">Created On</p>
+                        <p class="text-md font-medium text-gray-900">{{ qr_code.created_at.strftime('%b %d, %Y') }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if not has_data %}
+        <!-- No data state -->
+        <div class="bg-white shadow rounded-lg p-8 text-center">
+            <div class="mx-auto h-24 w-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                <i class="fas fa-chart-line text-4xl text-gray-400"></i>
+            </div>
+            <h2 class="text-xl font-semibold text-gray-800 mb-2">No scan data yet</h2>
+            <p class="text-gray-600 mb-6">Your QR code hasn't been scanned yet. Check back later for analytics.</p>
+            <a href="{{ url_for('download_qr', qr_id=qr_code.unique_id) }}" class="inline-flex items-center px-4 py-2 bg-secondary-600 hover:bg-secondary-700 text-white font-medium rounded-md">
+                <i class="fas fa-download mr-2"></i> Download QR Code
+            </a>
+        </div>
+        {% else %}
+
+        <!-- Main dashboard grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <!-- Timeline Chart -->
+            <div class="bg-white shadow rounded-lg col-span-3 p-6 border border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-chart-line text-secondary-600 mr-2"></i> Scan Timeline
+                </h2>
+                <div class="h-80">
+                    <canvas id="timelineChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Device Distribution Chart -->
+            <div class="bg-white shadow rounded-lg p-6 border border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-mobile-alt text-secondary-600 mr-2"></i> Device Distribution
+                </h2>
+                <div class="h-64">
+                    <canvas id="deviceChart"></canvas>
+                </div>
+            </div>
+
+            <!-- OS Distribution Chart -->
+            <div class="bg-white shadow rounded-lg p-6 border border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-laptop text-secondary-600 mr-2"></i> Operating System
+                </h2>
+                <div class="h-64">
+                    <canvas id="osChart"></canvas>
+                </div>
+                <div class="text-xs text-gray-500 text-center mt-2">
+                    *OS data detected from user agent
+                </div>
+            </div>
+
+            <!-- Hourly Activity -->
+            <div class="bg-white shadow rounded-lg p-6 border border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-clock text-secondary-600 mr-2"></i> Hourly Activity
+                </h2>
+                <div class="h-64">
+                    <canvas id="hourlyChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Scans Table with Pagination -->
+        <div class="bg-white shadow rounded-lg overflow-hidden border border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h2 class="text-lg font-semibold text-gray-800 flex items-center">
+                    <i class="fas fa-history text-secondary-600 mr-2"></i> Recent Scan Activity
+                </h2>
+                <div class="text-sm text-gray-500">
+                    Showing {{ (page_num - 1) * 10 + 1 if total_scans > 0 else 0 }}-{{ (page_num * 10) if (page_num * 10 < total_scans) else total_scans }} of {{ total_scans }} scans
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Date & Time
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Device & OS
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Location
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                IP Address
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for scan in paginated_scans %}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">{{ scan.timestamp.strftime('%b %d, %Y') }}</div>
+                                <div class="text-sm text-gray-500">{{ scan.timestamp.strftime('%I:%M %p') }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <span class="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center mr-2">
+                                        {% if scan.user_agent and 'Mobile' in scan.user_agent and 'Tablet' not in scan.user_agent %}
+                                        <i class="fas fa-mobile-alt text-gray-600"></i>
+                                        {% elif scan.user_agent and 'Tablet' in scan.user_agent %}
+                                        <i class="fas fa-tablet-alt text-gray-600"></i>
+                                        {% else %}
+                                        <i class="fas fa-desktop text-gray-600"></i>
+                                        {% endif %}
+                                    </span>
+                                    <div>
+                                        {% if scan.user_agent and 'Mobile' in scan.user_agent and 'Tablet' not in scan.user_agent %}
+                                        <div class="text-sm font-medium text-gray-900">Mobile</div>
+                                        {% elif scan.user_agent and 'Tablet' in scan.user_agent %}
+                                        <div class="text-sm font-medium text-gray-900">Tablet</div>
+                                        {% else %}
+                                        <div class="text-sm font-medium text-gray-900">Desktop</div>
+                                        {% endif %}
+                                        <div class="text-xs text-gray-500">
+                                            {% if scan.user_agent %}
+                                                {% if 'Windows' in scan.user_agent %}Windows
+                                                {% elif 'Android' in scan.user_agent %}Android
+                                                {% elif 'iPhone' in scan.user_agent or 'iPad' in scan.user_agent or 'iOS' in scan.user_agent %}iOS
+                                                {% elif 'Mac OS' in scan.user_agent %}macOS
+                                                {% elif 'Linux' in scan.user_agent %}Linux
+                                                {% else %}Unknown
+                                                {% endif %}
+                                            {% else %}Unknown
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if scan.location and scan.location != 'Unknown' %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    <i class="fas fa-map-marker-alt mr-1"></i>
+                                    {{ scan.location or 'Unknown' }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ scan.ip_address or 'Unknown' }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                
+                <!-- Pagination Controls -->
+                {% if total_pages > 1 %}
+                <div class="bg-gray-50 px-6 py-3 flex items-center justify-between border-t border-gray-200">
+                    <div class="flex-1 flex justify-between sm:hidden">
+                        {% if page_num > 1 %}
+                        <a href="{{ url_for('qr_analytics', qr_id=qr_code.unique_id, page=page_num-1) }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            Previous
+                        </a>
+                        {% else %}
+                        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-300 bg-gray-50 cursor-not-allowed">
+                            Previous
+                        </span>
+                        {% endif %}
+                        
+                        {% if page_num < total_pages %}
+                        <a href="{{ url_for('qr_analytics', qr_id=qr_code.unique_id, page=page_num+1) }}" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            Next
+                        </a>
+                        {% else %}
+                        <span class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-300 bg-gray-50 cursor-not-allowed">
+                            Next
+                        </span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                        <div>
+                            <p class="text-sm text-gray-700">
+                                Showing <span class="font-medium">{{ (page_num - 1) * 10 + 1 if total_scans > 0 else 0 }}</span> to <span class="font-medium">{{ (page_num * 10) if (page_num * 10 < total_scans) else total_scans }}</span> of <span class="font-medium">{{ total_scans }}</span> results
+                            </p>
+                        </div>
+                        <div>
+                            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                <!-- Previous Page Button -->
+                                {% if page_num > 1 %}
+                                <a href="{{ url_for('qr_analytics', qr_id=qr_code.unique_id, page=page_num-1) }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">Previous</span>
+                                    <i class="fas fa-chevron-left h-5 w-5"></i>
+                                </a>
+                                {% else %}
+                                <span class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-gray-50 text-sm font-medium text-gray-300 cursor-not-allowed">
+                                    <span class="sr-only">Previous</span>
+                                    <i class="fas fa-chevron-left h-5 w-5"></i>
+                                </span>
+                                {% endif %}
+                                
+                                <!-- Page Number Buttons -->
+                                {% set start_page = [1, page_num - 2]|max %}
+                                {% set end_page = [start_page + 4, total_pages]|min %}
+                                {% if end_page - start_page < 4 and total_pages > 4 %}
+                                    {% set start_page = [end_page - 4, 1]|max %}
+                                {% endif %}
+                                
+                                {% for p in range(start_page, end_page + 1) %}
+                                    {% if p == page_num %}
+                                    <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-secondary-50 text-sm font-medium text-secondary-600">
+                                        {{ p }}
+                                    </span>
+                                    {% else %}
+                                    <a href="{{ url_for('qr_analytics', qr_id=qr_code.unique_id, page=p) }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                        {{ p }}
+                                    </a>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                <!-- Next Page Button -->
+                                {% if page_num < total_pages %}
+                                <a href="{{ url_for('qr_analytics', qr_id=qr_code.unique_id, page=page_num+1) }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">Next</span>
+                                    <i class="fas fa-chevron-right h-5 w-5"></i>
+                                </a>
+                                {% else %}
+                                <span class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-gray-50 text-sm font-medium text-gray-300 cursor-not-allowed">
+                                    <span class="sr-only">Next</span>
+                                    <i class="fas fa-chevron-right h-5 w-5"></i>
+                                </span>
+                                {% endif %}
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+    // Pass data from Flask to JavaScript
+    window.hasAnalyticsData = {{ has_data|tojson }};
+    {% if has_data %}
+        window.scanDatesData = {{ scan_dates|tojson }};
+        window.deviceData = {{ device_data|tojson }};
+        window.hourlyData = {{ hourly_data|tojson }};
+        window.locationData = {{ location_data|tojson }};
+        window.osData = {{ os_data|tojson }};  // Now already in list format
+        
+        console.log('Analytics data loaded:', {
+            scanDates: window.scanDatesData,
+            deviceData: window.deviceData,
+            hourlyData: window.hourlyData,
+            osData: window.osData
+        });
+    {% endif %}
+    
+    // Helper function for RGBA conversion
+    function hexToRGBA(hex, alpha) {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM loaded, hasAnalyticsData:', window.hasAnalyticsData);
+        
+        if (!window.hasAnalyticsData) {
+            console.log('No analytics data available');
+            return;
+        }
+        
+        try {
+            // Set Chart.js defaults
+            Chart.defaults.font.family = 'Inter, sans-serif';
+            Chart.defaults.color = '#64748b';
+            
+            // Define common colors
+            const primaryColor = '#8b5cf6';
+            const secondaryColor = '#0ea5e9';
+            const tertiaryColor = '#f97316';
+            const quaternaryColor = '#10b981';
+            const grayColor = '#cbd5e1';
+            
+            // Timeline Chart
+            const timelineCanvas = document.getElementById('timelineChart');
+            if (timelineCanvas && window.scanDatesData) {
+                const timelineDates = Object.keys(window.scanDatesData);
+                const timelineCounts = Object.values(window.scanDatesData);
+                
+                console.log('Timeline data:', { dates: timelineDates, counts: timelineCounts });
+                
+                // Sort dates chronologically
+                const sortedEntries = Object.entries(window.scanDatesData).sort((a, b) => new Date(a[0]) - new Date(b[0]));
+                const sortedDates = sortedEntries.map(entry => entry[0]);
+                const sortedCounts = sortedEntries.map(entry => entry[1]);
+                
+                const timelineCtx = timelineCanvas.getContext('2d');
+                new Chart(timelineCtx, {
+                    type: 'line',
+                    data: {
+                        labels: sortedDates,
+                        datasets: [{
+                            label: 'Scans',
+                            data: sortedCounts,
+                            fill: true,
+                            backgroundColor: hexToRGBA(primaryColor, 0.2),
+                            borderColor: primaryColor,
+                            borderWidth: 2,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointBackgroundColor: primaryColor
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    precision: 0
+                                },
+                                grid: {
+                                    color: '#e2e8f0'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(15, 23, 42, 0.8)',
+                                padding: 12,
+                                cornerRadius: 6
+                            }
+                        }
+                    }
+                });
+                console.log('Timeline chart created successfully');
+            }
+            
+            // Device Chart
+            const deviceCanvas = document.getElementById('deviceChart');
+            if (deviceCanvas && window.deviceData && window.deviceData.length > 0) {
+                const deviceLabels = window.deviceData.map(item => item.device);
+                const deviceCounts = window.deviceData.map(item => item.scans);
+                const deviceColors = [secondaryColor, primaryColor, tertiaryColor, grayColor];
+                
+                console.log('Device data:', { labels: deviceLabels, counts: deviceCounts });
+                
+                const deviceCtx = deviceCanvas.getContext('2d');
+                new Chart(deviceCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: deviceLabels,
+                        datasets: [{
+                            data: deviceCounts,
+                            backgroundColor: deviceColors.slice(0, deviceLabels.length),
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '60%',
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 15,
+                                    usePointStyle: true,
+                                    pointStyle: 'circle'
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(15, 23, 42, 0.8)',
+                                padding: 12,
+                                cornerRadius: 6,
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.raw || 0;
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = Math.round(value / total * 100);
+                                        return `${label}: ${value} (${percentage}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+                console.log('Device chart created successfully');
+            }
+            
+            // OS Chart
+            const osCanvas = document.getElementById('osChart');
+            if (osCanvas && window.osData && window.osData.length > 0) {
+                const osLabels = window.osData.map(item => item.os);
+                const osCounts = window.osData.map(item => item.scans);
+                const osColors = [primaryColor, secondaryColor, quaternaryColor, tertiaryColor, '#0f766e', grayColor];
+                
+                console.log('OS data:', { labels: osLabels, counts: osCounts });
+                
+                const osCtx = osCanvas.getContext('2d');
+                new Chart(osCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: osLabels,
+                        datasets: [{
+                            data: osCounts,
+                            backgroundColor: osColors.slice(0, osLabels.length),
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '60%',
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 15,
+                                    usePointStyle: true,
+                                    pointStyle: 'circle'
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(15, 23, 42, 0.8)',
+                                padding: 12,
+                                cornerRadius: 6,
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.raw || 0;
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = Math.round(value / total * 100);
+                                        return `${label}: ${value} (${percentage}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+                console.log('OS chart created successfully');
+            }
+            
+            // Hourly Chart
+            const hourlyCanvas = document.getElementById('hourlyChart');
+            if (hourlyCanvas && window.hourlyData && Array.isArray(window.hourlyData)) {
+                const hourLabels = Array.from({length: 24}, (_, i) => {
+                    const hour = i % 12 || 12;
+                    const ampm = i < 12 ? 'AM' : 'PM';
+                    return `${hour}${ampm}`;
+                });
+                
+                console.log('Hourly data:', window.hourlyData);
+                
+                const hourlyCtx = hourlyCanvas.getContext('2d');
+                new Chart(hourlyCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: hourLabels,
+                        datasets: [{
+                            label: 'Scans',
+                            data: window.hourlyData,
+                            backgroundColor: secondaryColor,
+                            borderRadius: 4,
+                            barPercentage: 0.6,
+                            categoryPercentage: 0.8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                grid: {
+                                    display: false
+                                },
+                                ticks: {
+                                    maxRotation: 45,
+                                    minRotation: 45
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    precision: 0
+                                },
+                                grid: {
+                                    color: '#e2e8f0'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(15, 23, 42, 0.8)',
+                                padding: 12,
+                                cornerRadius: 6
+                            }
+                        }
+                    }
+                });
+                console.log('Hourly chart created successfully');
+            }
+            
+        } catch (error) {
+            console.error("Error initializing charts:", error);
+            
+            // Create error message elements for failed charts
+            const chartContainers = document.querySelectorAll('#timelineChart, #deviceChart, #osChart, #hourlyChart');
+            chartContainers.forEach(container => {
+                if (container) {
+                    const parent = container.parentElement;
+                    parent.innerHTML = `
+                        <div class="flex items-center justify-center h-full">
+                            <div class="text-center p-4">
+                                <div class="text-red-500 mb-2"><i class="fas fa-exclamation-circle text-xl"></i></div>
+                                <p class="text-gray-500">Could not load chart data</p>
+                                <p class="text-xs text-gray-400 mt-1">${error.message}</p>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}Set New Password | QR Craft{% endblock %}
+
+{% block content %}
+<section class="qr-pattern py-16">
+    <div class="max-w-md mx-auto px-4 sm:px-6">
+        <!-- Card -->
+        <div class="bg-white rounded-lg shadow-card overflow-hidden fade-in">
+            <!-- Header -->
+            <div class="px-8 py-6 bg-gradient-to-r from-primary-600 to-secondary-600 text-white text-center">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white bg-opacity-20 mb-4">
+                    <i class="fas fa-lock-open text-3xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold">Set New Password</h2>
+            </div>
+            
+            <!-- Form -->
+            <div class="px-8 py-8">
+                <form method="post" action="{{ url_for('reset_token', token=token) }}" id="passwordResetForm">
+                    <!-- Add CSRF token -->
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <div class="mb-6">
+                        <label for="password" class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-lock text-primary-500"></i>
+                            <span>New Password</span>
+                        </label>
+                        <div class="relative">
+                            <input type="password" id="password" name="password" class="focus:ring-primary-500 focus:border-primary-500 block w-full pl-3 pr-10 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 text-gray-800" placeholder="Enter new password" required>
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                <button type="button" id="passwordToggle" class="text-gray-400 hover:text-gray-600 focus:outline-none transition-colors duration-300">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="passwordError" class="mt-2 text-sm text-red-600"></div>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label for="confirm_password" class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-check-circle text-primary-500"></i>
+                            <span>Confirm Password</span>
+                        </label>
+                        <div class="relative">
+                            <input type="password" id="confirm_password" name="confirm_password" class="focus:ring-primary-500 focus:border-primary-500 block w-full pl-3 pr-10 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 text-gray-800" placeholder="Confirm new password" required>
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                <button type="button" id="confirmPasswordToggle" class="text-gray-400 hover:text-gray-600 focus:outline-none transition-colors duration-300">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="confirmError" class="mt-2 text-sm text-red-600"></div>
+                    </div>
+                    
+                    <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                        <p class="font-medium text-sm text-gray-700 mb-2">Password must contain:</p>
+                        <ul class="space-y-1.5" id="passwordRequirements">
+                            <li id="length" class="text-sm flex items-center text-gray-500">
+                                <i class="fas fa-circle text-xs mr-2"></i>
+                                <span>At least 8 characters</span>
+                            </li>
+                            <li id="uppercase" class="text-sm flex items-center text-gray-500">
+                                <i class="fas fa-circle text-xs mr-2"></i>
+                                <span>Upper and lowercase letters</span>
+                            </li>
+                            <li id="number" class="text-sm flex items-center text-gray-500">
+                                <i class="fas fa-circle text-xs mr-2"></i>
+                                <span>At least one number</span>
+                            </li>
+                            <li id="special" class="text-sm flex items-center text-gray-500">
+                                <i class="fas fa-circle text-xs mr-2"></i>
+                                <span>At least one special character</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <button type="submit" class="w-full flex justify-center items-center px-4 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-700 hover:to-secondary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-300" id="submitBtn">
+                        <i class="fas fa-save mr-2"></i>
+                        <span>Reset Password</span>
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Footer link -->
+            <div class="px-8 py-6 bg-gray-50 border-t border-gray-200 text-center">
+                <a href="{{ url_for('login') }}" class="inline-flex items-center text-sm font-medium text-gray-600 hover:text-primary-600 transition-colors duration-300">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Back to Login
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const passwordInput = document.getElementById('password');
+    const confirmInput = document.getElementById('confirm_password');
+    const passwordForm = document.getElementById('passwordResetForm');
+    const passwordError = document.getElementById('passwordError');
+    const confirmError = document.getElementById('confirmError');
+    const passwordToggle = document.getElementById('passwordToggle');
+    const confirmPasswordToggle = document.getElementById('confirmPasswordToggle');
+    
+    // Password requirement elements
+    const lengthReq = document.getElementById('length');
+    const uppercaseReq = document.getElementById('uppercase');
+    const numberReq = document.getElementById('number');
+    const specialReq = document.getElementById('special');
+    
+    // Toggle password visibility
+    passwordToggle.addEventListener('click', function() {
+        togglePasswordVisibility(passwordInput, passwordToggle);
+    });
+    
+    confirmPasswordToggle.addEventListener('click', function() {
+        togglePasswordVisibility(confirmInput, confirmPasswordToggle);
+    });
+    
+    function togglePasswordVisibility(input, toggle) {
+        const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+        input.setAttribute('type', type);
+        
+        const icon = toggle.querySelector('i');
+        icon.className = type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+    }
+    
+    // Update password requirements in real-time
+    passwordInput.addEventListener('input', function() {
+        const password = passwordInput.value;
+        
+        // Check length requirement
+        updateRequirement(lengthReq, password.length >= 8);
+        
+        // Check uppercase and lowercase requirement
+        updateRequirement(uppercaseReq, /[A-Z]/.test(password) && /[a-z]/.test(password));
+        
+        // Check number requirement
+        updateRequirement(numberReq, /[0-9]/.test(password));
+        
+        // Check special character requirement
+        updateRequirement(specialReq, /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password));
+        
+        // Check if passwords match whenever password changes
+        if (confirmInput.value) {
+            validatePasswordMatch();
+        }
+    });
+    
+    function updateRequirement(element, isValid) {
+        if (isValid) {
+            element.classList.remove('text-gray-500');
+            element.classList.add('text-green-500');
+            element.querySelector('i').className = 'fas fa-check-circle text-xs mr-2';
+        } else {
+            element.classList.remove('text-green-500');
+            element.classList.add('text-gray-500');
+            element.querySelector('i').className = 'fas fa-circle text-xs mr-2';
+        }
+    }
+    
+    // Validate password match
+    function validatePasswordMatch() {
+        if (passwordInput.value !== confirmInput.value) {
+            confirmInput.classList.add('border-red-500');
+            confirmError.textContent = 'Passwords do not match';
+            return false;
+        } else {
+            confirmInput.classList.remove('border-red-500');
+            confirmError.textContent = '';
+            return true;
+        }
+    }
+    
+    // Check password match when confirm password is changed
+    confirmInput.addEventListener('input', validatePasswordMatch);
+    
+    // Validate form on submit
+    passwordForm.addEventListener('submit', function(event) {
+        let isValid = true;
+        
+        // Validate password requirements
+        const password = passwordInput.value;
+        if (password.length < 8 || 
+            !(/[A-Z]/.test(password) && /[a-z]/.test(password)) || 
+            !(/[0-9]/.test(password)) || 
+            !(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password))) {
+            
+            passwordInput.classList.add('border-red-500');
+            passwordError.textContent = 'Password does not meet all requirements';
+            isValid = false;
+        } else {
+            passwordInput.classList.remove('border-red-500');
+            passwordError.textContent = '';
+        }
+        
+        // Validate password match
+        if (!validatePasswordMatch()) {
+            isValid = false;
+        }
+        
+        if (!isValid) {
+            event.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

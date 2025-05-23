@@ -1,0 +1,1570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Connect to WiFi network securely with QR code and automatic connection options">
+    <meta name="theme-color" content="#4cc9f0">
+    <title>{{ detail.ssid|default('WiFi Connection') }}</title>
+    
+    <!-- Preload critical resources -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+    
+    <style>
+        /* Futuristic Variables */
+        :root {
+            /* Primary Palette */
+            --primary-color: #4cc9f0;
+            --primary-glow: rgba(76, 201, 240, 0.3);
+            --secondary-color: #3a0ca3;
+            --secondary-glow: rgba(58, 12, 163, 0.3);
+            --accent-color: #4361ee;
+            --accent-glow: rgba(67, 97, 238, 0.3);
+            --success-color: #06d6a0;
+            --warning-color: #f9c74f;
+            --danger-color: #ef476f;
+            
+            /* Neutral Colors */
+            --text-color: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --text-muted: rgba(255, 255, 255, 0.5);
+            --background-primary: #111827;
+            --background-secondary: #1f2937;
+            --card-bg: rgba(31, 41, 55, 0.85);
+            
+            /* Elements */
+            --border-radius-sm: 8px;
+            --border-radius-md: 12px;
+            --border-radius-lg: 20px;
+            --box-shadow: 0 10px 30px -5px rgba(2, 12, 27, 0.7);
+            --glow-shadow: 0 0 20px var(--primary-glow);
+            
+            /* Borders & Lines */
+            --border-light: 1px solid rgba(255, 255, 255, 0.1);
+            --border-highlight: 1px solid rgba(255, 255, 255, 0.15);
+            --border-glow: 1px solid var(--primary-glow);
+            --divider: rgba(255, 255, 255, 0.1);
+            
+            /* Transitions */
+            --transition-fast: 150ms ease;
+            --transition-normal: 300ms ease;
+            --transition-slow: 500ms ease;
+        }
+        
+        /* Light Mode */
+        @media (prefers-color-scheme: light) {
+            :root {
+                --text-color: #111827;
+                --text-secondary: rgba(17, 24, 39, 0.7);
+                --text-muted: rgba(17, 24, 39, 0.5);
+                --background-primary: #f1f5f9;
+                --background-secondary: #ffffff;
+                --card-bg: rgba(255, 255, 255, 0.85);
+                --divider: rgba(17, 24, 39, 0.1);
+                --box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1);
+            }
+        }
+        
+        /* Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, var(--background-primary), var(--background-secondary));
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            line-height: 1.6;
+            position: relative;
+            overflow-x: hidden;
+            transition: background var(--transition-normal);
+        }
+        
+        /* Circuit Background - Optimized SVG */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' width='100' height='100'%3E%3Cg stroke='rgba(76, 201, 240, 0.1)' stroke-width='1' fill='none'%3E%3Cpath d='M10,50 h20 v20 h40 v-40 h20'/%3E%3Ccircle cx='30' cy='50' r='2' fill='rgba(76, 201, 240, 0.2)'/%3E%3Ccircle cx='30' cy='70' r='2' fill='rgba(76, 201, 240, 0.2)'/%3E%3Ccircle cx='70' cy='70' r='2' fill='rgba(76, 201, 240, 0.2)'/%3E%3Ccircle cx='70' cy='30' r='2' fill='rgba(76, 201, 240, 0.2)'/%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.3;
+            pointer-events: none;
+            z-index: -1;
+            animation: drift 20s ease-in-out infinite;
+        }
+        
+        @keyframes drift {
+            0%, 100% { transform: translateX(0) translateY(0); }
+            50% { transform: translateX(-20px) translateY(-20px); }
+        }
+        
+        /* Radial Gradient Background */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 10% 20%, var(--primary-glow) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, var(--secondary-glow) 0%, transparent 40%);
+            opacity: 0.4;
+            z-index: -2;
+            transition: opacity var(--transition-normal);
+        }
+        
+        /* Main Container */
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--card-bg);
+            border-radius: var(--border-radius-lg);
+            overflow: hidden;
+            box-shadow: var(--box-shadow);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: var(--border-light);
+            animation: appear 0.7s ease-out forwards;
+            position: relative;
+            will-change: transform;
+        }
+        
+        .container::before,
+        .container::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(to right, transparent, var(--primary-color), transparent);
+        }
+        
+        .container::before {
+            top: 0;
+            opacity: 0.7;
+        }
+        
+        .container::after {
+            bottom: 0;
+            opacity: 0.4;
+        }
+        
+        /* WiFi Header */
+        .wifi-header {
+            padding: 40px 30px;
+            text-align: center;
+            position: relative;
+            background: linear-gradient(to bottom, rgba(31, 41, 55, 0.8), var(--card-bg));
+            overflow: hidden;
+        }
+        
+        /* Wi-Fi Icon with Signal Animation */
+        .wifi-icon {
+            width: 140px;
+            height: 140px;
+            margin: 0 auto 25px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            filter: drop-shadow(0 0 10px var(--primary-glow));
+        }
+        
+        .wifi-icon::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
+            animation: pulse 3s infinite;
+            border-radius: 50%;
+        }
+        
+        .signal-container {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .signal-wave {
+            position: absolute;
+            border: 2px solid var(--primary-color);
+            border-radius: 50%;
+            animation: wave 3s infinite;
+            opacity: 0;
+            box-shadow: 0 0 10px var(--primary-glow);
+            will-change: transform, opacity;
+        }
+        
+        .signal-wave:nth-child(1) {
+            width: 100px;
+            height: 100px;
+            animation-delay: 0s;
+        }
+        
+        .signal-wave:nth-child(2) {
+            width: 75px;
+            height: 75px;
+            animation-delay: 0.4s;
+        }
+        
+        .signal-wave:nth-child(3) {
+            width: 50px;
+            height: 50px;
+            animation-delay: 0.8s;
+        }
+        
+        .signal-core {
+            width: 25px;
+            height: 25px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            box-shadow: 0 0 15px var(--primary-glow);
+            position: relative;
+            z-index: 2;
+        }
+        
+        .signal-core::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8) 0%, transparent 60%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        
+        .wifi-title {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: 0.02em;
+            position: relative;
+            display: inline-block;
+            color: var(--text-color);
+        }
+        
+        .wifi-title::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 25%;
+            width: 50%;
+            height: 2px;
+            background: linear-gradient(to right, transparent, var(--primary-color), transparent);
+        }
+        
+        .wifi-subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            letter-spacing: 0.01em;
+            margin-top: 10px;
+        }
+        
+        /* WiFi Details */
+        .wifi-details {
+            padding: 0 30px 30px;
+        }
+        
+        .detail-card {
+            background: rgba(76, 201, 240, 0.07);
+            border-radius: var(--border-radius-md);
+            padding: 25px;
+            margin-bottom: 25px;
+            border: var(--border-light);
+            transition: all var(--transition-normal);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .detail-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 20px rgba(0, 0, 0, 0.1);
+            border-color: rgba(76, 201, 240, 0.3);
+        }
+        
+        .detail-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), transparent);
+            pointer-events: none;
+        }
+        
+        .detail-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        }
+        
+        .detail-label::before {
+            content: '';
+            display: inline-block;
+            width: 10px;
+            height: 3px;
+            background: var(--primary-color);
+            margin-right: 8px;
+            border-radius: 2px;
+        }
+        
+        .detail-value {
+            font-size: 1.3rem;
+            color: var(--text-color);
+            word-break: break-all;
+            margin-bottom: 10px;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+            position: relative;
+            display: inline-block;
+        }
+        
+        .encryption-badge {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--primary-color);
+            color: white;
+            font-size: 0.8rem;
+            padding: 5px 12px;
+            border-radius: var(--border-radius-sm);
+            margin-top: 10px;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+        }
+        
+        .encryption-badge::before {
+            content: '🔒';
+            margin-right: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .password-container {
+            position: relative;
+        }
+        
+        .password-toggle {
+            position: absolute;
+            right: 0;
+            top: 0;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all var(--transition-normal);
+            padding: 8px;
+            border-radius: var(--border-radius-sm);
+        }
+        
+        .password-toggle:hover {
+            color: var(--primary-color);
+            transform: scale(1.1);
+        }
+        
+        .password-toggle:focus {
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
+        }
+        
+        /* Strength Indicator */
+        .signal-strength {
+            display: flex;
+            align-items: center;
+            margin-top: 15px;
+        }
+        
+        .strength-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-right: 10px;
+            letter-spacing: 0.05em;
+        }
+        
+        .strength-bars {
+            display: flex;
+            gap: 3px;
+        }
+        
+        .strength-bar {
+            width: 20px;
+            height: 7px;
+            background: rgba(76, 201, 240, 0.15);
+            border-radius: 2px;
+            transition: all var(--transition-normal);
+        }
+        
+        .strength-bar.active {
+            background: var(--primary-color);
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+        
+        /* QR Code Section */
+        .qr-section {
+            background: rgba(67, 97, 238, 0.07);
+            border-radius: var(--border-radius-md);
+            padding: 25px;
+            margin-bottom: 25px;
+            text-align: center;
+            border: var(--border-light);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .qr-section::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), transparent);
+            pointer-events: none;
+        }
+        
+        .qr-title {
+            font-size: 1.1rem;
+            color: var(--text-color);
+            margin-bottom: 20px;
+            letter-spacing: 0.02em;
+            position: relative;
+            display: inline-block;
+        }
+        
+        .qr-title::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 25%;
+            width: 50%;
+            height: 1px;
+            background: linear-gradient(to right, transparent, var(--primary-color), transparent);
+        }
+        
+        .qr-container {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 20px;
+            background: white;
+            padding: 10px;
+            border-radius: var(--border-radius-sm);
+            position: relative;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+        }
+        
+        .qr-container::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            border-radius: var(--border-radius-sm);
+            background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+            z-index: -1;
+            opacity: 0.5;
+        }
+        
+        .qr-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-muted);
+        }
+        
+        /* Action Buttons */
+        .action-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 16px 20px;
+            border-radius: var(--border-radius-md);
+            font-weight: 600;
+            font-size: 1.05rem;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            margin-top: 25px;
+            box-shadow: 0 5px 15px rgba(76, 201, 240, 0.3);
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            letter-spacing: 0.02em;
+            touch-action: manipulation;
+        }
+        
+        .action-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+        
+        .action-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transform: translateX(-100%);
+            transition: transform var(--transition-slow);
+        }
+        
+        .action-btn:hover::before {
+            transform: translateX(100%);
+        }
+        
+        .action-btn:hover:not(:disabled) {
+            background: rgba(76, 201, 240, 0.9);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(76, 201, 240, 0.4);
+        }
+        
+        .action-btn:focus {
+            outline: 2px solid var(--primary-color);
+            outline-offset: 3px;
+        }
+        
+        .download-btn {
+            background: var(--accent-color);
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+            margin-top: 15px;
+            font-size: 1rem;
+        }
+        
+        .download-btn:hover:not(:disabled) {
+            background: rgba(67, 97, 238, 0.9);
+            box-shadow: 0 8px 25px rgba(67, 97, 238, 0.4);
+        }
+        
+        .btn-icon {
+            margin-right: 10px;
+            font-size: 1.2rem;
+            transition: transform var(--transition-normal);
+        }
+        
+        .action-btn:hover .btn-icon {
+            transform: scale(1.2);
+        }
+        
+        /* Connection Status */
+        .connection-status {
+            text-align: center;
+            margin-top: 25px;
+            padding: 15px;
+            border-radius: var(--border-radius-md);
+            background: rgba(76, 201, 240, 0.07);
+            color: var(--text-color);
+            font-weight: 500;
+            display: none;
+            border: var(--border-light);
+            animation: slideUp 0.3s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .connection-status.success {
+            background: rgba(6, 214, 160, 0.1);
+            color: var(--success-color);
+            display: block;
+            border-color: rgba(6, 214, 160, 0.3);
+        }
+        
+        .connection-status.error {
+            background: rgba(239, 71, 111, 0.1);
+            color: var(--danger-color);
+            display: block;
+            border-color: rgba(239, 71, 111, 0.3);
+        }
+        
+        /* Link to manual instructions */
+        .note {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 20px;
+            line-height: 1.5;
+        }
+        
+        .manual-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all var(--transition-normal);
+            display: inline-block;
+            position: relative;
+        }
+        
+        .manual-link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: var(--primary-color);
+            transform: scaleX(0);
+            transform-origin: right;
+            transition: transform var(--transition-normal);
+        }
+        
+        .manual-link:hover::after {
+            transform: scaleX(1);
+            transform-origin: left;
+        }
+        
+        /* Options Buttons */
+        .options-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 25px;
+        }
+        
+        .option-btn {
+            padding: 12px 15px;
+            border: 1px solid rgba(76, 201, 240, 0.3);
+            border-radius: var(--border-radius-md);
+            background: rgba(76, 201, 240, 0.07);
+            color: var(--primary-color);
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+            touch-action: manipulation;
+        }
+        
+        .option-btn:hover {
+            background: rgba(76, 201, 240, 0.15);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(76, 201, 240, 0.15);
+        }
+        
+        .option-btn:focus {
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
+        }
+        
+        /* Manual Connection Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all var(--transition-normal);
+        }
+        
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal-content {
+            background: var(--background-secondary);
+            padding: 35px;
+            border-radius: var(--border-radius-lg);
+            max-width: 90%;
+            width: 400px;
+            box-shadow: var(--box-shadow);
+            transform: scale(0.9);
+            transition: transform var(--transition-normal);
+            position: relative;
+            border: var(--border-light);
+        }
+        
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+        
+        .modal-header {
+            margin-bottom: 25px;
+            position: relative;
+            text-align: center;
+        }
+        
+        .modal-header::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 15%;
+            width: 70%;
+            height: 1px;
+            background: linear-gradient(to right, transparent, var(--primary-color), transparent);
+        }
+        
+        .modal-title {
+            font-size: 1.5rem;
+            color: var(--text-color);
+            font-weight: 600;
+        }
+        
+        .modal-body {
+            margin-bottom: 30px;
+        }
+        
+        .instructions-list {
+            padding-left: 20px;
+            text-align: left;
+            margin: 20px 0;
+            line-height: 1.8;
+            color: var(--text-secondary);
+        }
+        
+        .instructions-list li {
+            margin-bottom: 12px;
+        }
+        
+        .instructions-list strong {
+            color: var(--text-color);
+            letter-spacing: 0.01em;
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: transparent;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-color);
+            cursor: pointer;
+            opacity: 0.7;
+            transition: all var(--transition-normal);
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+        
+        .close-btn:hover {
+            opacity: 1;
+            transform: rotate(90deg);
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .close-btn:focus {
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
+        }
+        
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--background-secondary);
+            color: var(--text-color);
+            padding: 15px 25px;
+            border-radius: var(--border-radius-md);
+            font-size: 0.95rem;
+            opacity: 0;
+            transition: all var(--transition-normal);
+            z-index: 1000;
+            box-shadow: var(--box-shadow);
+            border: var(--border-light);
+            max-width: 90%;
+            text-align: center;
+        }
+        
+        .toast.success {
+            border-left: 4px solid var(--success-color);
+        }
+        
+        .toast.error {
+            border-left: 4px solid var(--danger-color);
+        }
+        
+        .toast.warning {
+            border-left: 4px solid var(--warning-color);
+        }
+        
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Animations */
+        @keyframes appear {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.7; }
+            50% { transform: scale(1.05); opacity: 0.3; }
+            100% { transform: scale(0.95); opacity: 0.7; }
+        }
+        
+        @keyframes wave {
+            0% { transform: scale(0.5); opacity: 0.8; }
+            50% { transform: scale(0.8); opacity: 0.5; }
+            100% { transform: scale(1.1); opacity: 0; }
+        }
+        
+        /* Accessibility */
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+        
+        /* Print styles */
+        @media print {
+            body {
+                background: white;
+                color: black;
+            }
+            
+            .container {
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+            
+            .qr-container {
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+            
+            .action-btn,
+            .option-btn,
+            .modal {
+                display: none;
+            }
+        }
+        
+        /* Responsive design - improved breakpoints */
+        @media (max-width: 768px) {
+            .container {
+                border-radius: var(--border-radius-md);
+            }
+            
+            .wifi-header {
+                padding: 35px 25px;
+            }
+            
+            .wifi-icon {
+                width: 120px;
+                height: 120px;
+                margin-bottom: 20px;
+            }
+            
+            .signal-container {
+                width: 90px;
+                height: 90px;
+            }
+            
+            .signal-wave:nth-child(1) {
+                width: 90px;
+                height: 90px;
+            }
+            
+            .signal-wave:nth-child(2) {
+                width: 65px;
+                height: 65px;
+            }
+            
+            .signal-wave:nth-child(3) {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .wifi-title {
+                font-size: 1.8rem;
+            }
+            
+            .wifi-details {
+                padding: 0 25px 25px;
+            }
+            
+            .detail-card, .qr-section {
+                padding: 20px;
+            }
+            
+            .options-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                border-radius: var(--border-radius-sm);
+            }
+            
+            .wifi-header {
+                padding: 30px 20px;
+            }
+            
+            .wifi-icon {
+                width: 100px;
+                height: 100px;
+                margin-bottom: 15px;
+            }
+            
+            .signal-container {
+                width: 80px;
+                height: 80px;
+            }
+            
+            .signal-wave:nth-child(1) {
+                width: 80px;
+                height: 80px;
+            }
+            
+            .signal-wave:nth-child(2) {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .signal-wave:nth-child(3) {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .wifi-title {
+                font-size: 1.6rem;
+            }
+            
+            .wifi-subtitle {
+                font-size: 1rem;
+            }
+            
+            .wifi-details {
+                padding: 0 20px 20px;
+            }
+            
+            .detail-card, .qr-section {
+                padding: 15px;
+                margin-bottom: 20px;
+            }
+            
+            .detail-value {
+                font-size: 1.2rem;
+            }
+            
+            .qr-container {
+                width: 180px;
+                height: 180px;
+            }
+            
+            .action-btn {
+                font-size: 1rem;
+                padding: 14px 16px;
+            }
+        }
+        
+        /* Dark mode preference support */
+        @media (prefers-color-scheme: dark) {
+            .qr-container {
+                filter: brightness(0.95);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="wifi-header">
+            <div class="wifi-icon">
+                <div class="signal-container">
+                    <div class="signal-wave"></div>
+                    <div class="signal-wave"></div>
+                    <div class="signal-wave"></div>
+                    <div class="signal-core"></div>
+                </div>
+            </div>
+            <h1 class="wifi-title">WiFi Connection</h1>
+            <p class="wifi-subtitle">Secure Network Access</p>
+        </div>
+        
+        <div class="wifi-details">
+            <div class="detail-card">
+                <div class="detail-label">Network Name (SSID)</div>
+                <div class="detail-value" id="ssidValue">
+                    {% if detail and detail.ssid %}{{ detail.ssid }}{% else %}Unknown Network{% endif %}
+                </div>
+                
+                <div class="signal-strength">
+                    <span class="strength-label">Signal Strength:</span>
+                    <div class="strength-bars">
+                        <div class="strength-bar active"></div>
+                        <div class="strength-bar active"></div>
+                        <div class="strength-bar active"></div>
+                        <div class="strength-bar active"></div>
+                        <div class="strength-bar"></div>
+                    </div>
+                </div>
+                
+                <span class="encryption-badge">
+                    {% if detail and detail.encryption %}{{ detail.encryption }}{% else %}WPA/WPA2{% endif %}
+                </span>
+            </div>
+            
+            {% if detail and detail.password %}
+            <div class="detail-card">
+                <div class="detail-label">Network Password</div>
+                <div class="password-container">
+                    <div class="detail-value" id="passwordValue">•••••••••••••</div>
+                    <button class="password-toggle" id="passwordToggle" aria-label="Toggle password visibility">
+                        <span aria-hidden="true">Show</span>
+                        <span class="visually-hidden">Toggle password visibility</span>
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="qr-section">
+                <h3 class="qr-title">Scan to Connect</h3>
+                <div class="qr-container" id="wifiQrCode">
+                    <div class="qr-loading" aria-live="polite">
+                        <span>Loading QR code...</span>
+                    </div>
+                </div>
+                
+                <button class="action-btn download-btn" id="downloadQrBtn" aria-label="Download QR Code">
+                    <span class="btn-icon" aria-hidden="true">💾</span> Download QR Code
+                </button>
+            </div>
+            
+            <button class="action-btn" id="connectBtn" aria-label="Connect to WiFi automatically">
+                <span class="btn-icon" aria-hidden="true">📶</span> Connect Automatically
+            </button>
+            
+            <div id="connectionStatus" class="connection-status" role="status" aria-live="polite"></div>
+            
+            <p class="note">
+                This will attempt to connect compatible devices automatically. 
+                For manual connection, <button class="manual-link" id="manualLink" role="link" tabindex="0">view instructions</button>.
+            </p>
+            
+            <div class="options-buttons">
+                <button class="option-btn" id="copySSIDBtn" aria-label="Copy network name to clipboard">
+                    <span class="btn-icon" aria-hidden="true">📋</span> Copy Network Name
+                </button>
+                
+                {% if detail and detail.password %}
+                <button class="option-btn" id="copyPasswordBtn" aria-label="Copy password to clipboard">
+                    <span class="btn-icon" aria-hidden="true">🔑</span> Copy Password
+                </button>
+                {% endif %}
+                
+                <button class="option-btn" id="shareWifiBtn" aria-label="Share WiFi network details">
+                    <span class="btn-icon" aria-hidden="true">🔗</span> Share WiFi
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Manual Connection Instructions Modal -->
+    <div class="modal" id="instructionsModal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-content">
+            <button class="close-btn" id="closeModal" aria-label="Close instructions modal">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <div class="modal-header">
+                <h2 class="modal-title" id="modal-title">Manual Connection</h2>
+            </div>
+            <div class="modal-body">
+                <p>Follow these steps to connect to this WiFi network:</p>
+                <ol class="instructions-list">
+                    <li>Open your device's <strong>WiFi settings</strong></li>
+                    <li>Select the network named <strong id="modalSsid"></strong></li>
+                    <li>Enter password: <strong id="modalPassword"></strong></li>
+                    <li>Tap "<strong>Connect</strong>" or "<strong>Join</strong>"</li>
+                </ol>
+                <button class="action-btn" id="copyInstructionsBtn" aria-label="Copy connection instructions">
+                    <span class="btn-icon" aria-hidden="true">📋</span> Copy Instructions
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast notification -->
+    <div class="toast" id="toast" role="alert" aria-live="assertive"></div>
+
+    <!-- Include QR code library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+    
+    <script>
+        // Enhanced WiFi connection data
+        const wifiData = {
+            ssid: "{% if detail and detail.ssid %}{{ detail.ssid }}{% else %}Unknown Network{% endif %}",
+            password: "{% if detail and detail.password %}{{ detail.password }}{% else %}{% endif %}",
+            encryption: "{% if detail and detail.encryption %}{{ detail.encryption }}{% else %}WPA{% endif %}",
+            hidden: {% if detail and detail.hidden %}true{% else %}false{% endif %}
+        };
+        
+        // DOM elements caching
+        const elements = {
+            connectBtn: document.getElementById('connectBtn'),
+            passwordToggle: document.getElementById('passwordToggle'),
+            passwordValue: document.getElementById('passwordValue'),
+            copySSIDBtn: document.getElementById('copySSIDBtn'),
+            copyPasswordBtn: document.getElementById('copyPasswordBtn'),
+            shareWifiBtn: document.getElementById('shareWifiBtn'),
+            downloadQrBtn: document.getElementById('downloadQrBtn'),
+            connectionStatus: document.getElementById('connectionStatus'),
+            instructionsModal: document.getElementById('instructionsModal'),
+            closeModal: document.getElementById('closeModal'),
+            modalSsid: document.getElementById('modalSsid'),
+            modalPassword: document.getElementById('modalPassword'),
+            manualLink: document.getElementById('manualLink'),
+            copyInstructionsBtn: document.getElementById('copyInstructionsBtn'),
+            toast: document.getElementById('toast'),
+            qrContainer: document.getElementById('wifiQrCode')
+        };
+        
+        // Toast notification queue
+        let toastTimeout;
+        
+        // Function to show toast notification
+        function showToast(message, type = 'success', duration = 3000) {
+            clearTimeout(toastTimeout);
+            elements.toast.textContent = message;
+            elements.toast.className = 'toast ' + type;
+            elements.toast.classList.add('show');
+            
+            toastTimeout = setTimeout(() => {
+                elements.toast.classList.remove('show');
+            }, duration);
+        }
+        
+        // Toggle password visibility with security
+        function togglePassword() {
+            if (!elements.passwordValue || !elements.passwordToggle) return;
+            
+            const isHidden = elements.passwordValue.textContent === '•••••••••••••';
+            
+            if (isHidden) {
+                elements.passwordValue.textContent = wifiData.password;
+                elements.passwordToggle.querySelector('span:first-child').textContent = 'Hide';
+                elements.passwordToggle.setAttribute('aria-pressed', 'true');
+            } else {
+                elements.passwordValue.textContent = '•••••••••••••';
+                elements.passwordToggle.querySelector('span:first-child').textContent = 'Show';
+                elements.passwordToggle.setAttribute('aria-pressed', 'false');
+            }
+        }
+        
+        // Modern clipboard implementation
+        async function copyToClipboard(text, successMessage) {
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(text);
+                    showToast(successMessage);
+                } else {
+                    // Fallback for older browsers
+                    const successful = fallbackCopyTextToClipboard(text);
+                    if (successful) {
+                        showToast(successMessage);
+                    } else {
+                        showToast('Failed to copy. Please try again.', 'error');
+                    }
+                }
+            } catch (err) {
+                console.error('Clipboard write failed:', err);
+                showToast('Failed to copy. Please try again.', 'error');
+            }
+        }
+        
+        // Fallback clipboard function
+        function fallbackCopyTextToClipboard(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none';
+            document.body.appendChild(textArea);
+            
+            try {
+                textArea.select();
+                textArea.setSelectionRange(0, 99999); // For mobile devices
+                const successful = document.execCommand('copy');
+                return successful;
+            } catch (err) {
+                console.error('Fallback: Oops, unable to copy', err);
+                return false;
+            } finally {
+                document.body.removeChild(textArea);
+            }
+        }
+        
+        // Copy functions
+        const copySSID = () => copyToClipboard(wifiData.ssid, 'Network name copied to clipboard');
+        
+        const copyPassword = () => {
+            if (!wifiData.password) {
+                showToast('No password available', 'warning');
+                return;
+            }
+            copyToClipboard(wifiData.password, 'Password copied to clipboard');
+        };
+        
+        const copyInstructions = () => {
+            const instructions = `WiFi Connection Instructions:
+1. Open your device's WiFi settings
+2. Select the network named "${wifiData.ssid}"
+3. Enter password: ${wifiData.password || 'None (Open Network)'}
+4. Tap "Connect" or "Join"`;
+            
+            copyToClipboard(instructions, 'Instructions copied to clipboard');
+        };
+        
+        // Generate WiFi QR code with error handling
+        function generateWifiQR() {
+            try {
+                // Clear loading state
+                elements.qrContainer.innerHTML = '';
+                
+                // Create WiFi connection string according to standard
+                let wifiString = `WIFI:T:${wifiData.encryption};S:${escapeQRString(wifiData.ssid)};`;
+                
+                if (wifiData.password) {
+                    wifiString += `P:${escapeQRString(wifiData.password)};`;
+                }
+                
+                if (wifiData.hidden) {
+                    wifiString += 'H:true;';
+                }
+                
+                wifiString += ';';
+                
+                // Generate QR code
+                new QRCode(elements.qrContainer, {
+                    text: wifiString,
+                    width: 200,
+                    height: 200,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.M
+                });
+            } catch (error) {
+                console.error('QR generation failed:', error);
+                elements.qrContainer.innerHTML = '<div class="qr-loading">Failed to generate QR code</div>';
+            }
+        }
+        
+        // Escape special characters for QR code
+        function escapeQRString(str) {
+            return str.replace(/[\\:;,"]/g, '\\            .qr-container {
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }');
+        }
+        
+        // Download QR code as image
+        async function downloadQRCode() {
+            try {
+                const qrCanvas = elements.qrContainer.querySelector('canvas');
+                if (!qrCanvas) {
+                    showToast('No QR code available to download', 'error');
+                    return;
+                }
+                
+                const blob = await new Promise(resolve => qrCanvas.toBlob(resolve, 'image/png'));
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.download = `wifi_${wifiData.ssid.replace(/\s+/g, '_').toLowerCase()}.png`;
+                link.href = url;
+                link.click();
+                
+                // Clean up
+                setTimeout(() => URL.revokeObjectURL(url), 100);
+                
+                showToast('QR code downloaded successfully');
+            } catch (error) {
+                console.error('Download failed:', error);
+                showToast('Failed to download QR code', 'error');
+            }
+        }
+        
+        // Share WiFi credentials with Web Share API
+        async function shareWifi() {
+            const shareData = {
+                title: 'WiFi Connection',
+                text: `Connect to WiFi network: ${wifiData.ssid}`
+            };
+            
+            if (wifiData.password) {
+                shareData.text += `\nPassword: ${wifiData.password}`;
+            }
+            
+            try {
+                if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+                    await navigator.share(shareData);
+                    showToast('WiFi credentials shared successfully');
+                } else {
+                    // Fallback to showing instructions modal
+                    showInstructionsModal();
+                }
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    console.error('Share failed:', err);
+                    showInstructionsModal();
+                }
+            }
+        }
+        
+        // Connect to WiFi network with improved feedback
+        async function connectToWifi() {
+            elements.connectBtn.innerHTML = '<span class="spinner"></span> Connecting...';
+            elements.connectBtn.disabled = true;
+            
+            try {
+                // Check for experimental WiFi API support
+                if ('wifi' in navigator) {
+                    // Future API support
+                    await navigator.wifi.connect({
+                        ssid: wifiData.ssid,
+                        password: wifiData.password,
+                        security: wifiData.encryption
+                    });
+                    handleConnectionSuccess();
+                } else {
+                    // Simulate connection process
+                    await simulateConnection();
+                }
+            } catch (error) {
+                handleConnectionError(error);
+            } finally {
+                // Reset button after delay
+                setTimeout(() => {
+                    elements.connectBtn.innerHTML = '<span class="btn-icon" aria-hidden="true">📶</span> Connect Automatically';
+                    elements.connectBtn.disabled = false;
+                    elements.connectBtn.style.background = '';
+                }, 5000);
+            }
+        }
+        
+        // Simulate connection process with realistic states
+        async function simulateConnection() {
+            const states = [
+                { message: 'Scanning networks...', duration: 800 },
+                { message: 'Connecting to ' + wifiData.ssid + '...', duration: 1200 },
+                { message: 'Authenticating...', duration: 1000 },
+                { message: 'Obtaining IP address...', duration: 800 }
+            ];
+            
+            for (const state of states) {
+                elements.connectBtn.innerHTML = `<span class="spinner"></span> ${state.message}`;
+                await delay(state.duration);
+            }
+            
+            // Simulate success/failure (70% success rate for demo)
+            if (Math.random() > 0.3) {
+                handleConnectionSuccess();
+            } else {
+                handleConnectionError(new Error('Connection failed'));
+            }
+        }
+        
+        function handleConnectionSuccess() {
+            elements.connectBtn.innerHTML = '<span class="btn-icon" aria-hidden="true">✓</span> Connected!';
+            elements.connectBtn.style.background = 'var(--success-color)';
+            
+            elements.connectionStatus.textContent = 'Successfully connected to the network!';
+            elements.connectionStatus.className = 'connection-status success';
+            
+            // Update signal strength
+            document.querySelectorAll('.strength-bar').forEach(bar => bar.classList.add('active'));
+        }
+        
+        function handleConnectionError(error) {
+            elements.connectBtn.innerHTML = '<span class="btn-icon" aria-hidden="true">✖</span> Connection Failed';
+            elements.connectBtn.style.background = 'var(--danger-color)';
+            
+            elements.connectionStatus.textContent = 'Could not connect automatically. Try manual connection.';
+            elements.connectionStatus.className = 'connection-status error';
+            
+            // Show manual instructions after delay
+            setTimeout(showInstructionsModal, 1500);
+        }
+        
+        // Utility delay function
+        const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+        
+        // Modal management
+        function showInstructionsModal() {
+            if (elements.modalSsid) elements.modalSsid.textContent = wifiData.ssid;
+            if (elements.modalPassword) elements.modalPassword.textContent = wifiData.password || 'None (Open Network)';
+            
+            elements.instructionsModal.classList.add('active');
+            elements.closeModal.focus();
+            
+            // Trap focus in modal
+            trapFocus(elements.instructionsModal);
+        }
+        
+        function closeInstructionsModal() {
+            elements.instructionsModal.classList.remove('active');
+            elements.manualLink.focus();
+        }
+        
+        // Focus trap for accessibility
+        function trapFocus(element) {
+            const focusableElements = element.querySelectorAll(
+                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+            );
+            const firstFocusableElement = focusableElements[0];
+            const lastFocusableElement = focusableElements[focusableElements.length - 1];
+            
+            element.addEventListener('keydown', function(e) {
+                if (e.key === 'Tab') {
+                    if (e.shiftKey) {
+                        if (document.activeElement === firstFocusableElement) {
+                            lastFocusableElement.focus();
+                            e.preventDefault();
+                        }
+                    } else {
+                        if (document.activeElement === lastFocusableElement) {
+                            firstFocusableElement.focus();
+                            e.preventDefault();
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Event listeners with improved handling
+        function attachEventListeners() {
+            // Password toggle
+            elements.passwordToggle?.addEventListener('click', togglePassword);
+            
+            // Copy buttons
+            elements.copySSIDBtn?.addEventListener('click', copySSID);
+            elements.copyPasswordBtn?.addEventListener('click', copyPassword);
+            elements.copyInstructionsBtn?.addEventListener('click', copyInstructions);
+            
+            // Action buttons
+            elements.shareWifiBtn?.addEventListener('click', shareWifi);
+            elements.downloadQrBtn?.addEventListener('click', downloadQRCode);
+            elements.connectBtn?.addEventListener('click', connectToWifi);
+            
+            // Modal controls
+            elements.closeModal?.addEventListener('click', closeInstructionsModal);
+            elements.manualLink?.addEventListener('click', showInstructionsModal);
+            
+            // Keyboard support for manual link
+            elements.manualLink?.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    showInstructionsModal();
+                }
+            });
+            
+            // Close modal on outside click
+            elements.instructionsModal?.addEventListener('click', (e) => {
+                if (e.target === elements.instructionsModal) {
+                    closeInstructionsModal();
+                }
+            });
+            
+            // Keyboard navigation
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && elements.instructionsModal.classList.contains('active')) {
+                    closeInstructionsModal();
+                }
+            });
+        }
+        
+        // Initialize application
+        function initializeApp() {
+            // Generate QR code
+            generateWifiQR();
+            
+            // Attach event listeners
+            attachEventListeners();
+            
+            // Animate signal waves with stagger
+            setTimeout(() => {
+                const waves = document.querySelectorAll('.signal-wave');
+                waves.forEach((wave, index) => {
+                    wave.style.animationDelay = `${index * 0.4}s`;
+                });
+            }, 500);
+        }
+        
+        // Start app when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeApp);
+        } else {
+            initializeApp();
+        }
+        
+        // Service Worker registration for offline support
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').catch(err => {
+                    console.log('Service Worker registration failed:', err);
+                });
+            });
+        }
+    </script>
+</body>
+</html>

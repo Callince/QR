@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}QR Craft - Advanced QR Code Generator{% endblock %}</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/favicon.png') }}">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        secondary: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            200: '#ddd6fe',
+                            300: '#c4b5fd',
+                            400: '#a78bfa',
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                            800: '#5b21b6',
+                            900: '#4c1d95',
+                        },
+                        accent: {
+                            50: '#fffbeb',
+                            100: '#fef3c7',
+                            200: '#fde68a',
+                            300: '#fcd34d',
+                            400: '#fbbf24',
+                            500: '#f59e0b',
+                            600: '#d97706',
+                            700: '#b45309',
+                            800: '#92400e',
+                            900: '#78350f',
+                        }
+                    },
+                    fontFamily: {
+                        'sans': ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+                        'mono': ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', 'monospace'],
+                    },
+                    boxShadow: {
+                        'soft': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                        'card': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                        'glow': '0 0 15px rgba(124, 58, 237, 0.4)',
+                        'glow-primary': '0 0 15px rgba(14, 165, 233, 0.4)'
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'gradient': 'gradient 8s ease infinite',
+                        'shift': 'shift 3s ease infinite alternate',
+                        'fade-in': 'fadeInUp 0.5s ease-out forwards',
+                        'bounce-slow': 'bounce 3s infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        gradient: {
+                            '0%': { backgroundPosition: '0% 50%' },
+                            '50%': { backgroundPosition: '100% 50%' },
+                            '100%': { backgroundPosition: '0% 50%' },
+                        },
+                        shift: {
+                            '0%': { transform: 'translateX(0)' },
+                            '100%': { transform: 'translateX(10px)' },
+                        },
+                        fadeInUp: {
+                            from: {
+                                opacity: 0,
+                                transform: 'translate3d(0, 20px, 0)'
+                            },
+                            to: {
+                                opacity: 1,
+                                transform: 'translate3d(0, 0, 0)'
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <style>
+        /* Base styles and resets */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+        
+        body {
+            scroll-behavior: smooth;
+            isolation: isolate;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        
+        /* QR Code pattern background */
+        .qr-pattern {
+            background-color: #f8fafc;
+            background-image: 
+                radial-gradient(#e2e8f0 1.5px, transparent 1.5px),
+                radial-gradient(#e2e8f0 1.5px, transparent 1.5px);
+            background-size: 30px 30px;
+            background-position: 0 0, 15px 15px;
+            z-index: 10;
+        }
+        
+        /* Animated gradient background */
+        .gradient-bg {
+            background: linear-gradient(-45deg, #0ea5e9, #8b5cf6, #ec4899, #f97316);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+        
+        @keyframes gradient {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+        
+        /* QR code grid animation */
+        .qr-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-template-rows: repeat(10, 1fr);
+            gap: 4px;
+        }
+        
+        .qr-cell {
+            aspect-ratio: 1/1;
+            background-color: #cbd5e1;
+            transition: background-color 0.3s ease;
+            border-radius: 2px;
+        }
+        
+        .qr-cell.active {
+            background-color: #0f172a;
+        }
+        
+        /* Glassmorphic elements */
+        .glass {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+        }
+        
+        /* Menu and Nav animations */
+        .nav-item {
+            position: relative;
+            transition: color 0.2s ease;
+        }
+        
+        .nav-item::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -2px;
+            left: 0;
+            background-color: #8b5cf6;
+            transition: width 0.3s ease;
+        }
+        
+        .nav-item:hover::after,
+        .nav-item.active::after {
+            width: 100%;
+        }
+        
+        /* Active nav item */
+        .nav-item.active {
+            color: #7c3aed; /* secondary-600 */
+        }
+        
+        /* Toast notifications system */
+        .toast-container {
+            position: fixed;
+            top: 1.25rem;
+            right: 1.25rem;
+            z-index: 1070;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .toast {
+            position: relative;
+            max-width: 350px;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            transform: translateX(100%);
+            opacity: 0;
+            transition: transform 0.5s ease, opacity 0.5s ease;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        .toast.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        
+        .toast .close-btn {
+            margin-left: auto;
+            cursor: pointer;
+            transition: color 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 9999px;
+        }
+        
+        .toast .close-btn:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Improved dropdown menu styling */
+        .dropdown-container {
+            position: relative;
+            z-index: 100;
+        }
+        
+        .dropdown-menu {
+            position: absolute;
+            right: 0;
+            top: calc(100% + 0.5rem);
+            width: 12rem;
+            padding: 0.5rem 0;
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e5e7eb;
+            z-index: 1050;
+            transform-origin: top right;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            visibility: hidden;
+        }
+        
+        .dropdown-menu.visible {
+            visibility: visible;
+        }
+        
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            padding: 0.625rem 1rem;
+            color: #374151;
+            font-size: 0.875rem;
+            transition: background-color 0.15s ease, color 0.15s ease;
+        }
+        
+        .dropdown-item:hover {
+            background-color: #f3f4f6;
+            color: #1f2937;
+        }
+        
+        .dropdown-item.danger {
+            color: #ef4444;
+        }
+        
+        .dropdown-item.danger:hover {
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+        
+        .dropdown-divider {
+            height: 1px;
+            margin: 0.375rem 0;
+            background-color: #e5e7eb;
+        }
+        
+        /* Header positioning */
+        .header {
+            position: relative;
+            z-index: 1000;
+            width: 100%;
+        }
+        
+        /* Main content */
+        .main-content {
+            position: relative;
+            z-index: 5;
+        }
+        
+        /* Footer styling */
+        .footer {
+            position: relative;
+            z-index: 10;
+        }
+        
+        /* Mobile menu */
+        .mobile-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            z-index: 990;
+            background-color: white;
+            border-bottom: 1px solid #e5e7eb;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transform: translateY(-10px);
+            opacity: 0;
+            visibility: hidden;
+            transition: transform 0.3s ease, opacity 0.3s ease, visibility 0.3s ease;
+        }
+        
+        .mobile-menu.visible {
+            transform: translateY(0);
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        /* Button styles */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.375rem;
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 5px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 100%;
+            transform: scale(0) translate(-50%, -50%);
+            transform-origin: top left;
+            opacity: 0;
+        }
+        
+        .btn:active::after {
+            animation: ripple 0.6s ease-out;
+        }
+        
+        @keyframes ripple {
+            0% {
+                transform: scale(0) translate(-50%, -50%);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(40) translate(-50%, -50%);
+                opacity: 0;
+            }
+        }
+        
+        .btn:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.5);
+        }
+        
+        .btn-primary {
+            background-color: #7c3aed;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #6d28d9;
+        }
+        
+        .btn-primary:active {
+            background-color: #5b21b6;
+        }
+        
+        .btn-outline {
+            border: 1px solid #e5e7eb;
+            background-color: transparent;
+            color: #374151;
+        }
+        
+        .btn-outline:hover {
+            background-color: #f9fafb;
+        }
+        
+        /* Avatar circle */
+        .avatar-circle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9999px;
+            background-color: #ede9fe;
+            color: #7c3aed;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        /* Enhanced scrollbars for supported browsers */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 transparent;
+        }
+        
+        *::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        *::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        *::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 4px;
+        }
+        
+        /* Animations for page elements */
+        .fade-in {
+            animation: fadeIn 0.5s ease forwards;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        .slide-in {
+            animation: slideIn 0.5s ease forwards;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        /* Enhanced card styles */
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        /* Focus styles for accessibility */
+        a:focus, button:focus, [role="button"]:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.5);
+            border-radius: 0.25rem;
+        }
+        
+        /* Make sure elements have proper stacking context */
+        [x-cloak] {
+            display: none !important;
+        }
+        
+        @supports (backdrop-filter: blur(10px)) {
+            .glass {
+                backdrop-filter: blur(10px);
+            }
+        }
+        
+        /* Utility for focusing elements */
+        .focus-ring:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.5);
+            border-radius: 0.25rem;
+        }
+        
+        /* Enhanced button styles */
+        .btn-gradient {
+            background: linear-gradient(45deg, #7c3aed, #4f46e5);
+            color: white;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-gradient:hover {
+            background: linear-gradient(45deg, #6d28d9, #4338ca);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+        }
+        
+        /* Pill badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.35em 0.65em;
+            font-size: 0.75em;
+            font-weight: 500;
+            border-radius: 9999px;
+            letter-spacing: 0.025em;
+        }
+        
+        .badge-primary {
+            background-color: #ede9fe;
+            color: #7c3aed;
+        }
+        
+        .badge-success {
+            background-color: #d1fae5;
+            color: #059669;
+        }
+        
+        .badge-warning {
+            background-color: #fef3c7;
+            color: #d97706;
+        }
+        
+        .badge-danger {
+            background-color: #fee2e2;
+            color: #dc2626;
+        }
+        
+        /* Feature highlight box */
+        .feature-box {
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .feature-box:hover {
+            border-color: #c4b5fd;
+            box-shadow: 0 10px 15px -3px rgba(124, 58, 237, 0.1), 0 4px 6px -2px rgba(124, 58, 237, 0.05);
+        }
+        
+        .feature-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 3rem;
+            height: 3rem;
+            border-radius: 9999px;
+            font-size: 1.25rem;
+            background: linear-gradient(45deg, #7c3aed, #4f46e5);
+            color: white;
+            margin-bottom: 1rem;
+        }
+        
+        /* Progress bar */
+        .progress {
+            height: 0.5rem;
+            width: 100%;
+            background-color: #e2e8f0;
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background-color: #7c3aed;
+            border-radius: 9999px;
+            transition: width 0.5s ease;
+        }
+    </style>
+    
+    {% block head %}{% endblock %}
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="min-h-screen font-sans bg-gray-50 text-gray-800 flex flex-col">
+    <!-- Flash Messages -->
+    <div id="toast-container" class="toast-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="toast glass text-gray-800 shadow-lg rounded-lg flex items-center show" role="alert">
+                        {% if category == 'error' %}
+                            <i class="fa-solid fa-circle-exclamation text-red-500 mr-3"></i>
+                        {% elif category == 'success' %}
+                            <i class="fa-solid fa-circle-check text-green-500 mr-3"></i>
+                        {% else %}
+                            <i class="fa-solid fa-circle-info text-blue-500 mr-3"></i>
+                        {% endif %}
+                        <div>{{ message }}</div>
+                        <button onclick="this.parentElement.remove()" class="close-btn">
+                            <i class="fa-solid fa-xmark text-gray-500 hover:text-gray-700"></i>
+                        </button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Header with improved aesthetic -->
+    <header class="header bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <!-- Logo and Navigation -->
+                <div class="flex items-center">
+                    <a href="{{ url_for('index') }}" class="flex items-center space-x-2 focus-ring rounded-md">
+                        <div class="h-10 w-10 bg-gradient-to-br from-primary-500 to-secondary-600 rounded-md flex items-center justify-center shadow-glow">
+                            <i class="fas fa-qrcode text-white text-lg"></i>
+                        </div>
+                        <span class="text-xl font-bold text-gray-900">QR Craft</span>
+                    </a>
+                    <div class="hidden sm:ml-8 sm:flex sm:space-x-8">
+                        <a href="{{ url_for('index') }}" class="nav-item py-2 px-1 text-gray-700 hover:text-secondary-700 font-medium focus-ring rounded-md {% if request.path == url_for('index') %}text-secondary-700 active{% endif %}">Home</a>
+                        {% if current_user.is_authenticated %}
+                            <a href="{{ url_for('dashboard') }}" class="nav-item py-2 px-1 text-gray-700 hover:text-secondary-700 font-medium focus-ring rounded-md {% if request.path == url_for('dashboard') %}text-secondary-700 active{% endif %}">Dashboard</a>
+                            <a href="{{ url_for('create_qr') }}" class="nav-item py-2 px-1 text-gray-700 hover:text-secondary-700 font-medium focus-ring rounded-md {% if request.path == url_for('create_qr') %}text-secondary-700 active{% endif %}">Create QR</a>
+                            <a href="{{ url_for('user_analytics') }}" class="nav-item py-2 px-1 text-gray-700 hover:text-secondary-700 font-medium focus-ring rounded-md {% if request.path == url_for('user_analytics') %}text-secondary-700 active{% endif %}">Analytics</a>
+                        {% else %}
+                            <a href="{{ url_for('help_center') }}" class="nav-item py-2 px-1 text-gray-700 hover:text-secondary-700 font-medium focus-ring rounded-md {% if request.path == url_for('help_center') %}text-secondary-700 active{% endif %}">Help</a>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Right Side Actions -->
+                <div class="flex items-center space-x-4">
+                    <!-- User Menu or Auth Links -->
+                    {% if current_user.is_authenticated %}
+                        <div class="dropdown-container" id="user-dropdown">
+                            <button class="flex items-center space-x-2 rounded-full p-1 text-gray-800 hover:text-secondary-600 focus-ring" aria-expanded="false" aria-haspopup="true" aria-controls="user-dropdown-menu">
+                                <span class="avatar-circle h-10 w-10">
+                                    <span class="text-sm">{{ current_user.name[0].upper() }}</span>
+                                </span>
+                                <span class="hidden md:block font-medium text-sm">{{ current_user.name }}</span>
+                                <i class="fas fa-chevron-down text-xs"></i>
+                            </button>
+                            
+                            <!-- Dropdown Menu -->
+                            <div x-show="open" @click.away="open = false" id="user-dropdown-menu" class="dropdown-menu" role="menu" aria-labelledby="user-dropdown-button"
+                                 x-transition:enter="transition ease-out duration-100" 
+                                 x-transition:enter-start="transform opacity-0 scale-95" 
+                                 x-transition:enter-end="transform opacity-100 scale-100" 
+                                 x-transition:leave="transition ease-in duration-75" 
+                                 x-transition:leave-start="transform opacity-100 scale-100" 
+                                 x-transition:leave-end="transform opacity-0 scale-95">
+                                {% if request.path != url_for('dashboard') %}
+                                <a href="{{ url_for('dashboard') }}" class="dropdown-item" role="menuitem">
+                                    <i class="fas fa-tachometer-alt w-5 mr-2"></i> Dashboard
+                                </a>
+                                {% endif %}
+                                {% if request.path != url_for('subscription.user_subscriptions') %}
+                                <a href="{{ url_for('subscription.user_subscriptions') }}" class="dropdown-item" role="menuitem">
+                                    <i class="fas fa-crown w-5 mr-2"></i> Subscription
+                                </a>
+                                {% endif %}
+                                {% if request.path != url_for('profile') %}
+                                <a href="{{ url_for('profile') }}" class="dropdown-item" role="menuitem">
+                                    <i class="fas fa-user w-5 mr-2"></i> Profile
+                                </a>
+                                {% endif %}
+                                <div class="dropdown-divider"></div>
+                                <a href="{{ url_for('logout') }}" class="dropdown-item danger" role="menuitem">
+                                    <i class="fas fa-sign-out-alt w-5 mr-2"></i> Logout
+                                </a>
+                            </div>
+                        </div>
+                    {% else %}
+                        <a href="{{ url_for('login') }}" class="btn btn-outline focus-ring">Login</a>
+                        <a href="{{ url_for('signup') }}" class="btn btn-gradient focus-ring">Sign Up</a>
+                    {% endif %} 
+                    </div>
+                    
+                    <!-- Mobile Menu Button -->
+                    <button type="button" id="mobile-menu-button" class="sm:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-secondary-700 hover:bg-gray-100 focus-ring" aria-controls="mobile-menu" aria-expanded="false">
+                        <span class="sr-only">Open main menu</span>
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div class="mobile-menu sm:hidden" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                <a href="{{ url_for('index') }}" class="block px-3 py-2 rounded-md text-base font-medium {% if request.path == url_for('index') %}bg-secondary-50 text-secondary-700{% else %}text-gray-700 hover:bg-gray-50 hover:text-secondary-700{% endif %}">Home</a>
+                {% if current_user.is_authenticated %}
+                    {% if request.path != url_for('dashboard') %}
+                    <a href="{{ url_for('dashboard') }}" class="block px-3 py-2 rounded-md text-base font-medium {% if request.path == url_for('dashboard') %}bg-secondary-50 text-secondary-700{% else %}text-gray-700 hover:bg-gray-50 hover:text-secondary-700{% endif %}">Dashboard</a>
+                    {% endif %}
+                    <a href="{{ url_for('create_qr') }}" class="block px-3 py-2 rounded-md text-base font-medium {% if request.path == url_for('create_qr') %}bg-secondary-50 text-secondary-700{% else %}text-gray-700 hover:bg-gray-50 hover:text-secondary-700{% endif %}">Create QR</a>
+                    <a href="{{ url_for('user_analytics') }}" class="block px-3 py-2 rounded-md text-base font-medium {% if request.path == url_for('user_analytics') %}bg-secondary-50 text-secondary-700{% else %}text-gray-700 hover:bg-gray-50 hover:text-secondary-700{% endif %}">Analytics</a>
+                    {% if request.path != url_for('subscription.user_subscriptions') %}
+                    <a href="{{ url_for('subscription.user_subscriptions') }}" class="block px-3 py-2 rounded-md text-base font-medium {% if request.path == url_for('subscription.user_subscriptions') %}bg-secondary-50 text-secondary-700{% else %}text-gray-700 hover:bg-gray-50 hover:text-secondary-700{% endif %}">Subscription</a>
+                    {% endif %}
+                    {% if request.path != url_for('profile') %}
+                    <a href="{{ url_for('profile') }}" class="block px-3 py-2 rounded-md text-base font-medium {% if request.path == url_for('profile') %}bg-secondary-50 text-secondary-700{% else %}text-gray-700 hover:bg-gray-50 hover:text-secondary-700{% endif %}">Profile</a>
+                    {% endif %}
+                    <div class="border-t border-gray-200 my-2"></div>
+                    <a href="{{ url_for('logout') }}" class="block px-3 py-2 rounded-md text-base font-medium text-red-600 hover:bg-red-50 hover:text-red-700">Logout</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <!-- Subscription Status Indicator (NEW) -->
+    {% if current_user.is_authenticated %}
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+        {% if has_subscription %}
+        <div class="bg-white shadow-sm rounded-lg p-3 border border-gray-200 flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <div class="h-10 w-10 bg-secondary-100 rounded-full flex items-center justify-center text-secondary-700">
+                    <i class="fas fa-crown text-lg"></i>
+                </div>
+                <div>
+                    <span class="text-sm text-gray-600">{{ plan_name }} Plan</span>
+                    <div class="flex space-x-4 text-xs text-gray-500">
+                        <span>QR Codes: {{ qr_remaining }}/{{ qr_limit }}</span>
+                        {% if analytics_remaining is defined %}
+                        <span>Analytics: {{ analytics_remaining }} remaining</span>
+                        {% endif %}
+                        <span>Expires: {{ expires_on|date('%b %d, %Y') if expires_on else 'Unknown' }}</span>
+                    </div>
+                </div>
+            </div>
+            <a href="{{ url_for('subscription.user_subscriptions') }}" class="text-sm text-secondary-600 hover:text-secondary-800 font-medium">
+                Manage Subscription
+            </a>
+        </div>
+        {% else %}
+        <div class="bg-gray-50 shadow-sm rounded-lg p-3 border border-gray-200 flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <div class="h-10 w-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-500">
+                    <i class="fas fa-crown text-lg"></i>
+                </div>
+                <div>
+                    <span class="text-sm text-gray-600">No Active Subscription</span>
+                    <div class="text-xs text-gray-500">
+                        <span>Subscribe to create more QR codes and access analytics</span>
+                    </div>
+                </div>
+            </div>
+            <a href="{{ url_for('subscription.user_subscriptions') }}" class="btn btn-sm btn-gradient">
+                Subscribe Now
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Main Content with improved aesthetics -->
+    <main class="main-content flex-grow fade-in">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer with improved design -->
+    <footer class="footer bg-white border-t border-gray-200 py-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="col-span-1 md:col-span-2 slide-in">
+                    <div class="flex items-center space-x-2">
+                        <div class="h-10 w-10 bg-gradient-to-br from-primary-500 to-secondary-600 rounded-md flex items-center justify-center shadow-glow">
+                            <i class="fas fa-qrcode text-white text-lg"></i>
+                        </div>
+                        <span class="text-xl font-bold text-gray-900">QR Craft</span>
+                    </div>
+                    <p class="mt-4 text-gray-600 max-w-md">
+                        Create beautiful, customizable QR codes that stand out from the crowd. Perfect for businesses, events, marketing campaigns, and personal use.
+                    </p>
+                    <div class="mt-6 flex space-x-5">
+                        <a href="#" class="text-gray-400 hover:text-secondary-600 hover:scale-110 transition-all duration-300 focus-ring rounded-full p-1">
+                            <i class="fab fa-twitter text-lg"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-secondary-600 hover:scale-110 transition-all duration-300 focus-ring rounded-full p-1">
+                            <i class="fab fa-facebook text-lg"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-secondary-600 hover:scale-110 transition-all duration-300 focus-ring rounded-full p-1">
+                            <i class="fab fa-instagram text-lg"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-secondary-600 hover:scale-110 transition-all duration-300 focus-ring rounded-full p-1">
+                            <i class="fab fa-github text-lg"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="slide-in" style="animation-delay: 0.1s;">
+                    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Resources</h3>
+                    <ul class="mt-4 space-y-3">
+                        <li><a href="{{ url_for('help_center') }}" class="text-gray-600 hover:text-secondary-600 transition-colors duration-300 focus-ring rounded-md px-1">Help Center</a></li>
+                        <li><a href="#" class="text-gray-600 hover:text-secondary-600 transition-colors duration-300 focus-ring rounded-md px-1">Documentation</a></li>
+                        <li><a href="#" class="text-gray-600 hover:text-secondary-600 transition-colors duration-300 focus-ring rounded-md px-1">Tutorials</a></li>
+                        <li><a href="#" class="text-gray-600 hover:text-secondary-600 transition-colors duration-300 focus-ring rounded-md px-1">Blog</a></li>
+                    </ul>
+                </div>
+                <div class="slide-in" style="animation-delay: 0.2s;">
+                    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Legal</h3>
+                    <ul class="mt-4 space-y-3">
+                        <li><a href="#" class="text-gray-600 hover:text-secondary-600 transition-colors duration-300 focus-ring rounded-md px-1">Privacy Policy</a></li>
+                        <li><a href="#" class="text-gray-600 hover:text-secondary-600 transition-colors duration-300 focus-ring rounded-md px-1">Terms of Service</a></li>
+                        <li><a href="#" class="text-gray-600 hover:text-secondary-600 transition-colors duration-300 focus-ring rounded-md px-1">Cookie Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-12 border-t border-gray-200 pt-6">
+                <p class="text-sm text-gray-500 text-center">
+                    © 2025 QR Craft. All rights reserved.
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Alpine.js for interactive components -->
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.12.0/cdn.min.js"></script>
+    
+    <!-- Common JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Enhanced dropdown functionality
+            const userDropdown = document.getElementById('user-dropdown');
+            if (userDropdown) {
+                const dropdownButton = userDropdown.querySelector('button');
+                const dropdownMenu = document.getElementById('user-dropdown-menu');
+                const chevronIcon = dropdownButton.querySelector('i.fa-chevron-down');
+                
+                dropdownButton.addEventListener('click', function() {
+                    const expanded = dropdownButton.getAttribute('aria-expanded') === 'true';
+                    
+                    if (expanded) {
+                        dropdownMenu.classList.remove('visible');
+                        dropdownButton.setAttribute('aria-expanded', 'false');
+                        chevronIcon.style.transform = 'rotate(0deg)';
+                    } else {
+                        dropdownMenu.classList.add('visible');
+                        dropdownButton.setAttribute('aria-expanded', 'true');
+                        chevronIcon.style.transform = 'rotate(180deg)';
+                    }
+                });
+                
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function(event) {
+                    if (!userDropdown.contains(event.target)) {
+                        dropdownMenu.classList.remove('visible');
+                        dropdownButton.setAttribute('aria-expanded', 'false');
+                        chevronIcon.style.transform = 'rotate(0deg)';
+                    }
+                });
+                
+                // Ensure dropdown is positioned correctly
+                const positionDropdown = function() {
+                    const buttonRect = dropdownButton.getBoundingClientRect();
+                    const headerHeight = document.querySelector('header').offsetHeight;
+                    
+                    // Ensure dropdown doesn't go off-screen
+                    if (buttonRect.bottom + 10 > headerHeight) {
+                        dropdownMenu.style.top = '100%';
+                        dropdownMenu.style.marginTop = '0.5rem';
+                    }
+                };
+                
+                // Position on load and window resize
+                positionDropdown();
+                window.addEventListener('resize', positionDropdown);
+            }
+            
+            // Mobile menu toggle with animation
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            
+            mobileMenuButton.addEventListener('click', function() {
+                const expanded = mobileMenuButton.getAttribute('aria-expanded') === 'true';
+                
+                if (expanded) {
+                    mobileMenu.classList.remove('visible');
+                    mobileMenuButton.setAttribute('aria-expanded', 'false');
+                } else {
+                    mobileMenu.classList.add('visible');
+                    mobileMenuButton.setAttribute('aria-expanded', 'true');
+                }
+            });
+            
+            // Enhanced toast notification system
+            const toasts = document.querySelectorAll('.toast');
+            toasts.forEach(toast => {
+                // Auto hide after 5 seconds
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    // Remove from DOM after animation completes
+                    setTimeout(() => toast.remove(), 500);
+                }, 5000);
+                
+                // Add close button functionality
+                const closeButton = toast.querySelector('.close-btn');
+                if (closeButton) {
+                    closeButton.addEventListener('click', () => {
+                        toast.classList.remove('show');
+                        setTimeout(() => toast.remove(), 500);
+                    });
+                }
+            });
+            
+            // Function to create and show toast notifications programmatically
+            window.showToast = function(message, type = 'info') {
+                const toastContainer = document.getElementById('toast-container');
+                
+                const toast = document.createElement('div');
+                toast.className = 'toast glass text-gray-800 shadow-lg rounded-lg flex items-center';
+                
+                let icon;
+                if (type === 'error') {
+                    icon = '<i class="fa-solid fa-circle-exclamation text-red-500 mr-3"></i>';
+                } else if (type === 'success') {
+                    icon = '<i class="fa-solid fa-circle-check text-green-500 mr-3"></i>';
+                } else {
+                    icon = '<i class="fa-solid fa-circle-info text-blue-500 mr-3"></i>';
+                }
+                
+                toast.innerHTML = `
+                    ${icon}
+                    <div>${message}</div>
+                    <button class="close-btn">
+                        <i class="fa-solid fa-xmark text-gray-500 hover:text-gray-700"></i>
+                    </button>
+                `;
+                
+                toastContainer.appendChild(toast);
+                
+                // Add event listener to close button
+                const closeButton = toast.querySelector('.close-btn');
+                closeButton.addEventListener('click', () => {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.remove(), 500);
+                });
+                
+                // Force reflow to trigger animation
+                void toast.offsetWidth;
+                
+                // Show the toast
+                toast.classList.add('show');
+                
+                // Auto hide after 5 seconds
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.remove(), 500);
+                }, 5000);
+            };
+            
+            // QR Animation for elements with class 'animate-qr'
+            const qrAnimElements = document.querySelectorAll('.animate-qr');
+            
+            qrAnimElements.forEach(el => {
+                // Create a 10x10 grid of cells
+                const grid = document.createElement('div');
+                grid.className = 'qr-grid';
+                
+                // Create the cells
+                for (let i = 0; i < 10; i++) {
+                    for (let j = 0; j < 10; j++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'qr-cell';
+                        
+                        // Finder patterns - make them active immediately
+                        if ((i < 7 && j < 7 && (i === 0 || i === 6 || j === 0 || j === 6 || (i > 1 && i < 5 && j > 1 && j < 5))) || 
+                            (i < 7 && j > 2 && ((i === 0 || i === 6) && j < 7)) ||
+                            (i > 2 && j < 7 && ((j === 0 || j === 6) && i < 7))) {
+                            cell.classList.add('active');
+                        }
+                        
+                        grid.appendChild(cell);
+                    }
+                }
+                
+                el.appendChild(grid);
+                
+                // Animate random cells (except finder patterns)
+                setInterval(() => {
+                    const cells = grid.querySelectorAll('.qr-cell:not(.active)');
+                    const randomCells = Array.from(cells).sort(() => 0.5 - Math.random()).slice(0, 3);
+                    
+                    randomCells.forEach(cell => {
+                        cell.classList.add('active');
+                        setTimeout(() => cell.classList.remove('active'), 1500);
+                    });
+                }, 800);
+            });
+            
+            // Handle keyboard navigation for dropdowns
+            const dropdowns = document.querySelectorAll('.dropdown-container');
+            dropdowns.forEach(dropdown => {
+                const button = dropdown.querySelector('button');
+                const menu = dropdown.querySelector('.dropdown-menu');
+                
+                if (button && menu) {
+                    const items = menu.querySelectorAll('[role="menuitem"]');
+                    
+                    // Handle keyboard navigation
+                    button.addEventListener('keydown', function(e) {
+                        if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            menu.classList.add('visible');
+                            button.setAttribute('aria-expanded', 'true');
+                            
+                            // Focus first menu item
+                            if (items.length > 0) {
+                                items[0].focus();
+                            }
+                        }
+                    });
+                    
+                    // Keyboard navigation within the menu
+                    menu.addEventListener('keydown', function(e) {
+                        const currentIndex = Array.from(items).indexOf(document.activeElement);
+                        
+                        if (e.key === 'Escape') {
+                            menu.classList.remove('visible');
+                            button.setAttribute('aria-expanded', 'false');
+                            button.focus();
+                        } else if (e.key === 'ArrowDown') {
+                            e.preventDefault();
+                            const nextIndex = (currentIndex + 1) % items.length;
+                            items[nextIndex].focus();
+                        } else if (e.key === 'ArrowUp') {
+                            e.preventDefault();
+                            const prevIndex = (currentIndex - 1 + items.length) % items.length;
+                            items[prevIndex].focus();
+                        }
+                    });
+                }
+            });
+        });
+        // Run when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+            // Detect browser timezone
+            const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            // Send to server
+            fetch('/set_timezone', {
+                method: 'POST',
+                headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() if csrf_token else "" }}'
+                },
+                body: JSON.stringify({ timezone: timezone })
+            });
+            } catch (error) {
+            console.error('Timezone detection failed:', error);
+            }
+        });
+    </script>
+
+    {% block scripts %}{% endblock %}
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

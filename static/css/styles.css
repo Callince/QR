@@ -1,0 +1,223 @@
+/* General Styles */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f5f7fa;
+  color: #444;
+}
+
+.card {
+  border-radius: 10px;
+  border: none;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+}
+
+.card-header {
+  border-radius: 10px 10px 0 0 !important;
+  font-weight: 600;
+}
+
+/* QR Code Creator Page */
+.template-card {
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.template-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.active-template {
+  border-color: #0d6efd;
+  background-color: #f8f9fa;
+}
+
+.template-preview {
+  height: 70px;
+  width: 70px;
+  margin: 10px auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background-color: #fff;
+  box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.1);
+}
+
+.qr-preview {
+  height: 45px;
+  width: 45px;
+  position: relative;
+}
+
+.qr-preview::before,
+.qr-preview::after {
+  content: '';
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  background-color: inherit;
+}
+
+.qr-preview::before {
+  top: 0;
+  left: 0;
+}
+
+.qr-preview::after {
+  top: 0;
+  right: 0;
+}
+
+.custom-preview {
+  background: linear-gradient(135deg, #FF5500, #FFAA00, #3366CC, #33CC99);
+  border-radius: 5px;
+}
+
+/* Form Controls */
+.form-control:focus,
+.form-select:focus {
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+}
+
+.form-control-color {
+  height: 38px;
+}
+
+/* QR Preview */
+#preview-container {
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8f9fa;
+  border: 2px dashed #dee2e6;
+  transition: all 0.3s ease;
+}
+
+#preview-container:hover {
+  border-color: #0d6efd;
+}
+
+#qr-preview {
+  max-width: 250px;
+  transition: all 0.3s ease;
+}
+
+/* Dashboard */
+.qr-card {
+  transition: all 0.2s ease-in-out;
+}
+
+.qr-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.qr-stats {
+  font-size: 0.9rem;
+  color: #6c757d;
+}
+
+.qr-thumbnail {
+  max-width: 120px;
+  margin: 0 auto;
+}
+
+/* Buttons */
+.btn-primary {
+  background-color: #4361ee;
+  border-color: #4361ee;
+}
+
+.btn-primary:hover {
+  background-color: #3a56d4;
+  border-color: #3a56d4;
+}
+
+.btn-success {
+  background-color: #38b000;
+  border-color: #38b000;
+}
+
+.btn-success:hover {
+  background-color: #2d9200;
+  border-color: #2d9200;
+}
+
+/* Navbar */
+.navbar-brand {
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* Footer */
+footer {
+  border-top: 1px solid #e9ecef;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .card-header h5 {
+      font-size: 1.1rem;
+  }
+  
+  .lead {
+      font-size: 1rem;
+  }
+  
+  #preview-container {
+      min-height: 250px;
+  }
+  
+  #qr-preview {
+      max-width: 200px;
+  }
+}
+
+/* Animation for QR Code Generation */
+@keyframes pulse {
+  0% {
+      transform: scale(1);
+  }
+  50% {
+      transform: scale(1.05);
+  }
+  100% {
+      transform: scale(1);
+  }
+}
+
+.generate-pulse {
+  animation: pulse 1s ease-in-out;
+}
+
+/* Custom Checkbox and Radio Styling */
+.form-check-input:checked {
+  background-color: #4361ee;
+  border-color: #4361ee;
+}
+
+/* Range Input Styling */
+.form-range::-webkit-slider-thumb {
+  background: #4361ee;
+}
+
+.form-range::-moz-range-thumb {
+  background: #4361ee;
+}
+
+.form-range::-ms-thumb {
+  background: #4361ee;
+}
+
+/* Advanced Options Collapse */
+#advancedOptions {
+  padding-top: 1rem;
+  border-top: 1px solid #dee2e6;
+  margin-top: 1rem;
+}

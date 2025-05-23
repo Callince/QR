@@ -1,0 +1,92 @@
+{% if usage_history.items %}
+<div class="overflow-x-auto mb-4">
+    <table class="min-w-full bg-white rounded-xl shadow-default">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="py-3 px-4 text-left text-xs font-medium text-textSecondary uppercase tracking-wider">Date & Time</th>
+                <th class="py-3 px-4 text-left text-xs font-medium text-textSecondary uppercase tracking-wider">Operation</th>
+                <th class="py-3 px-4 text-left text-xs font-medium text-textSecondary uppercase tracking-wider">Details</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+            {% for usage in usage_history.items %}
+            <tr class="hover:bg-gray-50">
+                <td class="py-3 px-4 whitespace-nowrap">{{ usage.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                <td class="py-3 px-4 whitespace-nowrap">
+                    <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                        {{ usage.operation_type }}
+                    </span>
+                </td>
+                <td class="py-3 px-4">{{ usage.details or 'N/A' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination Component -->
+<div class="flex items-center justify-between mb-8">
+    <div class="flex items-center text-sm text-textSecondary">
+        Showing <span class="font-medium mx-1">{{ usage_history.first }}</span> to 
+        <span class="font-medium mx-1">{{ usage_history.last }}</span> of 
+        <span class="font-medium mx-1">{{ usage_history.total }}</span> entries
+    </div>
+    
+    <div class="flex space-x-1">
+        <!-- Previous Page Button -->
+        {% if usage_history.has_prev %}
+        <a href="{{ url_for('get_usage_history', subscription_id=subscription.id, page=usage_history.prev_num) }}" 
+           class="pagination-link btn-outline-primary px-3 py-1 text-sm">
+            <i class="fas fa-chevron-left mr-1"></i>Previous
+        </a>
+        {% else %}
+        <span class="px-3 py-1 text-sm text-gray-400 bg-gray-100 rounded-md cursor-not-allowed">
+            <i class="fas fa-chevron-left mr-1"></i>Previous
+        </span>
+        {% endif %}
+        
+        <!-- Page Numbers -->
+        {% for page_num in usage_history.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if page_num %}
+                {% if page_num == usage_history.page %}
+                <span class="px-3 py-1 text-sm bg-primary text-white rounded-md">
+                    {{ page_num }}
+                </span>
+                {% else %}
+                <a href="{{ url_for('get_usage_history', subscription_id=subscription.id, page=page_num) }}" 
+                   class="pagination-link px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 text-textPrimary rounded-md">
+                    {{ page_num }}
+                </a>
+                {% endif %}
+            {% else %}
+            <span class="px-2 py-1 text-sm text-gray-400">
+                ...
+            </span>
+            {% endif %}
+        {% endfor %}
+        
+        <!-- Next Page Button -->
+        {% if usage_history.has_next %}
+        <a href="{{ url_for('get_usage_history', subscription_id=subscription.id, page=usage_history.next_num) }}" 
+           class="pagination-link btn-outline-primary px-3 py-1 text-sm">
+            Next<i class="fas fa-chevron-right ml-1"></i>
+        </a>
+        {% else %}
+        <span class="px-3 py-1 text-sm text-gray-400 bg-gray-100 rounded-md cursor-not-allowed">
+            Next<i class="fas fa-chevron-right ml-1"></i>
+        </span>
+        {% endif %}
+    </div>
+</div>
+{% else %}
+<div class="bg-blue-50 p-4 rounded-lg mb-8 border border-blue-200">
+    <div class="flex">
+        <div class="flex-shrink-0">
+            <i class="fas fa-info-circle text-blue-500"></i>
+        </div>
+        <div class="ml-3">
+            <p class="text-sm text-blue-700">No usage history found for this subscription.</p>
+        </div>
+    </div>
+</div>
+{% endif %}

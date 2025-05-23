@@ -1,0 +1,389 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Manage Subscription Plans{% endblock %}
+
+{% block page_title %}
+<div class="d-flex justify-content-between align-items-center">
+    <h1 class="h3 mb-0">
+        <i class="fas fa-tags me-2"></i> Manage Subscription Plans
+    </h1>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <p class="text-muted">Create and manage subscription plans for your users</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <div class="btn-toolbar justify-content-md-end">
+                <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-outline-secondary me-2">
+                    <i class="fas fa-arrow-left me-1"></i> Dashboard
+                </a>
+                <a href="{{ url_for('admin.admin_new_subscription') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i> New Plan
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-transparent d-flex justify-content-between align-items-center py-3">
+            <h5 class="mb-0">Subscription Plans</h5>
+            <!-- Toggle button for showing active/archived plans -->
+            <div class="btn-group" role="group" aria-label="Toggle plan view">
+                <button id="show-active" class="btn btn-sm btn-primary active" aria-pressed="true">
+                    <i class="fas fa-check-circle me-1"></i> Active Plans
+                </button>
+                <button id="show-archived" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-archive me-1"></i> Archived Plans
+                </button>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light sticky-top">
+                        <tr>
+                            <th scope="col">ID</th>
+                            <th scope="col">Plan Name</th>
+                            <th scope="col">Price</th>
+                            <th scope="col">Duration</th>
+                            <th scope="col">Analytics</th>
+                            <th scope="col">QR Limit</th>
+                            <th scope="col">Plan Type</th>
+                            <th scope="col">Status</th>
+                            <th scope="col" class="text-end sticky-top bg-light">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="active-plans">
+                        {% for data in subscriptions %}
+                            {% if not data.subscription.archived_at %}
+                            <tr>
+                                <td>{{ data.subscription.S_ID }}</td>
+                                <td>
+                                    <span class="fw-medium">{{ data.subscription.plan }}</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="icon-wrapper bg-success-subtle rounded-circle p-2 me-2">
+                                            <i class="fa fa-rupee text-success"></i>
+                                        </div>
+                                        <span class="fw-medium">{{ data.subscription.price }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="icon-wrapper bg-info-subtle rounded-circle p-2 me-2">
+                                            <i class="far fa-calendar-alt text-info"></i>
+                                        </div>
+                                        <span>{{ data.subscription.days }} days</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="icon-wrapper bg-primary-subtle rounded-circle p-2 me-2">
+                                            <i class="fas fa-chart-line text-primary"></i>
+                                        </div>
+                                        <span>{{ data.subscription.analytics or 0 }} ops</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="icon-wrapper bg-warning-subtle rounded-circle p-2 me-2">
+                                            <i class="fas fa-qrcode text-warning"></i>
+                                        </div>
+                                        <span>{{ data.subscription.qr_count or 0 }} codes</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="icon-wrapper bg-purple-subtle rounded-circle p-2 me-2">
+                                            <i class="fas fa-tag text-purple"></i>
+                                        </div>
+                                        <span class="text-capitalize">{{ data.subscription.plan_type }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success">Active</span>
+                                </td>
+                                <td class="text-end position-sticky" style="right: 0; background-color: white; box-shadow: -2px 0 5px rgba(0,0,0,0.05);">
+                                    <div class="btn-group">
+                                        <a href="{{ url_for('admin.admin_edit_subscription', id=data.subscription.S_ID) }}" class="btn btn-sm btn-outline-primary" aria-label="Edit plan">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <form action="{{ url_for('admin.admin_delete_subscription', id=data.subscription.S_ID) }}" method="POST" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this plan?')" aria-label="Delete plan">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                        {% if not data.subscription.is_active %}
+                                        <form action="{{ url_for('admin.admin_archive_subscription', id=data.subscription.S_ID) }}" method="POST" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-outline-warning" title="Archive Plan" onclick="return confirm('Are you sure you want to archive this plan?')" aria-label="Archive plan">
+                                                <i class="fas fa-archive"></i>
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endif %}
+                        {% else %}
+                            <tr>
+                                <td colspan="9">
+                                    <div class="empty-state text-center py-5">
+                                        <div class="icon-wrapper bg-light rounded-circle p-4 mx-auto mb-3" style="width: fit-content;">
+                                            <i class="fas fa-box-open fs-1 text-muted"></i>
+                                        </div>
+                                        <h5>No active subscription plans found</h5>
+                                        <p class="text-muted mb-3">Create your first subscription plan to get started!</p>
+                                        <a href="{{ url_for('admin.admin_new_subscription') }}" class="btn btn-primary">
+                                            <i class="fas fa-plus me-1"></i> Create New Plan
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                    
+                    <tbody id="archived-plans" style="display: none;">
+                        {% set has_archived = false %}
+                        {% for data in subscriptions %}
+                            {% if data.subscription.archived_at %}
+                                {% set has_archived = true %}
+                                <tr>
+                                    <td>{{ data.subscription.S_ID }}</td>
+                                    <td>
+                                        <span class="fw-medium text-muted">{{ data.subscription.plan }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="icon-wrapper bg-secondary-subtle rounded-circle p-2 me-2">
+                                                <i class="fa fa-rupee text-secondary"></i>
+                                            </div>
+                                            <span class="text-muted">{{ data.subscription.price }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="icon-wrapper bg-secondary-subtle rounded-circle p-2 me-2">
+                                                <i class="far fa-calendar-alt text-secondary"></i>
+                                            </div>
+                                            <span class="text-muted">{{ data.subscription.days }} days</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="icon-wrapper bg-secondary-subtle rounded-circle p-2 me-2">
+                                                <i class="fas fa-chart-line text-secondary"></i>
+                                            </div>
+                                            <span class="text-muted">{{ data.subscription.analytics or 0 }} ops</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="icon-wrapper bg-secondary-subtle rounded-circle p-2 me-2">
+                                                <i class="fas fa-qrcode text-secondary"></i>
+                                            </div>
+                                            <span class="text-muted">{{ data.subscription.qr_count or 0 }} codes</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="icon-wrapper bg-secondary-subtle rounded-circle p-2 me-2">
+                                                <i class="fas fa-tag text-secondary"></i>
+                                            </div>
+                                            <span class="text-muted text-capitalize">{{ data.subscription.plan_type }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">
+                                            Archived {{ data.subscription.archived_at.strftime('%d %b %Y') }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end position-sticky" style="right: 0; background-color: white; box-shadow: -2px 0 5px rgba(0,0,0,0.05);">
+                                        <form action="{{ url_for('admin.admin_restore_subscription', id=data.subscription.S_ID) }}" method="POST" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-outline-success" title="Restore Plan" onclick="return confirm('Are you sure you want to restore this plan?')" aria-label="Restore plan">
+                                                <i class="fas fa-trash-restore"></i> Restore
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if not has_archived %}
+                            <tr>
+                                <td colspan="9">
+                                    <div class="empty-state text-center py-5">
+                                        <div class="icon-wrapper bg-light rounded-circle p-4 mx-auto mb-3" style="width: fit-content;">
+                                            <i class="fas fa-archive fs-1 text-muted"></i>
+                                        </div>
+                                        <h5>No archived subscription plans found</h5>
+                                        <p class="text-muted">Archived plans will appear here</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Info Card -->
+    <div class="card border-0 shadow-sm mt-4">
+        <div class="card-header bg-info bg-opacity-10 border-0">
+            <div class="d-flex align-items-center">
+                <div class="icon-wrapper bg-info text-white rounded-circle p-2 me-2">
+                    <i class="fas fa-info"></i>
+                </div>
+                <h5 class="card-title mb-0 text-info">About Plan Management</h5>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="d-flex mb-3">
+                <div class="icon-wrapper bg-warning-subtle rounded-circle p-2 me-3 flex-shrink-0">
+                    <i class="fas fa-exclamation-triangle text-warning"></i>
+                </div>
+                <div>
+                    <h6 class="mb-1">Data Protection</h6>
+                    <p class="card-text mb-0">
+                        Subscription plans with associated payment records or subscription history cannot be permanently deleted for data integrity reasons. 
+                        These plans will be automatically archived instead.
+                    </p>
+                </div>
+            </div>
+            <div class="d-flex mb-3">
+                <div class="icon-wrapper bg-primary-subtle rounded-circle p-2 me-3 flex-shrink-0">
+                    <i class="fas fa-chart-line text-primary"></i>
+                </div>
+                <div>
+                    <h6 class="mb-1">Analytics Limit</h6>
+                    <p class="card-text mb-0">
+                        The number of analytics operations a user can perform with this subscription plan.
+                    </p>
+                </div>
+            </div>
+            <div class="d-flex mb-3">
+                <div class="icon-wrapper bg-warning-subtle rounded-circle p-2 me-3 flex-shrink-0">
+                    <i class="fas fa-qrcode text-warning"></i>
+                </div>
+                <div>
+                    <h6 class="mb-1">QR Code Limit</h6>
+                    <p class="card-text mb-0">
+                        The maximum number of QR codes a user can generate with this subscription plan.
+                    </p>
+                </div>
+            </div>
+            <div class="d-flex">
+                <div class="icon-wrapper bg-secondary-subtle rounded-circle p-2 me-3 flex-shrink-0">
+                    <i class="fas fa-archive text-secondary"></i>
+                </div>
+                <div>
+                    <h6 class="mb-1">Archived Plans</h6>
+                    <p class="card-text mb-0">
+                        Cannot be selected by new users but all historical data is preserved.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add fade-in effect to the main container
+        const container = document.querySelector('.container-fluid');
+        container.style.opacity = '0';
+        container.style.transition = 'opacity 0.5s ease';
+        
+        setTimeout(() => {
+            container.style.opacity = '1';
+        }, 100);
+        
+        // Add hover effects to table rows
+        const tableRows = document.querySelectorAll('tbody tr');
+        tableRows.forEach(row => {
+            row.addEventListener('mouseenter', function() {
+                this.style.transition = 'background-color 0.2s ease';
+                this.style.backgroundColor = 'rgba(0, 123, 255, 0.05)';
+            });
+            
+            row.addEventListener('mouseleave', function() {
+                this.style.backgroundColor = '';
+            });
+        });
+        
+        // Add ripple effect to buttons
+        const buttons = document.querySelectorAll('.btn');
+        buttons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                const ripple = document.createElement('span');
+                const rect = this.getBoundingClientRect();
+                
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                ripple.style.cssText = `
+                    position: absolute;
+                    background: rgba(255, 255, 255, 0.7);
+                    border-radius: 50%;
+                    pointer-events: none;
+                    width: 100px;
+                    height: 100px;
+                    left: ${x - 50}px;
+                    top: ${y - 50}px;
+                    transform: scale(0);
+                    opacity: 1;
+                    transition: transform 0.5s, opacity 0.5s;
+                `;
+                
+                this.style.position = this.style.position || 'relative';
+                this.style.overflow = 'hidden';
+                this.appendChild(ripple);
+                
+                setTimeout(() => {
+                    ripple.style.transform = 'scale(4)';
+                    ripple.style.opacity = '0';
+                    
+                    setTimeout(() => {
+                        ripple.remove();
+                    }, 500);
+                }, 1);
+            });
+        });
+        
+        // Toggle between active and archived plans
+        const showActiveBtn = document.getElementById('show-active');
+        const showArchivedBtn = document.getElementById('show-archived');
+        const activePlans = document.getElementById('active-plans');
+        const archivedPlans = document.getElementById('archived-plans');
+        
+        showActiveBtn.addEventListener('click', function() {
+            activePlans.style.display = 'table-row-group';
+            archivedPlans.style.display = 'none';
+            showActiveBtn.classList.add('active', 'btn-primary');
+            showActiveBtn.classList.remove('btn-outline-primary');
+            showActiveBtn.setAttribute('aria-pressed', 'true');
+            showArchivedBtn.classList.remove('active', 'btn-secondary');
+            showArchivedBtn.classList.add('btn-outline-secondary');
+            showArchivedBtn.setAttribute('aria-pressed', 'false');
+        });
+        
+        showArchivedBtn.addEventListener('click', function() {
+            activePlans.style.display = 'none';
+            archivedPlans.style.display = 'table-row-group';
+            showArchivedBtn.classList.add('active', 'btn-secondary');
+            showArchivedBtn.classList.remove('btn-outline-secondary');
+            showArchivedBtn.setAttribute('aria-pressed', 'true');
+            showActiveBtn.classList.remove('active', 'btn-primary');
+            showActiveBtn.classList.add('btn-outline-primary');
+            showActiveBtn.setAttribute('aria-pressed', 'false');
+        });
+    });
+</script>
+{% endblock %}

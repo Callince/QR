@@ -1,0 +1,532 @@
+{% extends 'admin/base.html' %}
+
+{% block title %}Admin Roles Management{% endblock %}
+
+{% block page_title %}
+<div class="d-flex justify-content-between align-items-center">
+    <h1 class="h3 mb-0">
+        <i class="fas fa-user-shield me-2"></i> Admin Roles Management
+    </h1>
+</div>
+{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('admin.admin_dashboard') }}">Dashboard</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Roles</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <div class="row g-4">
+        <div class="col-lg-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center py-3">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user-plus me-2 text-primary"></i>Create New Role
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="createRoleForm">
+                        <div class="mb-3">
+                            <label for="Name" class="form-label">
+                                <i class="fas fa-user me-2 text-primary"></i>Name
+                            </label>
+                            <input type="text" class="form-control" id="Name" name="NAME" required 
+                                placeholder="Enter Name" aria-describedby="nameHelp">
+                            <div id="nameHelp" class="form-text">Enter the full name of the admin user</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="email_id" class="form-label">
+                                <i class="fas fa-envelope me-2 text-primary"></i>Email ID
+                            </label>
+                            <input type="email" class="form-control" id="email_id" name="email_id" required 
+                                placeholder="Enter Email ID" aria-describedby="emailHelp">
+                            <div id="emailHelp" class="form-text">This email will be used for login and notifications</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="role" class="form-label">
+                                <i class="fas fa-user-tag me-2 text-primary"></i>Role Title
+                            </label>
+                            <input type="text" class="form-control" id="role" name="role" required 
+                                placeholder="Define Role" aria-describedby="roleHelp">
+                            <div id="roleHelp" class="form-text">Example: Support Manager, Content Editor, System Admin</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="phone_number" class="form-label">
+                                <i class="fas fa-phone me-2 text-primary"></i>Phone Number
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">+91</span>
+                                <input type="tel" class="form-control" id="phone_number" name="phone_number" 
+                                    placeholder="Enter Phone Number" pattern="[0-9]{10}" 
+                                    aria-describedby="phoneHelp">
+                            </div>
+                            <div id="phoneHelp" class="form-text">10-digit mobile number (optional)</div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="password" class="form-label">
+                                <i class="fas fa-lock me-2 text-primary"></i>Password
+                            </label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="password" name="password" required
+                                    placeholder="Enter Password" aria-describedby="passwordHelp">
+                                <button class="btn btn-outline-secondary" type="button" id="togglePassword" 
+                                    aria-label="Toggle password visibility">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <div id="passwordHelp" class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>Password must be at least 8 characters
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label d-block">
+                                <i class="fas fa-shield-alt me-2 text-primary"></i>Access Permissions
+                                <button type="button" id="selectAllPermissions" class="btn btn-sm btn-outline-secondary ms-2">
+                                    Select All
+                                </button>
+                            </label>
+                            <div class="row g-3 mt-1">
+                                <div class="col-md-6">
+                                    <div class="card bg-light border-0">
+                                        <div class="card-body p-3">
+                                            <h6 class="card-title">Core Functions</h6>
+                                            <div class="form-check mb-2">
+                                                <input class="form-check-input" type="checkbox" id="dashboard" name="permissions[]" value="dashboard">
+                                                <label class="form-check-label" for="dashboard">
+                                                    <i class="fas fa-tachometer-alt me-1 text-secondary"></i> Dashboard
+                                                </label>
+                                            </div>
+                                            <div class="form-check mb-2">
+                                                <input class="form-check-input" type="checkbox" id="subscription_management" name="permissions[]" value="subscription_management">
+                                                <label class="form-check-label" for="subscription_management">
+                                                    <i class="fas fa-tags me-1 text-secondary"></i> Subscription Plans
+                                                </label>
+                                            </div>
+                                            <div class="form-check mb-2">
+                                                <input class="form-check-input" type="checkbox" id="subscribed_users_view" name="permissions[]" value="subscribed_users_view">
+                                                <label class="form-check-label" for="subscribed_users_view">
+                                                    <i class="fas fa-users me-1 text-secondary"></i> Subscribed Users
+                                                </label>
+                                            </div>
+                                            <div class="form-check mb-2">
+                                                <input class="form-check-input" type="checkbox" id="search_history" name="permissions[]" value="search_history">
+                                                <label class="form-check-label" for="search_history">
+                                                    <i class="fas fa-search me-1 text-secondary"></i> Search History
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card bg-light border-0">
+                                        <div class="card-body p-3">
+                                            <h6 class="card-title">Administrative</h6>
+                                            <div class="form-check mb-2">
+                                                <input class="form-check-input" type="checkbox" id="user_management" name="permissions[]" value="user_management">
+                                                <label class="form-check-label" for="user_management">
+                                                    <i class="fas fa-user-cog me-1 text-secondary"></i> User Management
+                                                </label>
+                                            </div>
+                                            <div class="form-check mb-2">
+                                                <input class="form-check-input" type="checkbox" id="payments" name="permissions[]" value="payments">
+                                                <label class="form-check-label" for="payments">
+                                                    <i class="fas fa-rupee-sign me-1 text-secondary"></i> Payments
+                                                </label>
+                                            </div>
+                                            <div class="form-check mb-2">
+                                                <input class="form-check-input" type="checkbox" id="manage_roles" name="permissions[]" value="manage_roles">
+                                                <label class="form-check-label" for="manage_roles">
+                                                    <i class="fas fa-user-shield me-1 text-secondary"></i> Role
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-save me-2"></i> Create Role
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center py-3">
+                    <h5 class="mb-0">
+                        <i class="fas fa-users-cog me-2 text-primary"></i>Existing Roles
+                    </h5>
+                    <div>
+                        <input type="text" id="roleSearch" class="form-control form-control-sm" 
+                               placeholder="Search roles..." aria-label="Search roles">
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                        <table class="table table-hover align-middle mb-0" id="rolesTable">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">Email ID</th>
+                                    <th scope="col">Role</th>
+                                    <th scope="col" class="d-none d-md-table-cell">Permissions</th>
+                                    <th scope="col" class="d-none d-md-table-cell">Phone</th>
+                                    <th scope="col" class="text-end sticky-top bg-light">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for role in roles %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar-circle bg-primary-subtle text-primary me-2">
+                                                    {{ role.NAME[:1]|upper }}
+                                                </div>
+                                                <span class="fw-medium">{{ role.NAME }}</span>
+                                            </div>
+                                        </td>
+                                        <td>{{ role.email_id }}</td>
+                                        <td>
+                                            <span class="badge bg-primary">{{ role.role }}</span>
+                                        </td>
+                                        <td class="d-none d-md-table-cell">
+                                            <div class="permission-chips" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                                {% for perm in role.permission %}
+                                                    <span class="badge bg-light text-dark border me-1 mb-1">{{ perm }}</span>
+                                                {% endfor %}
+                                            </div>
+                                        </td>
+                                        <td class="d-none d-md-table-cell">
+                                            {% if role.phone_number %}
+                                                {{ role.phone_number }}
+                                            {% else %}
+                                                <span class="text-muted">Not provided</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end position-sticky" style="right: 0; background-color: white; box-shadow: -2px 0 5px rgba(0,0,0,0.05);">
+                                            <div class="btn-group">
+                                                <a href="{{ url_for('admin.edit_role', role_id=role.id) }}" class="btn btn-sm btn-outline-primary" aria-label="Edit role">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-sm btn-outline-info view-role-details" data-role-id="{{ role.id }}" aria-label="View role details">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% else %}
+                                    <tr>
+                                        <td colspan="6" class="text-center py-5">
+                                            <div class="empty-state">
+                                                <div class="icon-wrapper bg-light rounded-circle p-4 mx-auto mb-3" style="width: fit-content;">
+                                                    <i class="fas fa-user-slash fs-1 text-muted"></i>
+                                                </div>
+                                                <h5>No roles have been created yet</h5>
+                                                <p class="text-muted mb-3">Create your first admin role using the form</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Role Details Modal -->
+<div class="modal fade" id="roleDetailsModal" tabindex="-1" aria-labelledby="roleDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title" id="roleDetailsModalLabel">Role Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="role-details-content">
+                    <!-- Will be filled dynamically -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="#" class="btn btn-primary edit-role-link">Edit Role</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add animation to cards
+        const cards = document.querySelectorAll('.card');
+        cards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+            
+            setTimeout(() => {
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, 100 + (index * 100));
+        });
+
+        // Password visibility toggle
+        const togglePassword = document.getElementById('togglePassword');
+        const password = document.getElementById('password');
+        
+        if (togglePassword && password) {
+            togglePassword.addEventListener('click', function() {
+                const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+                password.setAttribute('type', type);
+                
+                // Toggle icon
+                const icon = this.querySelector('i');
+                icon.classList.toggle('fa-eye');
+                icon.classList.toggle('fa-eye-slash');
+            });
+        }
+
+        // Select all checkboxes functionality
+        const selectAllBtn = document.getElementById('selectAllPermissions');
+        if (selectAllBtn) {
+            selectAllBtn.addEventListener('click', function() {
+                const checkboxes = document.querySelectorAll('input[name="permissions[]"]');
+                const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+                
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = !allChecked;
+                });
+                
+                this.textContent = allChecked ? 'Select All' : 'Deselect All';
+            });
+        }
+        
+        // Search functionality for roles table
+        const roleSearch = document.getElementById('roleSearch');
+        const rolesTable = document.getElementById('rolesTable');
+        
+        if (roleSearch && rolesTable) {
+            roleSearch.addEventListener('keyup', function() {
+                const searchTerm = this.value.toLowerCase();
+                const rows = rolesTable.querySelectorAll('tbody tr');
+                
+                rows.forEach(row => {
+                    const name = row.cells[0].textContent.toLowerCase();
+                    const email = row.cells[1].textContent.toLowerCase();
+                    const role = row.cells[2].textContent.toLowerCase();
+                    
+                    if (name.includes(searchTerm) || email.includes(searchTerm) || role.includes(searchTerm)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        }
+        
+        // Role details modal functionality - FIXED FOR PERMISSIONS DISPLAY
+        const viewButtons = document.querySelectorAll('.view-role-details');
+        const roleDetailsModal = new bootstrap.Modal(document.getElementById('roleDetailsModal'), {});
+        const roleDetailsContent = document.querySelector('.role-details-content');
+        const editRoleLink = document.querySelector('.edit-role-link');
+        
+        if (viewButtons.length > 0 && roleDetailsContent) {
+            viewButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const roleId = this.getAttribute('data-role-id');
+                    const row = this.closest('tr');
+                    
+                    // Get data from the row
+                    const name = row.cells[0].textContent.trim();
+                    const email = row.cells[1].textContent.trim();
+                    const role = row.cells[2].textContent.trim();
+                    const phone = row.cells[4] ? row.cells[4].textContent.trim() : 'Not provided';
+                    
+                    // Get permission badges directly from the row
+                    const permissionChips = row.querySelector('.permission-chips');
+                    const permissionBadges = permissionChips ? permissionChips.querySelectorAll('.badge') : [];
+                    
+                    // Create permissions HTML section with proper wrapping
+                    let permissionsHTML = '<div class="permission-chips-container d-flex flex-wrap mt-2">';
+                    
+                    if (permissionBadges.length > 0) {
+                        // If we have badges in the table, use those
+                        permissionBadges.forEach(badge => {
+                            permissionsHTML += `<span class="badge bg-light text-dark border me-1 mb-1">${badge.textContent.trim()}</span>`;
+                        });
+                    } else {
+                        // Fallback to raw text parsing if needed
+                        const permissionsText = permissionChips ? permissionChips.textContent.trim() : '';
+                        const permissionsList = permissionsText.split(/\s+/).filter(p => p.trim() !== '');
+                        
+                        permissionsList.forEach(perm => {
+                            permissionsHTML += `<span class="badge bg-light text-dark border me-1 mb-1">${perm.trim()}</span>`;
+                        });
+                    }
+                    
+                    permissionsHTML += '</div>';
+                    
+                    // Update modal content
+                    roleDetailsContent.innerHTML = `
+                        <div class="text-center mb-4">
+                            <div class="avatar-circle bg-primary text-white mx-auto mb-3" style="width: 70px; height: 70px; line-height: 70px; font-size: 2rem;">
+                                ${name.charAt(0).toUpperCase()}
+                            </div>
+                            <h4>${name}</h4>
+                            <span class="badge bg-primary">${role}</span>
+                        </div>
+                        <div class="mb-3">
+                            <label class="fw-bold text-muted">Email:</label>
+                            <div>${email}</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="fw-bold text-muted">Phone:</label>
+                            <div>${phone}</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="fw-bold text-muted">Permissions:</label>
+                            ${permissionsHTML}
+                        </div>
+                    `;
+                    
+                    // Update edit link
+                    if (editRoleLink) {
+                        editRoleLink.href = `/admin/roles/edit/${roleId}`;
+                    }
+                    
+                    // Show modal
+                    roleDetailsModal.show();
+                });
+            });
+        }
+        
+        // Form validation
+        const createRoleForm = document.getElementById('createRoleForm');
+        if (createRoleForm) {
+            createRoleForm.addEventListener('submit', function(event) {
+                // Check if at least one permission is selected
+                const permissions = document.querySelectorAll('input[name="permissions[]"]:checked');
+                if (permissions.length === 0) {
+                    event.preventDefault();
+                    alert('Please select at least one permission for this role.');
+                    return false;
+                }
+                
+                // Validate password
+                const password = document.getElementById('password');
+                if (password && password.value.length < 8) {
+                    event.preventDefault();
+                    alert('Password must be at least 8 characters long.');
+                    password.focus();
+                    return false;
+                }
+                
+                // Phone number validation (if provided)
+                const phone = document.getElementById('phone_number');
+                if (phone && phone.value && !phone.checkValidity()) {
+                    event.preventDefault();
+                    alert('Please enter a valid 10-digit phone number.');
+                    phone.focus();
+                    return false;
+                }
+            });
+        }
+        
+        // Add hover effects to table rows
+        const tableRows = document.querySelectorAll('tbody tr');
+        tableRows.forEach(row => {
+            row.addEventListener('mouseenter', function() {
+                this.style.transition = 'background-color 0.2s ease';
+                this.style.backgroundColor = 'rgba(0, 123, 255, 0.05)';
+            });
+            
+            row.addEventListener('mouseleave', function() {
+                this.style.backgroundColor = '';
+            });
+        });
+    });
+</script>
+
+<style>
+    /* Add custom styles */
+    .avatar-circle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+    }
+    
+    .permission-chips {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow: hidden;
+    }
+    
+    /* Fix for permission chips in modal */
+    .permission-chips-container {
+        display: flex;
+        flex-wrap: wrap;
+        max-width: 100%;
+        overflow-wrap: break-word;
+        word-wrap: break-word;
+    }
+    
+    .permission-chips-container .badge {
+        margin-right: 4px;
+        margin-bottom: 4px;
+        white-space: normal;
+        text-align: left;
+        padding: 5px 8px;
+        line-height: 1.2;
+        font-size: 0.75rem;
+    }
+    
+    /* Make the modal body scrollable if needed */
+    .modal-body {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+    
+    /* Make sure permission chips don't overflow */
+    .role-details-content {
+        width: 100%;
+        overflow-wrap: break-word;
+        word-wrap: break-word;
+    }
+    
+    /* Improved form styles */
+    .form-control:focus {
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.1);
+    }
+    
+    /* Animation for form submission */
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    .btn-primary:active {
+        animation: pulse 0.3s;
+    }
+</style>
+{% endblock %}

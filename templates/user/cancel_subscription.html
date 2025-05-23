@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+
+{% block title %}Cancel Subscription - QR Craft{% endblock %}
+
+{% block content %}
+<!-- Hero Section with QR Pattern Background -->
+<div class="relative overflow-hidden">
+    <div class="qr-pattern h-40 relative">
+        <div class="absolute inset-0 bg-gradient-to-r from-primary-500/10 to-secondary-600/10"></div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center">
+            <div class="animate-fade-in">
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Cancel Subscription</h1>
+                <p class="text-gray-600 mt-2">Review and confirm your subscription cancellation</p>
+            </div>
+        </div>
+        <!-- Animated QR element in corner -->
+        <div class="absolute top-4 right-4 w-16 h-16 animate-qr animate-float"></div>
+    </div>
+</div>
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10 mb-12">
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="{% if category == 'success' %}bg-secondary-100 text-secondary-700 border-secondary-300{% elif category == 'danger' %}bg-red-100 text-red-700 border-red-300{% elif category == 'warning' %}bg-yellow-100 text-yellow-700 border-yellow-300{% else %}bg-primary-100 text-primary-700 border-primary-300{% endif %} border rounded-lg px-5 py-4 mb-6 relative animate-fade-in" role="alert">
+                    {{ message }}
+                    <button type="button" class="absolute top-3 right-3 text-gray-400 hover:text-gray-900 transition-colors duration-200" onclick="this.parentElement.remove()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Subscription Details Card -->
+    <div class="glass backdrop-blur-lg bg-white/90 rounded-2xl shadow-xl p-6 mb-8 animate-fade-in">
+        <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+            <i class="fas fa-info-circle text-primary-600"></i>
+            Subscription Details
+        </h3>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="text-left border-b border-gray-200">
+                        <th class="pb-3 text-sm font-medium text-gray-700">Plan</th>
+                        <th class="pb-3 text-sm font-medium text-gray-700">Start Date</th>
+                        <th class="pb-3 text-sm font-medium text-gray-700">End Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="border-b border-gray-100">
+                        <td class="py-4">
+                            <div class="font-medium text-gray-900">{{ subscription.subscription.plan }}</div>
+                        </td>
+                        <td class="py-4">
+                            <div class="text-gray-600">{{ subscription.start_date.strftime('%b %d, %Y') }}</div>
+                        </td>
+                        <td class="py-4">
+                            <div class="text-gray-600">{{ subscription.end_date.strftime('%b %d, %Y') }}</div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Confirmation Card -->
+    <div class="glass backdrop-blur-lg bg-white/90 rounded-2xl shadow-xl p-6 mb-8 animate-fade-in">
+        <h3 class="text-xl font-bold text-gray-900 mb-6">Are you sure you want to cancel your subscription?</h3>
+        
+        <div class="mb-6">
+            <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg mb-4">
+                <div class="flex">
+                    <div class="flex-shrink-0 transform transition-all duration-300 hover:scale-110">
+                        <i class="fas fa-exclamation-triangle text-yellow-500 text-lg"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-yellow-700">Your subscription will remain active until {{ subscription.end_date.strftime('%b %d, %Y') }}.</p>
+                        <p class="text-sm text-yellow-700 mt-2">Auto-renewal will be disabled, and your subscription will not be renewed after the end date.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="flex items-center space-x-4">
+            <form action="{{ url_for('subscription.cancel_subscription', subscription_id=subscription.id) }}" method="post">
+                <button type="submit" 
+                        class="px-5 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium rounded-lg transition-all duration-300 hover:shadow-lg flex items-center gap-2 transform hover:scale-105">
+                    <i class="fas fa-times-circle"></i> Confirm Cancellation
+                </button>
+            </form>
+            
+            <a href="{{ url_for('subscription.user_subscriptions') }}" 
+               class="px-5 py-3 glass backdrop-blur-md bg-white/50 border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium rounded-lg transition-all duration-300 flex items-center gap-2 transform hover:scale-105">
+                <i class="fas fa-arrow-left"></i> Keep My Subscription
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

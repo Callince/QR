@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Subscription Management{% endblock %}</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome 6 -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4f46e5',      /* Indigo */
+                        secondary: '#10b981',    /* Emerald */
+                        accent: '#f43f5e',       /* Rose */
+                        textPrimary: '#1e293b',  /* Slate 800 */
+                        textSecondary: '#475569', /* Slate 600 */
+                        bgLight: '#f8fafc',      /* Slate 50 */
+                        bgDark: '#1e293b',       /* Slate 800 */
+                        borderColor: '#e2e8f0',  /* Slate 200 */
+                    },
+                    boxShadow: {
+                        'default': '0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1)',
+                        'hover': '0 10px 15px rgba(0, 0, 0, 0.07), 0 4px 6px rgba(0, 0, 0, 0.05)',
+                        'card': '0 2px 20px rgba(0, 0, 0, 0.08)',
+                    },
+                    transitionProperty: {
+                        'height': 'height',
+                        'spacing': 'margin, padding',
+                    }
+                },
+                fontFamily: {
+                    'sans': ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+                },
+            }
+        }
+    </script>
+    
+    <!-- Custom Styles -->
+    <style type="text/tailwindcss">
+        @layer components {
+            .nav-link {
+                @apply relative text-textSecondary font-medium hover:text-primary transition duration-300 flex items-center gap-2 px-3 py-2 rounded-lg;
+            }
+            
+            .nav-link:hover {
+                @apply bg-primary/5;
+            }
+            
+            .nav-link.active {
+                @apply text-primary bg-primary/10 font-semibold;
+            }
+            
+            .btn-primary {
+                @apply bg-primary hover:bg-primary/90 text-white font-medium py-2.5 px-5 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 shadow-sm hover:shadow;
+            }
+            
+            .btn-outline-primary {
+                @apply border border-primary text-primary hover:bg-primary hover:text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 flex items-center justify-center gap-2;
+            }
+            
+            .btn-outline-danger {
+                @apply border border-accent text-accent hover:bg-accent hover:text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 flex items-center justify-center gap-2;
+            }
+            
+            .card {
+                @apply bg-white rounded-xl overflow-hidden shadow-card transition-all duration-300;
+            }
+            
+            .card-hover {
+                @apply hover:-translate-y-1 hover:shadow-hover;
+            }
+            
+            .card-header {
+                @apply p-5 border-b border-borderColor flex justify-between items-center;
+            }
+            
+            .input-group {
+                @apply relative rounded-lg shadow-sm;
+            }
+            
+            .input-group-icon {
+                @apply absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400;
+            }
+            
+            .input-field {
+                @apply block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition duration-200;
+            }
+            
+            .input-label {
+                @apply block text-sm font-medium text-gray-700 mb-1.5;
+            }
+            
+            .animate-fade-in {
+                animation: fadeInUp 0.5s ease-out forwards;
+            }
+            
+            @keyframes fadeInUp {
+                from {
+                    opacity: 0;
+                    transform: translate3d(0, 20px, 0);
+                }
+                to {
+                    opacity: 1;
+                    transform: translate3d(0, 0, 0);
+                }
+            }
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-bgLight text-textPrimary font-sans leading-relaxed min-h-screen flex flex-col">
+    <!-- Navbar -->
+    <nav class="bg-white sticky top-0 shadow-default z-10">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex justify-between items-center">
+                <a href="/" class="flex items-center space-x-2">
+                    <div class="bg-primary text-white p-2 rounded-lg">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <span class="text-textPrimary text-xl font-bold">QRnest</span>
+                </a>
+                
+                <!-- Mobile menu button -->
+                <div class="md:hidden">
+                    <button type="button" id="menu-toggle" class="text-textSecondary p-2 rounded-lg hover:bg-gray-100 focus:outline-none">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+                
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex items-center space-x-1">
+                    <a href="/dashboard" class="nav-link">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>    
+                    <a href="/subscription" class="nav-link">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span>Subscriptions</span>
+                    </a>
+                    <a href="/profile" class="nav-link">
+                        <i class="fas fa-user"></i>
+                        <span>Profile</span>
+                    </a>
+                    <div class="pl-2 ml-2 border-l border-gray-200">
+                        <a href="/logout" class="text-accent hover:text-accent/80 font-medium flex items-center px-3 py-2">
+                            <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Mobile Navigation -->
+            <div id="mobile-menu" class="md:hidden hidden pt-4 pb-2 animate-fade-in">
+                <div class="flex flex-col space-y-1 bg-gray-50 rounded-xl p-2 mt-2">
+                    <a href="/dashboard" class="nav-link">
+                        <i class="fas fa-tachometer-alt w-5"></i>
+                        <span>Dashboard</span>
+                    </a>  
+                    <a href="/subscription" class="nav-link">
+                        <i class="fas fa-shopping-cart w-5"></i>
+                        <span>Subscriptions</span>
+                    </a>
+                    <a href="/profile" class="nav-link">
+                        <i class="fas fa-user w-5"></i>
+                        <span>Profile</span>
+                    </a>
+                    <a href="/logout" class="nav-link text-accent">
+                        <i class="fas fa-sign-out-alt w-5"></i>
+                        <span>Logout</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow py-6">
+        <div class="container mx-auto px-4">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-borderColor py-6 mt-auto">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex items-center space-x-2">
+                    <div class="bg-primary text-white p-1.5 rounded">
+                        <i class="fas fa-bolt text-sm"></i>
+                    </div>
+                    <span class="text-textPrimary font-semibold">QRnest</span>
+                </div>
+                <p class="text-textSecondary text-sm">
+                    &copy; {{ current_year }} QRnest. All Rights Reserved.
+                </p>
+                <div class="flex space-x-4">
+                    <a href="#" class="text-textSecondary hover:text-primary transition-colors">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                    <a href="#" class="text-textSecondary hover:text-primary transition-colors">
+                        <i class="fab fa-facebook"></i>
+                    </a>
+                    <a href="#" class="text-textSecondary hover:text-primary transition-colors">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // Mobile menu toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.getElementById('menu-toggle');
+            const mobileMenu = document.getElementById('mobile-menu');
+            
+            if (menuToggle && mobileMenu) {
+                menuToggle.addEventListener('click', function() {
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+            
+            // Animate elements on page load
+            const animateElements = document.querySelectorAll('.animate-fade-in');
+            animateElements.forEach((el, index) => {
+                setTimeout(() => {
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+    </script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>
