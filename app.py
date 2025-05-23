@@ -3590,10 +3590,10 @@ def generate_svg_qr(qr, options):
 
 def apply_logo(qr_img, logo_path, round_corners=False, size_percentage=25):
     """
-    Apply logo to center of QR code with intelligent background handling:
+    Apply logo to center of QR code without extra white space:
     - If logo has its own background, keep it as is
     - If logo is transparent, apply it directly without background
-    - If rounded corners requested, add white background and round the corners
+    - If rounded corners requested, round the corners without adding white background
     
     Parameters:
         qr_img (PIL.Image): The QR code image to apply the logo to
@@ -3677,22 +3677,11 @@ def apply_logo(qr_img, logo_path, round_corners=False, size_percentage=25):
         # Create a working copy of the logo
         processed_logo = logo.copy()
         
-        # Apply rounded corners if requested
+        # Apply rounded corners if requested (WITHOUT white background)
         if round_corners:
             print("Applying rounded corners to logo")
             
-            # Create a white background first
-            white_bg = Image.new('RGBA', (new_logo_width, new_logo_height), (255, 255, 255, 255))
-            
-            # Paste the logo onto the white background
-            if has_transparency:
-                white_bg.paste(processed_logo, (0, 0), processed_logo)
-            else:
-                white_bg.paste(processed_logo, (0, 0))
-            
-            processed_logo = white_bg
-            
-            # Add rounded corners
+            # Add rounded corners directly to the logo without background
             corner_radius = min(new_logo_width, new_logo_height) // 4
             
             # Create a rounded mask
@@ -3706,12 +3695,12 @@ def apply_logo(qr_img, logo_path, round_corners=False, size_percentage=25):
                 fill=255
             )
             
-            # Create new image with rounded corners
+            # Create new image with rounded corners and preserve transparency
             rounded_logo = Image.new('RGBA', (new_logo_width, new_logo_height), (0, 0, 0, 0))
             rounded_logo.paste(processed_logo, (0, 0), mask)
             processed_logo = rounded_logo
             
-            # Always set has_transparency to True since we've created rounded corners
+            # Set transparency flag since we've created rounded corners
             has_transparency = True
         
         # Create a copy of QR code to avoid modifying original
@@ -3722,37 +3711,15 @@ def apply_logo(qr_img, logo_path, round_corners=False, size_percentage=25):
         y = (qr_height - new_logo_height) // 2
         print(f"Logo position: ({x}, {y})")
         
-        # Clear the center area to ensure logo visibility
-        # Calculate the QR module size for appropriate padding
-        module_count = 25  # Estimate if 'qr' variable not available
-        module_size = min(qr_width, qr_height) / (module_count + 8)  # Account for quiet zone
-        padding = max(5, int(module_size * 1.5))  # Padding based on module size
-        
-        # Create background area based on transparency
-        if has_transparency:
-            # For transparent logos, use semi-transparent white
-            # (Allows QR code to be partially visible through transparent areas)
-            draw = ImageDraw.Draw(result, 'RGBA')
-            draw.rectangle(
-                [x-padding, y-padding, x+new_logo_width+padding, y+new_logo_height+padding],
-                fill=(255, 255, 255, 255)  # Semi-transparent white
-            )
-            print("Added semi-transparent background for transparent logo")
-        else:
-            # For non-transparent logos, use solid white to ensure visibility
-            draw = ImageDraw.Draw(result)
-            draw.rectangle(
-                [x-padding, y-padding, x+new_logo_width+padding, y+new_logo_height+padding],
-                fill=(255, 255, 255, 255)
-            )
-            print("Added white background for non-transparent logo")
+        # REMOVED: All the background/padding code that was adding white space
+        # The logo will be applied directly without any background modification
         
         # Create mask for transparency handling
         mask = processed_logo if has_transparency else None
         
-        # Paste logo onto QR code
+        # Paste logo directly onto QR code without any background modifications
         result.paste(processed_logo, (x, y), mask)
-        print("Logo applied successfully")
+        print("Logo applied successfully without extra white space")
         
         return result
     except Exception as e:

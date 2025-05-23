@@ -1109,30 +1109,29 @@
                                         </select>
                                     </div>
                                     
-                                    <div id="gradient-options" class="hidden">
+                                    <div id="gradient-options">
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
-                                                <label for="gradient_start" class="form-label block">Gradient Start Color</label>
+                                                <label for="gradient_start_color" class="form-label block">Gradient Start Color</label>
                                                 <div class="flex">
-                                                    <span class="inline-flex items-center px-3 border border-r-0 border-gray-300 bg-gray-50">
+                                                    <span class="inline-flex items-center px-3 border border-r-0 border-gray-300 bg-gray-50 rounded-l">
                                                         <div id="gradient-start-preview" class="color-preview" style="background-color: #000000;" tabindex="0" role="button"></div>
                                                     </span>
-                                                    <input type="text" class="form-input flex-1" id="gradient_start" name="gradient_start" value="#000000">
+                                                    <input type="text" class="form-input flex-1 rounded-l-none" id="gradient_start_color" name="gradient_start" value="#000000">
                                                 </div>
                                             </div>
                                             
                                             <div>
-                                                <label for="gradient_end" class="form-label block">Gradient End Color</label>
+                                                <label for="gradient_end_color" class="form-label block">Gradient End Color</label>
                                                 <div class="flex">
-                                                    <span class="inline-flex items-center px-3 border border-r-0 border-gray-300 bg-gray-50">
+                                                    <span class="inline-flex items-center px-3 border border-r-0 border-gray-300 bg-gray-50 rounded-l">
                                                         <div id="gradient-end-preview" class="color-preview" style="background-color: #333333;" tabindex="0" role="button"></div>
                                                     </span>
-                                                    <input type="text" class="form-input flex-1" id="gradient_end" name="gradient_end" value="#333333">
+                                                    <input type="text" class="form-input flex-1 rounded-l-none" id="gradient_end_color" name="gradient_end" value="#333333">
                                                 </div>
                                             </div>
                                         </div>
-                                        
-                                        <div class="gradient-preview mt-4" style="background: linear-gradient(135deg, #000000, #333333); height: 40px;"></div>
+                                        <div class="gradient-preview mt-4 rounded" style="background: linear-gradient(135deg, #000000, #333333); height: 40px; border: 1px solid #e5e7eb;"></div>
                                     </div>
                                 </div>
                                 
@@ -2633,12 +2632,7 @@
                 (b.toString(16).padStart(2, '0'));
         }
         
-        // Add our enhanced functions for QR color and eye handling
-        setupEnhancedColorPickers();
-        setupEnhancedEyeCustomization();
-        
-        // Fix gradient activation
-        fixGradientActivation();
+
         
         // Initial preview after a short delay to allow form to initialize
         setTimeout(() => {
@@ -2693,309 +2687,9 @@
         });
     }
     
-    // Enhanced custom eyes initialization and handling
-    function setupEnhancedEyeCustomization() {
-        const customEyesCheckbox = document.getElementById('custom_eyes');
-        const eyeCustomizationOptions = document.getElementById('eye-customization-options');
-        const innerEyeStyleSelect = document.getElementById('inner_eye_style');
-        const outerEyeStyleSelect = document.getElementById('outer_eye_style');
-        const innerEyeColorInput = document.getElementById('inner_eye_color');
-        const outerEyeColorInput = document.getElementById('outer_eye_color');
-        
-        if (customEyesCheckbox && eyeCustomizationOptions) {
-            // Set initial state
-            eyeCustomizationOptions.classList.toggle('hidden', !customEyesCheckbox.checked);
-            
-            // Add hidden field to track custom eyes
-            let hiddenField = document.createElement('input');
-            hiddenField.type = 'hidden';
-            hiddenField.id = 'using_custom_eyes';
-            hiddenField.name = 'using_custom_eyes';
-            hiddenField.value = customEyesCheckbox.checked ? 'true' : 'false';
-            customEyesCheckbox.parentNode.appendChild(hiddenField);
-            
-            // Enhanced toggle function
-            customEyesCheckbox.addEventListener('change', function() {
-                eyeCustomizationOptions.classList.toggle('hidden', !this.checked);
-                hiddenField.value = this.checked ? 'true' : 'false';
-                
-                // Update inner and outer eye color inputs if they're empty
-                if (this.checked) {
-                    // Get main QR color
-                    const mainColor = document.getElementById('color').value;
-                    
-                    // Only set eye colors if they haven't been set already
-                    if (!innerEyeColorInput.value || innerEyeColorInput.value === '#000000') {
-                        innerEyeColorInput.value = mainColor;
-                        const innerPreview = document.getElementById('inner-eye-color-preview');
-                        if (innerPreview) {
-                            innerPreview.style.backgroundColor = mainColor;
-                        }
-                    }
-                    
-                    if (!outerEyeColorInput.value || outerEyeColorInput.value === '#000000') {
-                        outerEyeColorInput.value = mainColor;
-                        const outerPreview = document.getElementById('outer-eye-color-preview');
-                        if (outerPreview) {
-                            outerPreview.style.backgroundColor = mainColor;
-                        }
-                    }
-                }
-                
-                // Trigger preview update
-                updateQRPreview(this.checked ? 'Enabled custom eye styles' : 'Disabled custom eye styles');
-            });
-        }
-        
-        // Enhanced style select handling
-        if (innerEyeStyleSelect) {
-            innerEyeStyleSelect.addEventListener('change', function() {
-                updateQRPreview(`Changed inner eye style to ${this.value}`);
-            });
-        }
-        
-        if (outerEyeStyleSelect) {
-            outerEyeStyleSelect.addEventListener('change', function() {
-                updateQRPreview(`Changed outer eye style to ${this.value}`);
-            });
-        }
-    }
-    
-    // Fix for gradient activation issues
-    function fixGradientActivation() {
-        const exportTypeSelect = document.getElementById('export_type');
-        const gradientOptions = document.getElementById('gradient-options');
-        
-        if (exportTypeSelect && gradientOptions) {
-            // Ensure 'png' (solid color) is the default value
-            exportTypeSelect.value = 'png';
-            gradientOptions.classList.add('hidden');
-            
-            // Make sure the hidden gradient field is set correctly
-            let gradientField = document.getElementById('using_gradient');
-            if (!gradientField) {
-                gradientField = document.createElement('input');
-                gradientField.type = 'hidden';
-                gradientField.id = 'using_gradient';
-                gradientField.name = 'using_gradient';
-                exportTypeSelect.parentNode.appendChild(gradientField);
-            }
-            gradientField.value = 'false';
-        }
-    }
     
     // Enhanced template application function
-    function enhancedApplyTemplateStyles(template) {
-        if (!template) return;
-        
-        console.log("Applying template:", template);
-        
-        // Define templates with their respective styles
-        const templates = {
-            modern: {
-                shape: "rounded",
-                color: "#2c5282", // Updated to match formal blue
-                background_color: "#FFFFFF",
-                export_type: "png", // Explicitly set to non-gradient
-                custom_eyes: true,
-                inner_eye_style: "circle",
-                outer_eye_style: "rounded",
-                inner_eye_color: "#2c5282", // Updated to match formal blue
-                outer_eye_color: "#2c5282" // Updated to match formal blue
-            },
-            corporate: {
-                shape: "square",
-                color: "#1a365d", // Darker blue for corporate style
-                background_color: "#FFFFFF",
-                export_type: "png", // Explicitly set to non-gradient
-                frame_type: "square",
-                frame_color: "#1a365d", // Darker blue for corporate style
-                custom_eyes: false
-            },
-            playful: {
-                shape: "circle",
-                export_type: "gradient", // Only this template uses gradient
-                gradient_start: "#3182ce", // Updated to match formal blue palette
-                gradient_end: "#90cdf4", // Updated to match formal blue palette
-                background_color: "#FFFFFF",
-                custom_eyes: true,
-                inner_eye_style: "circle",
-                outer_eye_style: "circle",
-                inner_eye_color: "#3182ce", // Updated to match formal blue palette
-                outer_eye_color: "#3182ce" // Updated to match formal blue palette
-            },
-            minimal: {
-                shape: "square",
-                color: "#2d3748", // Gray for minimal style
-                background_color: "#FFFFFF",
-                export_type: "png", // Explicitly set to non-gradient
-                custom_eyes: false
-            },
-            high_contrast: {
-                shape: "square",
-                color: "#000000",
-                background_color: "#FFFFFF",
-                export_type: "png", // Explicitly set to non-gradient
-                module_size: 12,
-                quiet_zone: 4,
-                custom_eyes: false
-            }
-        };
-        
-        // Get the template styles
-        const styles = templates[template];
-        if (!styles) return;
-        
-        console.log("Template styles:", styles);
-        
-        // Reset user-changed flags when applying template
-        document.querySelectorAll('input[id$="color"]').forEach(input => {
-            input.dataset.userChanged = 'false';
-        });
-        
-        // Apply template styles
-        Object.keys(styles).forEach(key => {
-            const value = styles[key];
-            const element = document.getElementById(key);
-            
-            if (element) {
-                // Handle color inputs specially
-                if (key.includes('color')) {
-                    // Only update if user hasn't changed it
-                    if (element.dataset.userChanged !== 'true') {
-                        const formattedColor = formatColorValue(value);
-                        element.value = formattedColor;
-                        
-                        // Update preview for color inputs
-                        const preview = document.getElementById(`${key}-preview`);
-                        if (preview) {
-                            preview.style.backgroundColor = formattedColor;
-                        }
-                    }
-                } 
-                // Handle checkboxes
-                else if (element.type === 'checkbox') {
-                    element.checked = value;
-                    
-                    // Toggle related panels for custom eyes
-                    if (key === 'custom_eyes') {
-                        const eyeOptions = document.getElementById('eye-customization-options');
-                        if (eyeOptions) {
-                            eyeOptions.classList.toggle('hidden', !value);
-                        }
-                        
-                        // Update hidden field
-                        const hiddenField = document.getElementById('using_custom_eyes');
-                        if (hiddenField) {
-                            hiddenField.value = value ? 'true' : 'false';
-                        }
-                    }
-                }
-                // Handle select elements
-                else if (element.tagName === 'SELECT') {
-                    element.value = value;
-                    
-                    // Special handling for export type
-                    if (key === 'export_type') {
-                        const gradientOptions = document.getElementById('gradient-options');
-                        if (gradientOptions) {
-                            const isGradient = value === 'gradient';
-                            gradientOptions.classList.toggle('hidden', !isGradient);
-                        }
-                        
-                        // Update hidden field
-                        const gradientField = document.getElementById('using_gradient');
-                        if (gradientField) {
-                            gradientField.value = value === 'gradient' ? 'true' : 'false';
-                        } else {
-                            // Create hidden field if it doesn't exist
-                            const newField = document.createElement('input');
-                            newField.type = 'hidden';
-                            newField.id = 'using_gradient';
-                            newField.name = 'using_gradient';
-                            newField.value = value === 'gradient' ? 'true' : 'false';
-                            element.parentNode.appendChild(newField);
-                        }
-                    }
-                }
-                // Handle text inputs
-                else if (element.type === 'text' || element.type === 'number' || element.type === 'range') {
-                    element.value = value;
-                    
-                    // Update display value for range inputs
-                    if (element.type === 'range') {
-                        const valueDisplay = document.getElementById(`${key}-value`);
-                        if (valueDisplay) {
-                            valueDisplay.textContent = value;
-                        }
-                    }
-                }
-            }
-            
-            // Handle radio button groups
-            if (key === 'shape') {
-                const radio = document.getElementById(`shape-${value}`);
-                if (radio) {
-                    radio.checked = true;
-                    
-                    // Update styles on the label
-                    const allLabels = document.querySelectorAll('.shape-option label');
-                    allLabels.forEach(label => {
-                        label.classList.remove('bg-secondary-50', 'border-secondary-500');
-                    });
-                    
-                    const label = document.querySelector(`label[for="shape-${value}"]`);
-                    if (label) {
-                        label.classList.add('bg-secondary-50', 'border-secondary-500');
-                    }
-                }
-            }
-            else if (key === 'frame_type') {
-                const radio = document.getElementById(`frame-${value}`);
-                if (radio) {
-                    radio.checked = true;
-                    
-                    // Update styles on the label
-                    const allLabels = document.querySelectorAll('input[name="frame_type"] + label');
-                    allLabels.forEach(label => {
-                        label.classList.remove('bg-secondary-50', 'border-secondary-500');
-                    });
-                    
-                    const label = document.querySelector(`label[for="frame-${value}"]`);
-                    if (label) {
-                        label.classList.add('bg-secondary-50', 'border-secondary-500');
-                    }
-                    
-                    // Show/hide frame text input based on frame type
-                    const frameTextContainer = document.getElementById('frame-text-container');
-                    if (frameTextContainer) {
-                        frameTextContainer.classList.toggle('hidden', !['scan_me', 'branded'].includes(value));
-                    }
-                }
-            }
-        });
-        
-        // Update gradient preview if needed
-        if (styles.export_type === 'gradient') {
-            updateGradientPreview();
-        }
-        
-        // Trigger preview update
-        updateQRPreview(`Applied '${template}' template`);
-    }
     
-    // Helper function to update gradient preview
-    function updateGradientPreview() {
-        const gradientStartInput = document.getElementById('gradient_start');
-        const gradientEndInput = document.getElementById('gradient_end');
-        const gradientPreview = document.querySelector('.gradient-preview');
-        
-        if (gradientStartInput && gradientEndInput && gradientPreview) {
-            const startColor = gradientStartInput.value;
-            const endColor = gradientEndInput.value;
-            gradientPreview.style.background = `linear-gradient(135deg, ${startColor}, ${endColor})`;
-        }
-    }
     
     // Toggle password visibility for WiFi password
     function togglePassword(elementId) {
@@ -3010,8 +2704,7 @@
             element.previousElementSibling.textContent = 'Show';
         }
     }
-</script>
-<script>
+
 document.addEventListener("DOMContentLoaded", function () {
     // Preview and input pairs
     const colorInputs = [
@@ -3060,7 +2753,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 function setupColorPickers() {
     const inputs = document.querySelectorAll('input[id$="color"]');
-
+    
     inputs.forEach(input => {
         const flex = input.closest('.flex');
         if (!flex) return;
@@ -3081,9 +2774,9 @@ function setupColorPickers() {
             popup.innerHTML = `
                 <div class="grid grid-cols-6 gap-2">
                     ${['#000000','#FFFFFF','#FF0000','#00FF00','#0000FF','#FFFF00','#FF00FF','#00FFFF','#FFA500','#800080','#008000','#800000']
-                    .map(color => `<div class="color-preset w-6 h-6 cursor-pointer rounded" style="background-color: ${color}" data-color="${color}"></div>`).join('')}
+                        .map(color => `<div class="color-preset w-6 h-6 cursor-pointer rounded border border-gray-300 hover:border-gray-500" style="background-color: ${color}" data-color="${color}"></div>`).join('')}
                 </div>
-                <input type="color" class="mt-2 w-full h-8" value="${formatColorValue(input.value)}">
+                <input type="color" class="mt-2 w-full h-8 rounded border border-gray-300" value="${formatColorValue(input.value)}">
             `;
             flex.appendChild(popup);
 
@@ -3093,12 +2786,14 @@ function setupColorPickers() {
                     const color = this.dataset.color;
                     updateColorInput(input, preview, color);
                     popup.classList.add('hidden');
+                    updateGradientPreview();
                 });
             });
 
             // Native color picker
             popup.querySelector('input[type="color"]').addEventListener('input', function () {
                 updateColorInput(input, preview, this.value);
+                updateGradientPreview();
             });
         }
 
@@ -3115,11 +2810,15 @@ function setupColorPickers() {
         // Also make the input update the preview and trigger changes
         input.addEventListener('input', function() {
             updateColorInput(input, preview, this.value);
+            updateGradientPreview();
         });
 
         // Handle paste
         input.addEventListener('paste', function () {
-            setTimeout(() => updateColorInput(input, preview, this.value), 10);
+            setTimeout(() => {
+                updateColorInput(input, preview, this.value);
+                updateGradientPreview();
+            }, 10);
         });
     });
 
@@ -3139,6 +2838,104 @@ function updateColorInput(input, preview, color) {
     preview.style.backgroundColor = color;
     input.dispatchEvent(new Event('change'));
 }
+function setupColorPickers() {
+    const inputs = document.querySelectorAll('input[id$="color"]');
+    
+    inputs.forEach(input => {
+        const flex = input.closest('.flex');
+        if (!flex) return;
+
+        const preview = flex.querySelector('.color-preview');
+        if (!preview) return;
+
+        // Set initial color
+        preview.style.backgroundColor = formatColorValue(input.value);
+
+        const popupId = `color-popup-${input.id}`;
+        let popup = document.getElementById(popupId);
+
+        if (!popup) {
+            popup = document.createElement('div');
+            popup.id = popupId;
+            popup.className = 'color-picker-popup hidden absolute z-50 mt-2 p-2';
+            popup.innerHTML = `
+                <div class="grid grid-cols-6 gap-2">
+                    ${['#000000','#FFFFFF','#FF0000','#00FF00','#0000FF','#FFFF00','#FF00FF','#00FFFF','#FFA500','#800080','#008000','#800000']
+                        .map(color => `<div class="color-preset w-6 h-6 cursor-pointer rounded border border-gray-300 hover:border-gray-500" style="background-color: ${color}" data-color="${color}"></div>`).join('')}
+                </div>
+                <input type="color" class="mt-2 w-full h-8 rounded border border-gray-300" value="${formatColorValue(input.value)}">
+            `;
+            flex.appendChild(popup);
+
+            // Preset click
+            popup.querySelectorAll('.color-preset').forEach(preset => {
+                preset.addEventListener('click', function () {
+                    const color = this.dataset.color;
+                    updateColorInput(input, preview, color);
+                    popup.classList.add('hidden');
+                    updateGradientPreview();
+                });
+            });
+
+            // Native color picker
+            popup.querySelector('input[type="color"]').addEventListener('input', function () {
+                updateColorInput(input, preview, this.value);
+                updateGradientPreview();
+            });
+        }
+
+        // Show popup on preview click
+        preview.addEventListener('click', function (e) {
+            e.stopPropagation();
+            document.querySelectorAll('.color-picker-popup').forEach(p => {
+                if (p !== popup) p.classList.add('hidden');
+            });
+            popup.classList.toggle('hidden');
+            popup.querySelector('input[type="color"]').value = formatColorValue(input.value);
+        });
+
+        // Also make the input update the preview and trigger changes
+        input.addEventListener('input', function() {
+            updateColorInput(input, preview, this.value);
+            updateGradientPreview();
+        });
+
+        // Handle paste
+        input.addEventListener('paste', function () {
+            setTimeout(() => {
+                updateColorInput(input, preview, this.value);
+                updateGradientPreview();
+            }, 10);
+        });
+    });
+
+    document.addEventListener('click', () => {
+        document.querySelectorAll('.color-picker-popup').forEach(popup => popup.classList.add('hidden'));
+    });
+}
+
+function formatColorValue(val) {
+    if (!val) return '#000000';
+    if (val[0] !== '#') val = '#' + val;
+    return val.length === 7 || val.length === 4 ? val : '#000000';
+}
+
+function updateColorInput(input, preview, color) {
+    input.value = color;
+    preview.style.backgroundColor = color;
+    input.dispatchEvent(new Event('change'));
+}
+
+function updateGradientPreview() {
+    const startColor = document.getElementById('gradient_start_color').value;
+    const endColor = document.getElementById('gradient_end_color').value;
+    const gradientPreview = document.querySelector('.gradient-preview');
+    
+    if (gradientPreview) {
+        gradientPreview.style.background = `linear-gradient(135deg, ${startColor}, ${endColor})`;
+    }
+}
+
 // Enhanced setupGradientOptions function
 function setupGradientOptions() {
     const exportTypeSelect = document.getElementById('export_type');
