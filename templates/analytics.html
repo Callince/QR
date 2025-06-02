@@ -4,14 +4,14 @@
 
 {% block head %}
 <!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 {% endblock %}
 
 {% block content %}
 <div class="bg-gray-50 min-h-screen">
     <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <!-- Back button and title -->
+        <!-- Back button and title with timezone info -->
         <div class="flex flex-col md:flex-row md:items-center justify-between mb-8">
             <div>
                 <a href="{{ url_for('view_qr', qr_id=qr_code.unique_id) }}" class="inline-flex items-center text-sm font-medium text-secondary-600 hover:text-secondary-800 mb-2">
@@ -19,6 +19,24 @@
                 </a>
                 <h1 class="text-2xl font-bold text-gray-900">Analytics for "{{ qr_code.name }}"</h1>
                 <p class="text-gray-600 mt-1">Track performance and engagement metrics for your QR code</p>
+                
+                <!-- Timezone Information -->
+                <div class="mt-2 flex items-center gap-4 text-sm text-gray-500">
+                    <span class="flex items-center gap-1">
+                        <i class="fas fa-clock"></i>
+                        Times shown in: <strong class="text-gray-700">{{ user_timezone or 'UTC' }}</strong>
+                    </span>
+                    {% if user_timezone and user_timezone != 'UTC' %}
+                    <button type="button" onclick="setTimezone('UTC')" class="text-secondary-600 hover:text-secondary-800 font-medium transition-colors duration-200">
+                        Switch to UTC
+                    </button>
+                    {% endif %}
+                    {% if not user_timezone or user_timezone not in ['Asia/Kolkata', 'Asia/Calcutta'] %}
+                    <button type="button" onclick="setTimezone('Asia/Kolkata')" class="text-secondary-600 hover:text-secondary-800 font-medium transition-colors duration-200">
+                        Switch to IST
+                    </button>
+                    {% endif %}
+                </div>
             </div>
             <div class="flex items-center mt-4 md:mt-0">
                 <div class="bg-white rounded-lg shadow-sm p-3 flex items-center border border-gray-200">
@@ -27,7 +45,7 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-sm text-gray-500">Total Scans</p>
-                        <p class="text-2xl font-bold text-gray-900">{{ total_scans }}</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ total_scans or 0 }}</p>
                     </div>
                 </div>
                 <div class="ml-4 bg-white rounded-lg shadow-sm p-3 flex items-center border border-gray-200">
@@ -36,11 +54,20 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-sm text-gray-500">Created On</p>
-                        <p class="text-md font-medium text-gray-900">{{ qr_code.created_at.strftime('%b %d, %Y') }}</p>
+                        <p class="text-md font-medium text-gray-900">
+                            {% if qr_code.created_at %}
+                                {{ qr_code.created_at.strftime('%b %d, %Y') }}
+                            {% else %}
+                                Unknown
+                            {% endif %}
+                        </p>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- Timezone Auto-Detection Alert (will be added by JavaScript) -->
+        <div id="timezone-alert-container"></div>
 
         {% if not has_data %}
         <!-- No data state -->
@@ -61,10 +88,18 @@
             <!-- Timeline Chart -->
             <div class="bg-white shadow rounded-lg col-span-3 p-6 border border-gray-200">
                 <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                    <i class="fas fa-chart-line text-secondary-600 mr-2"></i> Scan Timeline
+                    <i class="fas fa-chart-line text-secondary-600 mr-2"></i> 
+                    Scan Timeline
+                    <small class="ml-2 text-sm text-gray-500 font-normal">({{ user_timezone or 'UTC' }} time)</small>
                 </h2>
-                <div class="h-80">
+                <div class="h-80 relative">
                     <canvas id="timelineChart"></canvas>
+                    <div id="timelineChart-error" class="hidden absolute inset-0 flex items-center justify-center">
+                        <div class="text-center p-4">
+                            <div class="text-red-500 mb-2"><i class="fas fa-exclamation-circle text-xl"></i></div>
+                            <p class="text-gray-500">Could not load timeline chart</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -73,8 +108,14 @@
                 <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                     <i class="fas fa-mobile-alt text-secondary-600 mr-2"></i> Device Distribution
                 </h2>
-                <div class="h-64">
+                <div class="h-64 relative">
                     <canvas id="deviceChart"></canvas>
+                    <div id="deviceChart-error" class="hidden absolute inset-0 flex items-center justify-center">
+                        <div class="text-center p-4">
+                            <div class="text-red-500 mb-2"><i class="fas fa-exclamation-circle text-xl"></i></div>
+                            <p class="text-gray-500">Could not load device chart</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -83,8 +124,14 @@
                 <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                     <i class="fas fa-laptop text-secondary-600 mr-2"></i> Operating System
                 </h2>
-                <div class="h-64">
+                <div class="h-64 relative">
                     <canvas id="osChart"></canvas>
+                    <div id="osChart-error" class="hidden absolute inset-0 flex items-center justify-center">
+                        <div class="text-center p-4">
+                            <div class="text-red-500 mb-2"><i class="fas fa-exclamation-circle text-xl"></i></div>
+                            <p class="text-gray-500">Could not load OS chart</p>
+                        </div>
+                    </div>
                 </div>
                 <div class="text-xs text-gray-500 text-center mt-2">
                     *OS data detected from user agent
@@ -94,19 +141,29 @@
             <!-- Hourly Activity -->
             <div class="bg-white shadow rounded-lg p-6 border border-gray-200">
                 <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                    <i class="fas fa-clock text-secondary-600 mr-2"></i> Hourly Activity
+                    <i class="fas fa-clock text-secondary-600 mr-2"></i> 
+                    Hourly Activity
+                    <small class="ml-2 text-sm text-gray-500 font-normal">({{ user_timezone or 'UTC' }})</small>
                 </h2>
-                <div class="h-64">
+                <div class="h-64 relative">
                     <canvas id="hourlyChart"></canvas>
+                    <div id="hourlyChart-error" class="hidden absolute inset-0 flex items-center justify-center">
+                        <div class="text-center p-4">
+                            <div class="text-red-500 mb-2"><i class="fas fa-exclamation-circle text-xl"></i></div>
+                            <p class="text-gray-500">Could not load hourly chart</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Recent Scans Table with Pagination -->
+        <!-- Recent Scans Table with Pagination and Timezone Support -->
         <div class="bg-white shadow rounded-lg overflow-hidden border border-gray-200">
             <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
                 <h2 class="text-lg font-semibold text-gray-800 flex items-center">
-                    <i class="fas fa-history text-secondary-600 mr-2"></i> Recent Scan Activity
+                    <i class="fas fa-history text-secondary-600 mr-2"></i> 
+                    Recent Scan Activity
+                    <small class="ml-2 text-sm text-gray-500 font-normal">({{ user_timezone or 'UTC' }} time)</small>
                 </h2>
                 <div class="text-sm text-gray-500">
                     Showing {{ (page_num - 1) * 10 + 1 if total_scans > 0 else 0 }}-{{ (page_num * 10) if (page_num * 10 < total_scans) else total_scans }} of {{ total_scans }} scans
@@ -117,7 +174,7 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Date & Time
+                                Date & Time ({{ user_timezone or 'UTC' }})
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Device & OS
@@ -131,62 +188,77 @@
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                        {% for scan in paginated_scans %}
-                        <tr>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-900">{{ scan.timestamp.strftime('%b %d, %Y') }}</div>
-                                <div class="text-sm text-gray-500">{{ scan.timestamp.strftime('%I:%M %p') }}</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="flex items-center">
-                                    <span class="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center mr-2">
-                                        {% if scan.user_agent and 'Mobile' in scan.user_agent and 'Tablet' not in scan.user_agent %}
-                                        <i class="fas fa-mobile-alt text-gray-600"></i>
-                                        {% elif scan.user_agent and 'Tablet' in scan.user_agent %}
-                                        <i class="fas fa-tablet-alt text-gray-600"></i>
-                                        {% else %}
-                                        <i class="fas fa-desktop text-gray-600"></i>
-                                        {% endif %}
-                                    </span>
-                                    <div>
-                                        {% if scan.user_agent and 'Mobile' in scan.user_agent and 'Tablet' not in scan.user_agent %}
-                                        <div class="text-sm font-medium text-gray-900">Mobile</div>
-                                        {% elif scan.user_agent and 'Tablet' in scan.user_agent %}
-                                        <div class="text-sm font-medium text-gray-900">Tablet</div>
-                                        {% else %}
-                                        <div class="text-sm font-medium text-gray-900">Desktop</div>
-                                        {% endif %}
-                                        <div class="text-xs text-gray-500">
-                                            {% if scan.user_agent %}
-                                                {% if 'Windows' in scan.user_agent %}Windows
-                                                {% elif 'Android' in scan.user_agent %}Android
-                                                {% elif 'iPhone' in scan.user_agent or 'iPad' in scan.user_agent or 'iOS' in scan.user_agent %}iOS
-                                                {% elif 'Mac OS' in scan.user_agent %}macOS
-                                                {% elif 'Linux' in scan.user_agent %}Linux
+                        {% if paginated_scans %}
+                            {% for scan in paginated_scans %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {% if hasattr(scan, 'localized_timestamp') and scan.localized_timestamp %}
+                                        <div class="text-sm font-medium text-gray-900">{{ scan.localized_timestamp.strftime('%b %d, %Y') }}</div>
+                                        <div class="text-sm text-gray-500">{{ scan.localized_timestamp.strftime('%I:%M %p') }}</div>
+                                    {% elif scan.timestamp %}
+                                        <div class="text-sm font-medium text-gray-900">{{ scan.timestamp.strftime('%b %d, %Y') }}</div>
+                                        <div class="text-sm text-gray-500">{{ scan.timestamp.strftime('%I:%M %p') }} UTC</div>
+                                    {% else %}
+                                        <div class="text-sm font-medium text-gray-900">Unknown</div>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <span class="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center mr-2">
+                                            {% if scan.user_agent and 'Mobile' in scan.user_agent and 'Tablet' not in scan.user_agent %}
+                                            <i class="fas fa-mobile-alt text-gray-600"></i>
+                                            {% elif scan.user_agent and 'Tablet' in scan.user_agent %}
+                                            <i class="fas fa-tablet-alt text-gray-600"></i>
+                                            {% else %}
+                                            <i class="fas fa-desktop text-gray-600"></i>
+                                            {% endif %}
+                                        </span>
+                                        <div>
+                                            {% if scan.user_agent and 'Mobile' in scan.user_agent and 'Tablet' not in scan.user_agent %}
+                                            <div class="text-sm font-medium text-gray-900">Mobile</div>
+                                            {% elif scan.user_agent and 'Tablet' in scan.user_agent %}
+                                            <div class="text-sm font-medium text-gray-900">Tablet</div>
+                                            {% else %}
+                                            <div class="text-sm font-medium text-gray-900">Desktop</div>
+                                            {% endif %}
+                                            <div class="text-xs text-gray-500">
+                                                {% if scan.user_agent %}
+                                                    {% if 'Windows' in scan.user_agent %}Windows
+                                                    {% elif 'Android' in scan.user_agent %}Android
+                                                    {% elif 'iPhone' in scan.user_agent or 'iPad' in scan.user_agent or 'iOS' in scan.user_agent %}iOS
+                                                    {% elif 'Mac OS' in scan.user_agent %}macOS
+                                                    {% elif 'Linux' in scan.user_agent %}Linux
+                                                    {% else %}Unknown
+                                                    {% endif %}
                                                 {% else %}Unknown
                                                 {% endif %}
-                                            {% else %}Unknown
-                                            {% endif %}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if scan.location and scan.location != 'Unknown' %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}">
-                                    <i class="fas fa-map-marker-alt mr-1"></i>
-                                    {{ scan.location or 'Unknown' }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ scan.ip_address or 'Unknown' }}
-                            </td>
-                        </tr>
-                        {% endfor %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if scan.location and scan.location != 'Unknown' %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                                        <i class="fas fa-map-marker-alt mr-1"></i>
+                                        {{ scan.location or 'Unknown' }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ scan.ip_address or 'Unknown' }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="4" class="px-6 py-4 text-center text-gray-500">
+                                    No scans available
+                                </td>
+                            </tr>
+                        {% endif %}
                     </tbody>
                 </table>
                 
                 <!-- Pagination Controls -->
-                {% if total_pages > 1 %}
+                {% if total_pages and total_pages > 1 %}
                 <div class="bg-gray-50 px-6 py-3 flex items-center justify-between border-t border-gray-200">
                     <div class="flex-1 flex justify-between sm:hidden">
                         {% if page_num > 1 %}
@@ -273,306 +345,513 @@
     </div>
 </div>
 {% endblock %}
+
 {% block scripts %}
 <script>
-    // Pass data from Flask to JavaScript
-    window.hasAnalyticsData = {{ has_data|tojson }};
-    {% if has_data %}
-        window.scanDatesData = {{ scan_dates|tojson }};
-        window.deviceData = {{ device_data|tojson }};
-        window.hourlyData = {{ hourly_data|tojson }};
-        window.locationData = {{ location_data|tojson }};
-        window.osData = {{ os_data|tojson }};  // Now already in list format
+    // Global variables to store chart data
+    window.chartData = {
+        hasData: {{ has_data|tojson|safe }},
+        scanDates: {{ scan_dates|tojson|safe }},
+        deviceData: {{ device_data|tojson|safe }},
+        hourlyData: {{ hourly_data|tojson|safe }},
+        osData: {{ os_data|tojson|safe }},
+        userTimezone: {{ (user_timezone or 'UTC')|tojson|safe }}
+    };
+
+    // Timezone helper functions
+    function setTimezone(timezone) {
+        document.body.style.cursor = 'wait';
         
-        console.log('Analytics data loaded:', {
-            scanDates: window.scanDatesData,
-            deviceData: window.deviceData,
-            hourlyData: window.hourlyData,
-            osData: window.osData
+        fetch('/set_timezone', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({timezone: timezone})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success' || data.status === 'fallback') {
+                window.location.reload();
+            } else {
+                document.body.style.cursor = 'default';
+                alert('Failed to change timezone. Please try again.');
+            }
+        })
+        .catch(error => {
+            document.body.style.cursor = 'default';
+            console.error('Error setting timezone:', error);
+            alert('Failed to change timezone. Please try again.');
         });
-    {% endif %}
-    
-    // Helper function for RGBA conversion
-    function hexToRGBA(hex, alpha) {
-        const r = parseInt(hex.slice(1, 3), 16);
-        const g = parseInt(hex.slice(3, 5), 16);
-        const b = parseInt(hex.slice(5, 7), 16);
-        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     }
-    
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('DOM loaded, hasAnalyticsData:', window.hasAnalyticsData);
+
+    function getCurrentTimezoneDisplay() {
+        const timezone = window.chartData.userTimezone;
+        if (timezone === 'Asia/Kolkata' || timezone === 'Asia/Calcutta') {
+            return 'IST';
+        } else if (timezone === 'UTC') {
+            return 'UTC';
+        } else {
+            return timezone.split('/').pop();
+        }
+    }
+
+    // Show error for specific chart
+    function showChartError(chartId, message) {
+        const canvas = document.getElementById(chartId);
+        const errorDiv = document.getElementById(chartId + '-error');
         
-        if (!window.hasAnalyticsData) {
-            console.log('No analytics data available');
-            return;
+        if (canvas) canvas.style.display = 'none';
+        if (errorDiv) {
+            errorDiv.classList.remove('hidden');
+            const errorMsg = errorDiv.querySelector('p');
+            if (errorMsg && message) {
+                errorMsg.textContent = message;
+            }
+        }
+    }
+
+    // Validate and sanitize data
+    function validateChartData() {
+        const data = window.chartData;
+        
+        // Validate scan dates
+        if (!data.scanDates || typeof data.scanDates !== 'object') {
+            console.warn('Invalid scan dates data');
+            data.scanDates = {};
         }
         
+        // Validate device data
+        if (!Array.isArray(data.deviceData)) {
+            console.warn('Invalid device data');
+            data.deviceData = [];
+        }
+        
+        // Validate hourly data
+        if (!Array.isArray(data.hourlyData) || data.hourlyData.length !== 24) {
+            console.warn('Invalid hourly data');
+            data.hourlyData = new Array(24).fill(0);
+        }
+        
+        // Validate OS data
+        if (!Array.isArray(data.osData)) {
+            console.warn('Invalid OS data');
+            data.osData = [];
+        }
+        
+        return data;
+    }
+
+    // Helper function for RGBA conversion
+    function hexToRGBA(hex, alpha) {
+        if (!hex || typeof hex !== 'string') return `rgba(0, 0, 0, ${alpha})`;
+        
+        const r = parseInt(hex.slice(1, 3), 16) || 0;
+        const g = parseInt(hex.slice(3, 5), 16) || 0;
+        const b = parseInt(hex.slice(5, 7), 16) || 0;
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    // Auto-detect timezone and show alert if different
+    document.addEventListener('DOMContentLoaded', function() {
+        const currentTimezone = window.chartData.userTimezone;
+        
         try {
-            // Set Chart.js defaults
-            Chart.defaults.font.family = 'Inter, sans-serif';
-            Chart.defaults.color = '#64748b';
+            const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
             
-            // Define common colors
-            const primaryColor = '#8b5cf6';
-            const secondaryColor = '#0ea5e9';
-            const tertiaryColor = '#f97316';
-            const quaternaryColor = '#10b981';
-            const grayColor = '#cbd5e1';
-            
-            // Timeline Chart
-            const timelineCanvas = document.getElementById('timelineChart');
-            if (timelineCanvas && window.scanDatesData) {
-                const timelineDates = Object.keys(window.scanDatesData);
-                const timelineCounts = Object.values(window.scanDatesData);
+            if (currentTimezone !== detectedTimezone && 
+                !sessionStorage.getItem('timezone_prompt_dismissed_analytics')) {
                 
-                console.log('Timeline data:', { dates: timelineDates, counts: timelineCounts });
-                
-                // Sort dates chronologically
-                const sortedEntries = Object.entries(window.scanDatesData).sort((a, b) => new Date(a[0]) - new Date(b[0]));
-                const sortedDates = sortedEntries.map(entry => entry[0]);
-                const sortedCounts = sortedEntries.map(entry => entry[1]);
-                
-                const timelineCtx = timelineCanvas.getContext('2d');
-                new Chart(timelineCtx, {
-                    type: 'line',
-                    data: {
-                        labels: sortedDates,
-                        datasets: [{
-                            label: 'Scans',
-                            data: sortedCounts,
-                            fill: true,
-                            backgroundColor: hexToRGBA(primaryColor, 0.2),
-                            borderColor: primaryColor,
-                            borderWidth: 2,
-                            tension: 0.4,
-                            pointRadius: 4,
-                            pointBackgroundColor: primaryColor
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            x: {
-                                grid: {
-                                    display: false
-                                }
-                            },
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    precision: 0
-                                },
-                                grid: {
-                                    color: '#e2e8f0'
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                display: false
-                            },
-                            tooltip: {
-                                backgroundColor: 'rgba(15, 23, 42, 0.8)',
-                                padding: 12,
-                                cornerRadius: 6
-                            }
-                        }
-                    }
-                });
-                console.log('Timeline chart created successfully');
-            }
-            
-            // Device Chart
-            const deviceCanvas = document.getElementById('deviceChart');
-            if (deviceCanvas && window.deviceData && window.deviceData.length > 0) {
-                const deviceLabels = window.deviceData.map(item => item.device);
-                const deviceCounts = window.deviceData.map(item => item.scans);
-                const deviceColors = [secondaryColor, primaryColor, tertiaryColor, grayColor];
-                
-                console.log('Device data:', { labels: deviceLabels, counts: deviceCounts });
-                
-                const deviceCtx = deviceCanvas.getContext('2d');
-                new Chart(deviceCtx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: deviceLabels,
-                        datasets: [{
-                            data: deviceCounts,
-                            backgroundColor: deviceColors.slice(0, deviceLabels.length),
-                            borderWidth: 0
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        cutout: '60%',
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: {
-                                    padding: 15,
-                                    usePointStyle: true,
-                                    pointStyle: 'circle'
-                                }
-                            },
-                            tooltip: {
-                                backgroundColor: 'rgba(15, 23, 42, 0.8)',
-                                padding: 12,
-                                cornerRadius: 6,
-                                callbacks: {
-                                    label: function(context) {
-                                        const label = context.label || '';
-                                        const value = context.raw || 0;
-                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                        const percentage = Math.round(value / total * 100);
-                                        return `${label}: ${value} (${percentage}%)`;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-                console.log('Device chart created successfully');
-            }
-            
-            // OS Chart
-            const osCanvas = document.getElementById('osChart');
-            if (osCanvas && window.osData && window.osData.length > 0) {
-                const osLabels = window.osData.map(item => item.os);
-                const osCounts = window.osData.map(item => item.scans);
-                const osColors = [primaryColor, secondaryColor, quaternaryColor, tertiaryColor, '#0f766e', grayColor];
-                
-                console.log('OS data:', { labels: osLabels, counts: osCounts });
-                
-                const osCtx = osCanvas.getContext('2d');
-                new Chart(osCtx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: osLabels,
-                        datasets: [{
-                            data: osCounts,
-                            backgroundColor: osColors.slice(0, osLabels.length),
-                            borderWidth: 0
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        cutout: '60%',
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: {
-                                    padding: 15,
-                                    usePointStyle: true,
-                                    pointStyle: 'circle'
-                                }
-                            },
-                            tooltip: {
-                                backgroundColor: 'rgba(15, 23, 42, 0.8)',
-                                padding: 12,
-                                cornerRadius: 6,
-                                callbacks: {
-                                    label: function(context) {
-                                        const label = context.label || '';
-                                        const value = context.raw || 0;
-                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                        const percentage = Math.round(value / total * 100);
-                                        return `${label}: ${value} (${percentage}%)`;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-                console.log('OS chart created successfully');
-            }
-            
-            // Hourly Chart
-            const hourlyCanvas = document.getElementById('hourlyChart');
-            if (hourlyCanvas && window.hourlyData && Array.isArray(window.hourlyData)) {
-                const hourLabels = Array.from({length: 24}, (_, i) => {
-                    const hour = i % 12 || 12;
-                    const ampm = i < 12 ? 'AM' : 'PM';
-                    return `${hour}${ampm}`;
-                });
-                
-                console.log('Hourly data:', window.hourlyData);
-                
-                const hourlyCtx = hourlyCanvas.getContext('2d');
-                new Chart(hourlyCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: hourLabels,
-                        datasets: [{
-                            label: 'Scans',
-                            data: window.hourlyData,
-                            backgroundColor: secondaryColor,
-                            borderRadius: 4,
-                            barPercentage: 0.6,
-                            categoryPercentage: 0.8
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            x: {
-                                grid: {
-                                    display: false
-                                },
-                                ticks: {
-                                    maxRotation: 45,
-                                    minRotation: 45
-                                }
-                            },
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    precision: 0
-                                },
-                                grid: {
-                                    color: '#e2e8f0'
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                display: false
-                            },
-                            tooltip: {
-                                backgroundColor: 'rgba(15, 23, 42, 0.8)',
-                                padding: 12,
-                                cornerRadius: 6
-                            }
-                        }
-                    }
-                });
-                console.log('Hourly chart created successfully');
-            }
-            
-        } catch (error) {
-            console.error("Error initializing charts:", error);
-            
-            // Create error message elements for failed charts
-            const chartContainers = document.querySelectorAll('#timelineChart, #deviceChart, #osChart, #hourlyChart');
-            chartContainers.forEach(container => {
-                if (container) {
-                    const parent = container.parentElement;
-                    parent.innerHTML = `
-                        <div class="flex items-center justify-center h-full">
-                            <div class="text-center p-4">
-                                <div class="text-red-500 mb-2"><i class="fas fa-exclamation-circle text-xl"></i></div>
-                                <p class="text-gray-500">Could not load chart data</p>
-                                <p class="text-xs text-gray-400 mt-1">${error.message}</p>
+                const alertContainer = document.getElementById('timezone-alert-container');
+                if (alertContainer) {
+                    const alertElement = document.createElement('div');
+                    alertElement.className = 'bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6';
+                    alertElement.innerHTML = `
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-info-circle text-blue-400"></i>
+                            </div>
+                            <div class="ml-3 flex-1">
+                                <h3 class="text-sm font-medium text-blue-800">
+                                    Timezone Detection
+                                </h3>
+                                <p class="mt-2 text-sm text-blue-700">
+                                    We detected your timezone as <strong>${detectedTimezone}</strong>. 
+                                    Analytics are currently displayed in <strong>${currentTimezone}</strong>. 
+                                    Would you like to switch?
+                                </p>
+                                <div class="mt-4">
+                                    <div class="flex space-x-3">
+                                        <button type="button" onclick="setTimezone('${detectedTimezone}')" 
+                                                class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-3 rounded-md transition-colors duration-200">
+                                            Switch to ${detectedTimezone}
+                                        </button>
+                                        <button type="button" onclick="dismissTimezoneAlert()" 
+                                                class="bg-white hover:bg-gray-50 text-blue-600 text-sm font-medium py-2 px-3 rounded-md border border-blue-300 transition-colors duration-200">
+                                            Keep ${currentTimezone}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="ml-auto">
+                                <button type="button" onclick="dismissTimezoneAlert()" 
+                                        class="text-blue-400 hover:text-blue-600 transition-colors duration-200">
+                                    <i class="fas fa-times"></i>
+                                </button>
                             </div>
                         </div>
                     `;
+                    
+                    alertContainer.appendChild(alertElement);
                 }
-            });
+            }
+        } catch (error) {
+            console.warn('Timezone detection not available:', error);
+        }
+
+        // Initialize charts
+        if (window.chartData.hasData) {
+            initializeCharts();
+        } else {
+            console.log('No analytics data available');
         }
     });
+
+    function dismissTimezoneAlert() {
+        const alertContainer = document.getElementById('timezone-alert-container');
+        if (alertContainer) {
+            alertContainer.innerHTML = '';
+        }
+        sessionStorage.setItem('timezone_prompt_dismissed_analytics', 'true');
+    }
+
+    function initializeCharts() {
+        try {
+            console.log('Initializing charts with data:', window.chartData);
+            
+            // Validate data first
+            const data = validateChartData();
+            
+            // Set Chart.js defaults
+            if (typeof Chart !== 'undefined') {
+                Chart.defaults.font.family = 'Inter, sans-serif';
+                Chart.defaults.color = '#64748b';
+            } else {
+                console.error('Chart.js not loaded properly');
+                return;
+            }
+            
+            // Define common colors
+            const colors = {
+                primary: '#8b5cf6',
+                secondary: '#0ea5e9', 
+                tertiary: '#f97316',
+                quaternary: '#10b981',
+                gray: '#cbd5e1'
+            };
+            
+            // Initialize Timeline Chart
+            createTimelineChart(data, colors);
+            
+            // Initialize Device Chart
+            createDeviceChart(data, colors);
+            
+            // Initialize OS Chart
+            createOSChart(data, colors);
+            
+            // Initialize Hourly Chart
+            createHourlyChart(data, colors);
+            
+        } catch (error) {
+            console.error("Error initializing charts:", error);
+        }
+    }
+
+    function createTimelineChart(data, colors) {
+        try {
+            const canvas = document.getElementById('timelineChart');
+            if (!canvas) {
+                console.warn('Timeline chart canvas not found');
+                return;
+            }
+
+            if (!data.scanDates || Object.keys(data.scanDates).length === 0) {
+                showChartError('timelineChart', 'No timeline data available');
+                return;
+            }
+
+            // Sort dates chronologically
+            const sortedEntries = Object.entries(data.scanDates).sort((a, b) => new Date(a[0]) - new Date(b[0]));
+            const sortedDates = sortedEntries.map(entry => entry[0]);
+            const sortedCounts = sortedEntries.map(entry => entry[1]);
+
+            console.log('Timeline data:', { dates: sortedDates, counts: sortedCounts });
+
+            const ctx = canvas.getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: sortedDates,
+                    datasets: [{
+                        label: `Scans (${getCurrentTimezoneDisplay()})`,
+                        data: sortedCounts,
+                        fill: true,
+                        backgroundColor: hexToRGBA(colors.primary, 0.2),
+                        borderColor: colors.primary,
+                        borderWidth: 2,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointBackgroundColor: colors.primary
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            title: {
+                                display: true,
+                                text: `Date (${getCurrentTimezoneDisplay()})`
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: { precision: 0 },
+                            grid: { color: '#e2e8f0' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.8)',
+                            padding: 12,
+                            cornerRadius: 6
+                        }
+                    }
+                }
+            });
+            
+            console.log('Timeline chart created successfully');
+        } catch (error) {
+            console.error('Error creating timeline chart:', error);
+            showChartError('timelineChart', 'Failed to create timeline chart');
+        }
+    }
+
+    function createDeviceChart(data, colors) {
+        try {
+            const canvas = document.getElementById('deviceChart');
+            if (!canvas) {
+                console.warn('Device chart canvas not found');
+                return;
+            }
+
+            if (!data.deviceData || data.deviceData.length === 0) {
+                showChartError('deviceChart', 'No device data available');
+                return;
+            }
+
+            const deviceLabels = data.deviceData.map(item => item.device);
+            const deviceCounts = data.deviceData.map(item => item.scans);
+            const deviceColors = [colors.secondary, colors.primary, colors.tertiary, colors.gray];
+
+            console.log('Device data:', { labels: deviceLabels, counts: deviceCounts });
+
+            const ctx = canvas.getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: deviceLabels,
+                    datasets: [{
+                        data: deviceCounts,
+                        backgroundColor: deviceColors.slice(0, deviceLabels.length),
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '60%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                usePointStyle: true,
+                                pointStyle: 'circle'
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.8)',
+                            padding: 12,
+                            cornerRadius: 6,
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? Math.round(value / total * 100) : 0;
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            console.log('Device chart created successfully');
+        } catch (error) {
+            console.error('Error creating device chart:', error);
+            showChartError('deviceChart', 'Failed to create device chart');
+        }
+    }
+
+    function createOSChart(data, colors) {
+        try {
+            const canvas = document.getElementById('osChart');
+            if (!canvas) {
+                console.warn('OS chart canvas not found');
+                return;
+            }
+
+            if (!data.osData || data.osData.length === 0) {
+                showChartError('osChart', 'No OS data available');
+                return;
+            }
+
+            const osLabels = data.osData.map(item => item.os);
+            const osCounts = data.osData.map(item => item.scans);
+            const osColors = [colors.primary, colors.secondary, colors.quaternary, colors.tertiary, '#0f766e', colors.gray];
+
+            console.log('OS data:', { labels: osLabels, counts: osCounts });
+
+            const ctx = canvas.getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: osLabels,
+                    datasets: [{
+                        data: osCounts,
+                        backgroundColor: osColors.slice(0, osLabels.length),
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '60%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                usePointStyle: true,
+                                pointStyle: 'circle'
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.8)',
+                            padding: 12,
+                            cornerRadius: 6,
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? Math.round(value / total * 100) : 0;
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            console.log('OS chart created successfully');
+        } catch (error) {
+            console.error('Error creating OS chart:', error);
+            showChartError('osChart', 'Failed to create OS chart');
+        }
+    }
+
+    function createHourlyChart(data, colors) {
+        try {
+            const canvas = document.getElementById('hourlyChart');
+            if (!canvas) {
+                console.warn('Hourly chart canvas not found');
+                return;
+            }
+
+            if (!Array.isArray(data.hourlyData) || data.hourlyData.length !== 24) {
+                console.warn('Invalid hourly data:', data.hourlyData);
+                showChartError('hourlyChart', 'Invalid hourly data');
+                return;
+            }
+
+            const hourLabels = Array.from({length: 24}, (_, i) => {
+                const hour = i % 12 || 12;
+                const ampm = i < 12 ? 'AM' : 'PM';
+                return `${hour}${ampm}`;
+            });
+
+            console.log('Hourly data:', data.hourlyData);
+
+            const ctx = canvas.getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: hourLabels,
+                    datasets: [{
+                        label: `Scans per Hour (${getCurrentTimezoneDisplay()})`,
+                        data: data.hourlyData,
+                        backgroundColor: colors.secondary,
+                        borderRadius: 4,
+                        barPercentage: 0.6,
+                        categoryPercentage: 0.8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45
+                            },
+                            title: {
+                                display: true,
+                                text: `Hour of Day (${getCurrentTimezoneDisplay()})`
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: { precision: 0 },
+                            grid: { color: '#e2e8f0' },
+                            title: {
+                                display: true,
+                                text: 'Number of Scans'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.8)',
+                            padding: 12,
+                            cornerRadius: 6
+                        }
+                    }
+                }
+            });
+            
+            console.log('Hourly chart created successfully');
+        } catch (error) {
+            console.error('Error creating hourly chart:', error);
+            showChartError('hourlyChart', 'Failed to create hourly chart');
+        }
+    }
 </script>
 {% endblock %}

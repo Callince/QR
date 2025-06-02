@@ -15,6 +15,7 @@ from sqlalchemy import ForeignKey, case, or_, func
 from sqlalchemy.orm import relationship, joinedload
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 from PIL import ImageChops, Image  
 import qrcode
 from io import BytesIO
@@ -1158,8 +1159,75 @@ def create_qr():
                 flash(f'Required fields missing: {", ".join(missing)}', 'error')
                 return redirect(url_for('create_qr'))
             
-            # Create empty content JSON for backward compatibility
+            # Create content JSON with actual data based on QR type
             content = {}
+            
+            # Populate content based on QR type
+            if qr_type == 'link':
+                content['url'] = request.form.get('url', 'https://example.com')
+                
+            elif qr_type == 'email':
+                content['email'] = request.form.get('email', '')
+                content['subject'] = request.form.get('subject', '')
+                content['body'] = request.form.get('body', '')
+                
+            elif qr_type == 'text':
+                content['text'] = request.form.get('text', '')
+                
+            elif qr_type == 'call':
+                content['phone'] = request.form.get('phone', '')
+                
+            elif qr_type == 'sms':
+                content['phone'] = request.form.get('sms-phone') or request.form.get('phone', '')
+                content['message'] = request.form.get('message', '')
+                
+            elif qr_type == 'whatsapp':
+                content['phone'] = request.form.get('whatsapp-phone') or request.form.get('phone', '')
+                content['message'] = request.form.get('whatsapp-message') or request.form.get('message', '')
+                
+            elif qr_type == 'wifi':
+                content['ssid'] = request.form.get('ssid', '')
+                content['password'] = request.form.get('password', '')
+                content['encryption'] = request.form.get('encryption', 'WPA')
+                content['hidden_network'] = 'hidden_network' in request.form
+                
+            elif qr_type == 'vcard':
+                # Basic vCard information
+                content['name'] = request.form.get('full_name', '')
+                content['phone'] = request.form.get('vcard-phone') or request.form.get('phone', '')
+                content['email'] = request.form.get('vcard-email') or request.form.get('email', '')
+                content['company'] = request.form.get('company', '')
+                content['title'] = request.form.get('title', '')
+                content['address'] = request.form.get('address', '')
+                content['website'] = request.form.get('website', '')
+                
+                # Enhanced vCard information
+                content['primary_color'] = request.form.get('vcard_primary_color', '#2c5282')
+                content['secondary_color'] = request.form.get('vcard_secondary_color', '#3182ce')
+                
+                # Process social media links
+                social_media = {}
+                social_platforms = ['facebook', 'twitter', 'linkedin', 'instagram', 
+                                   'youtube', 'whatsapp', 'telegram', 'github', 
+                                   'tiktok', 'pinterest', 'snapchat', 'discord', 'reddit', 'tumblr']
+                
+                for platform in social_platforms:
+                    social_url = request.form.get(f'social_{platform}', '')
+                    if social_url:
+                        social_media[platform] = social_url
+                
+                if social_media:
+                    content['social_media'] = social_media
+                
+            elif qr_type == 'event':
+                content['title'] = request.form.get('event-title') or request.form.get('title', '')
+                content['location'] = request.form.get('location', '')
+                content['description'] = request.form.get('description', '')
+                content['organizer'] = request.form.get('organizer', '')
+                
+                # Handle datetime fields carefully
+                content['start_date'] = request.form.get('start_date', '')
+                content['end_time'] = request.form.get('end_time', '')
             
             # Basic QR code styling options
             template = request.form.get('template', '')
@@ -1249,7 +1317,7 @@ def create_qr():
                 name=name,
                 qr_type=qr_type,
                 is_dynamic=is_dynamic,
-                content=json.dumps(content),
+                content=json.dumps(content),  # Now contains the actual content!
                 color=color,
                 background_color=background_color,
                 frame_type=frame_type,
@@ -1289,7 +1357,6 @@ def create_qr():
             db.session.flush()  # Get ID without committing
             
             # Now create the specific QR type record based on the type
-            # [Rest of the QR type specific code remains the same...]
             if qr_type == 'link':
                 link_detail = QRLink(
                     qr_code_id=new_qr.id,
@@ -1345,7 +1412,78 @@ def create_qr():
                 )
                 db.session.add(wifi_detail)
                 
-            # [Continue with other QR types as in original code...]
+            elif qr_type == 'vcard':
+                # Handle social media data
+                social_media_data = {}
+                social_platforms = ['facebook', 'twitter', 'linkedin', 'instagram', 
+                                   'youtube', 'whatsapp', 'telegram', 'github', 
+                                   'tiktok', 'pinterest', 'snapchat', 'discord', 'reddit', 'tumblr']
+                
+                for platform in social_platforms:
+                    social_url = request.form.get(f'social_{platform}', '')
+                    if social_url:
+                        social_media_data[platform] = social_url
+                
+                vcard_detail = QRVCard(
+                    qr_code_id=new_qr.id,
+                    name=request.form.get('full_name', ''),
+                    phone=request.form.get('vcard-phone') or request.form.get('phone', ''),
+                    email=request.form.get('vcard-email') or request.form.get('email', ''),
+                    company=request.form.get('company', ''),
+                    title=request.form.get('title', ''),
+                    address=request.form.get('address', ''),
+                    website=request.form.get('website', ''),
+                    primary_color=request.form.get('vcard_primary_color', '#2c5282'),
+                    secondary_color=request.form.get('vcard_secondary_color', '#3182ce'),
+                    social_media=json.dumps(social_media_data) if social_media_data else None
+                )
+                
+                # Handle vCard logo if provided
+                vcard_logo = request.files.get('vcard_logo')
+                if vcard_logo and vcard_logo.filename:
+                    logo_filename = secure_filename(vcard_logo.filename)
+                    logo_path = os.path.join(app.config['UPLOAD_FOLDER'], 'vcard', logo_filename)
+                    os.makedirs(os.path.dirname(logo_path), exist_ok=True)
+                    vcard_logo.save(logo_path)
+                    vcard_detail.logo_path = os.path.join('vcard', logo_filename)
+                
+                db.session.add(vcard_detail)
+                
+            elif qr_type == 'event':
+                # Handle datetime fields
+                start_date = None
+                end_time = None
+                
+                start_date_str = request.form.get('start_date', '')
+                if start_date_str:
+                    try:
+                        start_date = datetime.fromisoformat(start_date_str.replace('Z', '+00:00'))
+                    except ValueError:
+                        try:
+                            start_date = datetime.strptime(start_date_str, '%Y-%m-%dT%H:%M')
+                        except ValueError:
+                            pass
+                
+                end_time_str = request.form.get('end_time', '')
+                if end_time_str:
+                    try:
+                        end_time = datetime.fromisoformat(end_time_str.replace('Z', '+00:00'))
+                    except ValueError:
+                        try:
+                            end_time = datetime.strptime(end_time_str, '%Y-%m-%dT%H:%M')
+                        except ValueError:
+                            pass
+                
+                event_detail = QREvent(
+                    qr_code_id=new_qr.id,
+                    title=request.form.get('event-title') or request.form.get('title', ''),
+                    location=request.form.get('location', ''),
+                    start_date=start_date or datetime.now(UTC),  # Default to now if parsing fails
+                    end_time=end_time,
+                    description=request.form.get('description', ''),
+                    organizer=request.form.get('organizer', '')
+                )
+                db.session.add(event_detail)
             
             # Increment QR usage for the subscription
             active_subscription.qr_generated += 1
@@ -1719,134 +1857,457 @@ def view_qr(qr_id):
 @app.route('/qr/<qr_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_qr(qr_id):
+    """
+    Enhanced edit QR route that properly handles both content and styling updates
+    with improved template handling and type-specific content management
+    """
     qr_code = QRCode.query.filter_by(unique_id=qr_id).first_or_404()
     
     # Ensure the QR code belongs to the current user
     if qr_code.user_id != current_user.id:
-        flash('You do not have permission to edit this QR code.')
+        flash('You do not have permission to edit this QR code.', 'danger')
         return redirect(url_for('dashboard'))
     
     if request.method == 'POST':
-        # [Content update code remains the same...]
-        
-        # Update styling - including the new gradient column
-        qr_code.template = request.form.get('template')
-        
-        # Get and validate color input
-        color = request.form.get('color', '#000000')
-        if not color or color.strip() == '' or color == 'undefined' or color == 'null':
-            color = '#000000'
-        qr_code.color = color
-        
-        background_color = request.form.get('background_color', '#FFFFFF')
-        if not background_color or background_color.strip() == '' or background_color == 'undefined':
-            background_color = '#FFFFFF'
-        qr_code.background_color = background_color
-        
-        qr_code.shape = request.form.get('shape', 'square')
-        qr_code.frame_type = request.form.get('frame_type')
-        qr_code.frame_text = request.form.get('frame_text')
-        
-        # Get frame color if a frame is selected
-        if request.form.get('frame_type'):
-            qr_code.frame_color = request.form.get('frame_color', qr_code.color)
-        
-        # UPDATE GRADIENT HANDLING - Use the new gradient column
-        using_gradient = False
-        export_type = request.form.get('export_type', 'png')
-        
-        # Check if user explicitly selected gradient
-        if export_type == 'gradient':
-            using_gradient = True
-        
-        # Check if gradient is enabled via checkbox or form field
-        if 'using_gradient' in request.form and request.form.get('using_gradient') == 'true':
-            using_gradient = True
-        
-        # Check if template has gradient
-        template = request.form.get('template', '')
-        if template and template in QR_TEMPLATES:
-            template_config = QR_TEMPLATES[template]
-            if template_config.get('export_type') == 'gradient':
+        try:
+            # First, update the type-specific content based on QR type
+            qr_type = qr_code.qr_type
+            content_updated = False
+            
+            # Update type-specific content in detail tables
+            if qr_type == 'link':
+                link_detail = qr_code.link_detail
+                new_url = request.form.get('url', '')
+                if link_detail and new_url and new_url != link_detail.url:
+                    link_detail.url = new_url
+                    content_updated = True
+                    print(f"Updated link URL to: {new_url}")
+                elif not link_detail and new_url:
+                    # Create new link detail if it doesn't exist
+                    link_detail = QRLink(qr_code_id=qr_code.id, url=new_url)
+                    db.session.add(link_detail)
+                    content_updated = True
+                    
+            elif qr_type == 'email':
+                email_detail = qr_code.email_detail
+                new_email = request.form.get('email', '')
+                new_subject = request.form.get('subject', '')
+                new_body = request.form.get('body', '')
+                
+                if email_detail:
+                    if (new_email != email_detail.email or 
+                        new_subject != (email_detail.subject or '') or 
+                        new_body != (email_detail.body or '')):
+                        email_detail.email = new_email
+                        email_detail.subject = new_subject
+                        email_detail.body = new_body
+                        content_updated = True
+                        print(f"Updated email details")
+                elif new_email:
+                    email_detail = QREmail(
+                        qr_code_id=qr_code.id,
+                        email=new_email,
+                        subject=new_subject,
+                        body=new_body
+                    )
+                    db.session.add(email_detail)
+                    content_updated = True
+                    
+            elif qr_type == 'text':
+                text_detail = qr_code.text_detail
+                new_text = request.form.get('text', '')
+                if text_detail and new_text != text_detail.text:
+                    text_detail.text = new_text
+                    content_updated = True
+                    print(f"Updated text content")
+                elif not text_detail and new_text:
+                    text_detail = QRText(qr_code_id=qr_code.id, text=new_text)
+                    db.session.add(text_detail)
+                    content_updated = True
+                    
+            elif qr_type == 'call':
+                phone_detail = qr_code.phone_detail
+                new_phone = request.form.get('phone', '')
+                if phone_detail and new_phone != phone_detail.phone:
+                    phone_detail.phone = new_phone
+                    content_updated = True
+                    print(f"Updated phone number")
+                elif not phone_detail and new_phone:
+                    phone_detail = QRPhone(qr_code_id=qr_code.id, phone=new_phone)
+                    db.session.add(phone_detail)
+                    content_updated = True
+                    
+            elif qr_type == 'sms':
+                sms_detail = qr_code.sms_detail
+                new_phone = request.form.get('sms-phone') or request.form.get('phone', '')
+                new_message = request.form.get('message', '')
+                if sms_detail:
+                    if (new_phone != sms_detail.phone or 
+                        new_message != (sms_detail.message or '')):
+                        sms_detail.phone = new_phone
+                        sms_detail.message = new_message
+                        content_updated = True
+                        print(f"Updated SMS details")
+                elif new_phone:
+                    sms_detail = QRSms(
+                        qr_code_id=qr_code.id,
+                        phone=new_phone,
+                        message=new_message
+                    )
+                    db.session.add(sms_detail)
+                    content_updated = True
+                    
+            elif qr_type == 'whatsapp':
+                whatsapp_detail = qr_code.whatsapp_detail
+                new_phone = request.form.get('whatsapp-phone') or request.form.get('phone', '')
+                new_message = request.form.get('whatsapp-message') or request.form.get('message', '')
+                if whatsapp_detail:
+                    if (new_phone != whatsapp_detail.phone or 
+                        new_message != (whatsapp_detail.message or '')):
+                        whatsapp_detail.phone = new_phone
+                        whatsapp_detail.message = new_message
+                        content_updated = True
+                        print(f"Updated WhatsApp details")
+                elif new_phone:
+                    whatsapp_detail = QRWhatsApp(
+                        qr_code_id=qr_code.id,
+                        phone=new_phone,
+                        message=new_message
+                    )
+                    db.session.add(whatsapp_detail)
+                    content_updated = True
+                    
+            elif qr_type == 'wifi':
+                wifi_detail = qr_code.wifi_detail
+                new_ssid = request.form.get('ssid', '')
+                new_password = request.form.get('password', '')
+                new_encryption = request.form.get('encryption', 'WPA')
+                if wifi_detail:
+                    if (new_ssid != wifi_detail.ssid or 
+                        new_password != (wifi_detail.password or '') or 
+                        new_encryption != wifi_detail.encryption):
+                        wifi_detail.ssid = new_ssid
+                        wifi_detail.password = new_password
+                        wifi_detail.encryption = new_encryption
+                        content_updated = True
+                        print(f"Updated WiFi details")
+                elif new_ssid:
+                    wifi_detail = QRWifi(
+                        qr_code_id=qr_code.id,
+                        ssid=new_ssid,
+                        password=new_password,
+                        encryption=new_encryption
+                    )
+                    db.session.add(wifi_detail)
+                    content_updated = True
+                    
+            elif qr_type == 'vcard':
+                vcard_detail = qr_code.vcard_detail
+                new_name = request.form.get('full_name', '')
+                new_phone = request.form.get('vcard-phone') or request.form.get('phone', '')
+                new_email = request.form.get('vcard-email') or request.form.get('email', '')
+                new_company = request.form.get('company', '')
+                new_title = request.form.get('title', '')
+                new_address = request.form.get('address', '')
+                new_website = request.form.get('website', '')
+                
+                # Handle social media data
+                social_media_data = {}
+                for platform in ['linkedin', 'twitter', 'facebook', 'instagram']:
+                    social_url = request.form.get(f'social_{platform}', '')
+                    if social_url:
+                        social_media_data[platform] = social_url
+                
+                if vcard_detail:
+                    # Check if any vCard field has changed
+                    current_social = {}
+                    if vcard_detail.social_media:
+                        try:
+                            current_social = json.loads(vcard_detail.social_media)
+                        except:
+                            current_social = {}
+                    
+                    if (new_name != vcard_detail.name or 
+                        new_phone != (vcard_detail.phone or '') or 
+                        new_email != (vcard_detail.email or '') or 
+                        new_company != (vcard_detail.company or '') or 
+                        new_title != (vcard_detail.title or '') or 
+                        new_address != (vcard_detail.address or '') or 
+                        new_website != (vcard_detail.website or '') or
+                        social_media_data != current_social):
+                        
+                        vcard_detail.name = new_name
+                        vcard_detail.phone = new_phone
+                        vcard_detail.email = new_email
+                        vcard_detail.company = new_company
+                        vcard_detail.title = new_title
+                        vcard_detail.address = new_address
+                        vcard_detail.website = new_website
+                        vcard_detail.social_media = json.dumps(social_media_data) if social_media_data else None
+                        content_updated = True
+                        print(f"Updated vCard details")
+                elif new_name:
+                    vcard_detail = QRVCard(
+                        qr_code_id=qr_code.id,
+                        name=new_name,
+                        phone=new_phone,
+                        email=new_email,
+                        company=new_company,
+                        title=new_title,
+                        address=new_address,
+                        website=new_website,
+                        social_media=json.dumps(social_media_data) if social_media_data else None
+                    )
+                    db.session.add(vcard_detail)
+                    content_updated = True
+                    
+            elif qr_type == 'event':
+                event_detail = qr_code.event_detail
+                new_title = request.form.get('event-title') or request.form.get('title', '')
+                new_location = request.form.get('location', '')
+                new_description = request.form.get('description', '')
+                new_organizer = request.form.get('organizer', '')
+                
+                # Handle datetime fields carefully
+                new_start_date = None
+                new_end_time = None
+                
+                start_date_str = request.form.get('start_date', '')
+                if start_date_str:
+                    try:
+                        new_start_date = datetime.fromisoformat(start_date_str.replace('Z', '+00:00'))
+                    except ValueError:
+                        try:
+                            new_start_date = datetime.strptime(start_date_str, '%Y-%m-%dT%H:%M')
+                        except ValueError:
+                            pass
+                
+                end_time_str = request.form.get('end_time', '')
+                if end_time_str:
+                    try:
+                        new_end_time = datetime.fromisoformat(end_time_str.replace('Z', '+00:00'))
+                    except ValueError:
+                        try:
+                            new_end_time = datetime.strptime(end_time_str, '%Y-%m-%dT%H:%M')
+                        except ValueError:
+                            pass
+                
+                if event_detail:
+                    if (new_title != event_detail.title or 
+                        new_location != (event_detail.location or '') or 
+                        new_description != (event_detail.description or '') or 
+                        new_organizer != (event_detail.organizer or '') or
+                        new_start_date != event_detail.start_date or
+                        new_end_time != event_detail.end_time):
+                        
+                        event_detail.title = new_title
+                        event_detail.location = new_location
+                        event_detail.description = new_description
+                        event_detail.organizer = new_organizer
+                        if new_start_date:
+                            event_detail.start_date = new_start_date
+                        if new_end_time:
+                            event_detail.end_time = new_end_time
+                        content_updated = True
+                        print(f"Updated event details")
+                elif new_title:
+                    event_detail = QREvent(
+                        qr_code_id=qr_code.id,
+                        title=new_title,
+                        location=new_location,
+                        description=new_description,
+                        organizer=new_organizer,
+                        start_date=new_start_date,
+                        end_time=new_end_time
+                    )
+                    db.session.add(event_detail)
+                    content_updated = True
+            
+            # Update basic QR code information
+            new_name = request.form.get('name', '')
+            if new_name and new_name != qr_code.name:
+                qr_code.name = new_name
+                content_updated = True
+                print(f"Updated QR code name to: {new_name}")
+            
+            # Now handle styling updates with improved logic matching create_qr
+            qr_code.template = request.form.get('template', '')
+            
+            # Get and validate color input with the same logic as create_qr
+            color = request.form.get('color', '#000000')
+            if not color or color.strip() == '' or color == 'undefined' or color == 'null':
+                color = '#000000'
+            qr_code.color = color
+            
+            background_color = request.form.get('background_color', '#FFFFFF')
+            if not background_color or background_color.strip() == '' or background_color == 'undefined':
+                background_color = '#FFFFFF'
+            qr_code.background_color = background_color
+            
+            qr_code.shape = request.form.get('shape', 'square')
+            qr_code.frame_type = request.form.get('frame_type', '')
+            qr_code.frame_text = request.form.get('frame_text', '')
+            
+            # Get frame color if a frame is selected
+            if request.form.get('frame_type'):
+                qr_code.frame_color = request.form.get('frame_color', qr_code.color)
+            else:
+                qr_code.frame_color = None
+            
+            # IMPROVED GRADIENT HANDLING - Use the same logic as create_qr
+            using_gradient = False
+            export_type = request.form.get('export_type', 'png')
+            
+            # Check if user explicitly selected gradient
+            if export_type == 'gradient':
                 using_gradient = True
-        
-        # UPDATE THE GRADIENT COLUMN
-        qr_code.gradient = using_gradient
-        print(f"Updated gradient column to: {using_gradient}")
-        
-        # Set gradient parameters if using gradient
-        if using_gradient:
-            qr_code.gradient_start = request.form.get('gradient_start', '#FF5500')
-            qr_code.gradient_end = request.form.get('gradient_end', '#FFAA00')
-            qr_code.gradient_type = request.form.get('gradient_type', 'linear')
-            qr_code.gradient_direction = request.form.get('gradient_direction', 'to-right')
-            qr_code.export_type = 'gradient'
-        else:
-            # Clear gradient parameters if not using gradient
-            qr_code.gradient_start = None
-            qr_code.gradient_end = None
-            qr_code.gradient_type = None
-            qr_code.gradient_direction = None
-            qr_code.export_type = 'png'
-        
-        # Update advanced styling
-        qr_code.custom_eyes = request.form.get('custom_eyes') == 'true'
-        qr_code.inner_eye_style = request.form.get('inner_eye_style')
-        qr_code.outer_eye_style = request.form.get('outer_eye_style')
-        
-        # Handle eye colors
-        inner_eye_color = request.form.get('inner_eye_color')
-        outer_eye_color = request.form.get('outer_eye_color')
-        
-        if inner_eye_color and inner_eye_color != 'undefined' and inner_eye_color.strip() != '':
-            qr_code.inner_eye_color = inner_eye_color
-        elif using_gradient and qr_code.gradient_start:
-            qr_code.inner_eye_color = qr_code.gradient_start
-        elif qr_code.custom_eyes:
-            qr_code.inner_eye_color = qr_code.color
-        else:
-            qr_code.inner_eye_color = ''
-        
-        if outer_eye_color and outer_eye_color != 'undefined' and outer_eye_color.strip() != '':
-            qr_code.outer_eye_color = outer_eye_color
-        elif using_gradient and qr_code.gradient_end:
-            qr_code.outer_eye_color = qr_code.gradient_end
-        elif qr_code.custom_eyes:
-            qr_code.outer_eye_color = qr_code.color
-        else:
-            qr_code.outer_eye_color = ''
-        
-        # [Rest of the update code remains the same...]
-        qr_code.module_size = request.form.get('module_size', 10, type=int)
-        qr_code.quiet_zone = request.form.get('quiet_zone', 4, type=int)
-        qr_code.error_correction = request.form.get('error_correction', 'H')
-        qr_code.watermark_text = request.form.get('watermark_text')
-        qr_code.logo_size_percentage = request.form.get('logo_size_percentage', 25, type=int)
-        qr_code.round_logo = request.form.get('round_logo') == 'true'
-        
-        # Handle logo update
-        logo_path = fix_logo_path_handling(request, qr_code)
-        qr_code.logo_path = logo_path
-        
-        qr_code.updated_at = datetime.utcnow()
-        db.session.commit()
-        
-        flash('QR Code updated successfully!')
-        return redirect(url_for('view_qr', qr_id=qr_id))
+            
+            # Check if gradient is enabled via checkbox or form field
+            if 'using_gradient' in request.form and request.form.get('using_gradient') == 'true':
+                using_gradient = True
+            
+            # Check if template has gradient and user didn't override
+            template = request.form.get('template', '')
+            if template and template in QR_TEMPLATES:
+                template_config = QR_TEMPLATES[template]
+                if template_config.get('export_type') == 'gradient':
+                    using_gradient = True
+            
+            # UPDATE THE GRADIENT COLUMN - This is the key improvement
+            qr_code.gradient = using_gradient
+            print(f"Updated gradient column to: {using_gradient}")
+            
+            # Set gradient parameters if using gradient
+            if using_gradient:
+                qr_code.gradient_start = request.form.get('gradient_start', '#FF5500')
+                qr_code.gradient_end = request.form.get('gradient_end', '#FFAA00')
+                qr_code.gradient_type = request.form.get('gradient_type', 'linear')
+                qr_code.gradient_direction = request.form.get('gradient_direction', 'to-right')
+                qr_code.export_type = 'gradient'
+                print(f"Set gradient colors: {qr_code.gradient_start} -> {qr_code.gradient_end}")
+            else:
+                # Clear gradient parameters if not using gradient
+                qr_code.gradient_start = None
+                qr_code.gradient_end = None
+                qr_code.gradient_type = None
+                qr_code.gradient_direction = None
+                qr_code.export_type = 'png'
+                print("Cleared gradient parameters")
+            
+            # Update advanced styling with improved eye color handling
+            qr_code.custom_eyes = 'custom_eyes' in request.form and request.form.get('custom_eyes') == 'true'
+            if 'using_custom_eyes' in request.form and request.form.get('using_custom_eyes') == 'true':
+                qr_code.custom_eyes = True
+            
+            qr_code.inner_eye_style = request.form.get('inner_eye_style', '')
+            qr_code.outer_eye_style = request.form.get('outer_eye_style', '')
+            
+            # Handle eye colors with the same logic as create_qr
+            inner_eye_color = request.form.get('inner_eye_color', '')
+            outer_eye_color = request.form.get('outer_eye_color', '')
+            
+            if inner_eye_color and inner_eye_color != 'undefined' and inner_eye_color.strip() != '':
+                qr_code.inner_eye_color = inner_eye_color
+            elif using_gradient and qr_code.gradient_start:
+                qr_code.inner_eye_color = qr_code.gradient_start
+            elif qr_code.custom_eyes:
+                qr_code.inner_eye_color = qr_code.color
+            else:
+                qr_code.inner_eye_color = ''
+            
+            if outer_eye_color and outer_eye_color != 'undefined' and outer_eye_color.strip() != '':
+                qr_code.outer_eye_color = outer_eye_color
+            elif using_gradient and qr_code.gradient_end:
+                qr_code.outer_eye_color = qr_code.gradient_end
+            elif qr_code.custom_eyes:
+                qr_code.outer_eye_color = qr_code.color
+            else:
+                qr_code.outer_eye_color = ''
+            
+            # Update other styling parameters
+            qr_code.module_size = request.form.get('module_size', 10, type=int)
+            qr_code.quiet_zone = request.form.get('quiet_zone', 4, type=int)
+            qr_code.error_correction = request.form.get('error_correction', 'H')
+            qr_code.watermark_text = request.form.get('watermark_text', '')
+            qr_code.logo_size_percentage = request.form.get('logo_size_percentage', 25, type=int)
+            qr_code.round_logo = 'round_logo' in request.form and request.form.get('round_logo') == 'true'
+            
+            # Handle logo update using the same function as create_qr
+            logo_path = fix_logo_path_handling(request, qr_code)
+            if logo_path != qr_code.logo_path:
+                qr_code.logo_path = logo_path
+                content_updated = True
+                print(f"Updated logo path to: {logo_path}")
+            
+            # Update the timestamp
+            qr_code.updated_at = datetime.utcnow()
+            
+            # Commit all changes
+            db.session.commit()
+            
+            # Provide appropriate success message
+            if content_updated:
+                flash('QR Code content and styling updated successfully!', 'success')
+            else:
+                flash('QR Code styling updated successfully!', 'success')
+                
+            return redirect(url_for('view_qr', qr_id=qr_id))
+            
+        except Exception as e:
+            import traceback
+            app.logger.error(f"Error updating QR code: {str(e)}")
+            app.logger.error(traceback.format_exc())
+            db.session.rollback()
+            flash(f'Error updating QR code: {str(e)}', 'error')
+            return redirect(url_for('edit_qr', qr_id=qr_id))
     
-    # [GET request code remains the same...]
-    content = json.loads(qr_code.content)
-    scans = Scan.query.filter_by(qr_code_id=qr_code.id).all()
-    max_scans = 1000
-    qr_image, qr_info = generate_qr_code(qr_code)
-    
-    return render_template('edit_qr.html', 
-                     qr_code=qr_code, 
-                     content=content, 
-                     qr_templates=QR_TEMPLATES,
-                     scans=scans,
-                     qr_image=qr_image,
-                     max_scans=max_scans)
+    # GET request - Prepare data for the edit form
+    try:
+        # Parse existing content for form pre-population
+        content = {}
+        try:
+            if qr_code.content:
+                content = json.loads(qr_code.content)
+        except (json.JSONDecodeError, TypeError):
+            content = {}
+        
+        # Get scan data for analytics display
+        scans = Scan.query.filter_by(qr_code_id=qr_code.id).order_by(Scan.timestamp.desc()).limit(50).all()
+        
+        # Generate current QR image for preview
+        qr_image, qr_info = generate_qr_code(qr_code)
+        
+        # Get user's subscription info for available templates
+        user_id = current_user.id
+        active_subscription = (
+            SubscribedUser.query
+            .filter(SubscribedUser.U_ID == user_id)
+            .filter(SubscribedUser.end_date > datetime.now(UTC))
+            .filter(SubscribedUser._is_active == True)
+            .first()
+        )
+        
+        available_templates = []
+        if active_subscription and active_subscription.subscription.design:
+            available_templates = active_subscription.subscription.get_designs()
+        
+        # Determine maximum scans for display purposes
+        max_scans = 1000
+        
+        return render_template('edit_qr.html', 
+                             qr_code=qr_code, 
+                             content=content, 
+                             qr_templates=QR_TEMPLATES,
+                             available_templates=available_templates,
+                             scans=scans,
+                             qr_image=qr_image,
+                             qr_info=qr_info,
+                             max_scans=max_scans)
+                             
+    except Exception as e:
+        app.logger.error(f"Error loading edit QR page: {str(e)}")
+        flash('Error loading QR code for editing', 'error')
+        return redirect(url_for('dashboard'))
 
 @app.route('/qr/<qr_id>/delete', methods=['POST'])
 @login_required
@@ -2029,6 +2490,9 @@ def qr_analytics(qr_id):
     active_subscription.analytics_used += 1
     db.session.commit()
     
+    # Get user's timezone
+    user_timezone = session.get('user_timezone', app.config.get('DEFAULT_TIMEZONE', 'UTC'))
+    
     # Get all scans for this QR code
     scans = Scan.query.filter_by(qr_code_id=qr_code.id).order_by(Scan.timestamp.desc()).all()
     total_scans = len(scans)
@@ -2044,7 +2508,7 @@ def qr_analytics(qr_id):
     end_index = min(start_index + page_size, total_scans)
     paginated_scans = scans[start_index:end_index] if total_scans > 0 else []
     
-    # Process scan data for charts and analysis
+    # Process scan data for charts and analysis with proper timezone handling
     scan_dates = {}
     scan_devices = {}
     scan_locations = {}
@@ -2052,15 +2516,8 @@ def qr_analytics(qr_id):
     os_data = {}
     
     for scan in scans:
-        # Get timestamp and adjust for timezone
-        timestamp = scan.timestamp
-        localized_time = get_localized_datetime(timestamp)
-        if localized_time:
-            scan_date = localized_time.strftime('%Y-%m-%d')
-            hour = localized_time.hour
-        else:
-            scan_date = timestamp.strftime('%Y-%m-%d') if timestamp else 'Unknown'
-            hour = timestamp.hour if timestamp else 0
+        # Use the centralized timestamp processing function
+        scan_date, hour = process_scan_timestamp(scan.timestamp, user_timezone)
         
         # Group by date for timeline chart
         if scan_date != 'Unknown':
@@ -2102,7 +2559,7 @@ def qr_analytics(qr_id):
         location = scan.location or "Unknown"
         scan_locations[location] = scan_locations.get(location, 0) + 1
     
-    # Transform data for charts - FIXED FORMAT
+    # Transform data for charts - properly formatted
     # Timeline data - convert to sorted list of objects
     sorted_dates = sorted(scan_dates.items())
     timeline_data = [{"date": date, "scans": count} for date, count in sorted_dates]
@@ -2117,10 +2574,24 @@ def qr_analytics(qr_id):
     # OS data - list of objects
     os_data_list = [{"os": os_name, "scans": count} for os_name, count in os_data.items() if count > 0]
     
+    # Process paginated scans with timezone conversion for display
+    processed_paginated_scans = []
+    for scan in paginated_scans:
+        scan_copy = scan  # Keep original scan object
+        
+        # Add localized timestamp for display
+        if scan.timestamp:
+            localized_time = get_localized_datetime(scan.timestamp, user_timezone)
+            scan_copy.localized_timestamp = localized_time
+        else:
+            scan_copy.localized_timestamp = None
+            
+        processed_paginated_scans.append(scan_copy)
+    
     return render_template('analytics.html', 
                          qr_code=qr_code, 
                          scans=scans,
-                         paginated_scans=paginated_scans,
+                         paginated_scans=processed_paginated_scans,
                          total_scans=total_scans,
                          page_num=page_num,
                          total_pages=total_pages,
@@ -2129,18 +2600,22 @@ def qr_analytics(qr_id):
                          scan_dates=scan_dates,
                          hourly_data=hourly_counts,
                          location_data=location_data,
-                         os_data=os_data_list,  # Changed to list format
+                         os_data=os_data_list,
                          has_data=(total_scans > 0),
                          analytics_used=active_subscription.analytics_used,
                          analytics_limit=active_subscription.subscription.analytics,
-                         analytics_remaining=max(0, active_subscription.subscription.analytics - active_subscription.analytics_used))
+                         analytics_remaining=max(0, active_subscription.subscription.analytics - active_subscription.analytics_used),
+                         user_timezone=user_timezone)
 
-
+# Fixed user_analytics route
 @app.route('/user/analytics')
 @login_required
 def user_analytics():
     # Get all QR codes for the current user
     qr_codes = QRCode.query.filter_by(user_id=current_user.id).all()
+    
+    # Get user's timezone
+    user_timezone = session.get('user_timezone', app.config.get('DEFAULT_TIMEZONE', 'UTC'))
     
     # Initialize analytics data structures
     total_scans = 0
@@ -2150,16 +2625,6 @@ def user_analytics():
     os_data = {"Windows": 0, "Android": 0, "iOS": 0, "macOS": 0, "Linux": 0, "Unknown": 0}
     location_data = {}
     hourly_data = [0] * 24  # Hour -> count
-    
-    # Try to get user's timezone from session, or use default (UTC)
-    user_timezone = session.get('user_timezone', 'UTC')
-    try:
-        import pytz
-        tz = pytz.timezone(user_timezone)
-    except (ImportError, pytz.exceptions.UnknownTimeZoneError):
-        from datetime import timezone, timedelta
-        # Default to UTC if pytz not available
-        tz = timezone.utc
     
     # Process all scans
     for qr_code in qr_codes:
@@ -2173,29 +2638,16 @@ def user_analytics():
             total_scans += 1
             scan_count += 1
             
-            # Get timestamp and adjust for timezone if possible
-            timestamp = scan.timestamp
-            try:
-                # Convert UTC timestamp to user's local time if pytz is available
-                if hasattr(timestamp, 'replace') and timestamp is not None:
-                    import pytz
-                    local_time = timestamp.replace(tzinfo=pytz.UTC).astimezone(tz)
-                    scan_date = local_time.strftime('%Y-%m-%d')
-                    hour = local_time.hour
-                else:
-                    scan_date = timestamp.strftime('%Y-%m-%d') if timestamp else 'Unknown'
-                    hour = timestamp.hour if timestamp else 0
-            except (AttributeError, ValueError, TypeError):
-                # Fallback if timestamp manipulation fails
-                scan_date = 'Unknown'
-                hour = 0
+            # Use centralized timestamp processing
+            scan_date, hour = process_scan_timestamp(scan.timestamp, user_timezone)
             
             # Process timeline data
             if scan_date != 'Unknown':
                 scan_timeline[scan_date] = scan_timeline.get(scan_date, 0) + 1
             
             # Process hourly data
-            hourly_data[hour] += 1
+            if 0 <= hour < 24:
+                hourly_data[hour] += 1
             
             # Process device data
             device = "Unknown"
@@ -2251,13 +2703,13 @@ def user_analytics():
     # Get top 5 QR codes for display
     top_qr_codes = qr_chart_data[:5] if qr_chart_data else []
     
-    # Calculate peak hour in user-friendly format
+    # Calculate peak hour in user-friendly format (using user's timezone)
     peak_hour_index = hourly_data.index(max(hourly_data)) if max(hourly_data) > 0 else 0
     hour_format = peak_hour_index % 12 or 12
     ampm = 'AM' if peak_hour_index < 12 else 'PM'
     peak_hour_formatted = f"{hour_format}{ampm}"
     
-    # Make sure all variables used in the template are defined
+    # Timeline data for chart
     scan_timeline_keys = list(scan_timeline.keys())
     
     return render_template(
@@ -4332,36 +4784,56 @@ def fromjson_filter(value):
             return {}
     return {}
 
+# Enhanced set_timezone route with better validation
 @app.route('/set_timezone', methods=['POST'])
 def set_timezone():
-    """Store user's timezone in session."""
+    """Store user's timezone in session with enhanced validation."""
     if request.is_json:
         timezone_data = request.get_json()
         timezone = timezone_data.get('timezone')
         
+        if not timezone:
+            return jsonify({'status': 'error', 'message': 'No timezone provided'}), 400
+        
         # Validate timezone
+        valid_timezone = False
         try:
             import pytz
             pytz.timezone(timezone)
-            # Store valid timezone in session
-            session['user_timezone'] = timezone
-            return jsonify({'status': 'success'})
+            valid_timezone = True
         except (ImportError, pytz.exceptions.UnknownTimeZoneError):
-            # If timezone is invalid, set default based on request IP
-            # This is a simplified approach - you might want to use a GeoIP service
-            ip = request.headers.get('X-Forwarded-For', request.remote_addr)
-            # Simple check - you would want a proper GeoIP lookup in production
-            if ip.startswith('103.') or ip.startswith('49.') or ip.startswith('122.'):  # Common Indian IP ranges
-                session['user_timezone'] = 'Asia/Kolkata'
-            else:  # Default to US Eastern
-                session['user_timezone'] = 'America/New_York'
-            return jsonify({'status': 'fallback', 'timezone': session['user_timezone']})
+            # Check against common timezones as fallback
+            common_timezones = [
+                'UTC', 'Asia/Kolkata', 'Asia/Calcutta', 'America/New_York', 
+                'America/Los_Angeles', 'Europe/London', 'Europe/Paris',
+                'Asia/Tokyo', 'Australia/Sydney'
+            ]
+            if timezone in common_timezones:
+                valid_timezone = True
+        
+        if valid_timezone:
+            session['user_timezone'] = timezone
+            app.logger.info(f"Timezone set to: {timezone}")
+            return jsonify({'status': 'success', 'timezone': timezone})
+        else:
+            # Set a reasonable default based on common patterns
+            default_timezone = 'UTC'
+            if 'Asia' in timezone or 'India' in timezone:
+                default_timezone = 'Asia/Kolkata'
+            elif 'America' in timezone:
+                default_timezone = 'America/New_York'
+            elif 'Europe' in timezone:
+                default_timezone = 'Europe/London'
+            
+            session['user_timezone'] = default_timezone
+            app.logger.warning(f"Invalid timezone {timezone}, set to default: {default_timezone}")
+            return jsonify({'status': 'fallback', 'timezone': default_timezone})
     
-    return jsonify({'status': 'error'}), 400
+    return jsonify({'status': 'error', 'message': 'Invalid request format'}), 400
 
 def get_localized_datetime(utc_datetime, user_timezone=None):
     """
-    Convert UTC datetime to user's local timezone.
+    Convert UTC datetime to user's local timezone with improved error handling.
     
     Args:
         utc_datetime: A datetime object in UTC
@@ -4387,25 +4859,72 @@ def get_localized_datetime(utc_datetime, user_timezone=None):
     
     # Get target timezone
     if user_timezone is None:
-        user_timezone = session.get('user_timezone', app.config['DEFAULT_TIMEZONE'])
+        user_timezone = session.get('user_timezone', app.config.get('DEFAULT_TIMEZONE', 'UTC'))
     
     try:
         import pytz
         target_tz = pytz.timezone(user_timezone)
         return utc_datetime.astimezone(target_tz)
     except (ImportError, pytz.exceptions.UnknownTimeZoneError):
-        # Fallback to simple offset for Indian Standard Time (+5:30)
-        if user_timezone == 'Asia/Kolkata' or user_timezone == 'Asia/Calcutta':
-            from datetime import timedelta
-            offset = timedelta(hours=5, minutes=30)
-            try:
-                from datetime import timezone
-                return utc_datetime.astimezone(timezone(offset))
-            except (ImportError, AttributeError):
-                # Very basic fallback
-                return utc_datetime + offset
+        # Fallback for common timezones without pytz
+        timezone_offsets = {
+            'Asia/Kolkata': timedelta(hours=5, minutes=30),
+            'Asia/Calcutta': timedelta(hours=5, minutes=30),
+            'America/New_York': timedelta(hours=-5),  # EST (adjust for DST as needed)
+            'America/Los_Angeles': timedelta(hours=-8),  # PST
+            'Europe/London': timedelta(hours=0),  # GMT
+            'Europe/Paris': timedelta(hours=1),  # CET
+        }
+        
+        offset = timezone_offsets.get(user_timezone, timedelta(0))
+        try:
+            from datetime import timezone
+            return utc_datetime.astimezone(timezone(offset))
+        except (ImportError, AttributeError):
+            # Very basic fallback
+            return utc_datetime + offset
+    except Exception as e:
+        app.logger.warning(f"Timezone conversion failed: {e}")
         return utc_datetime  # Return original as last resort
     
+def process_scan_timestamp(scan_timestamp, user_timezone=None):
+    """
+    Process a scan timestamp and return localized date and hour.
+    
+    Args:
+        scan_timestamp: UTC timestamp from scan record
+        user_timezone: User's timezone string
+        
+    Returns:
+        tuple: (localized_date_string, localized_hour)
+    """
+    if not scan_timestamp:
+        return 'Unknown', 0
+        
+    try:
+        # Convert to user's timezone
+        localized_time = get_localized_datetime(scan_timestamp, user_timezone)
+        
+        if localized_time:
+            scan_date = localized_time.strftime('%Y-%m-%d')
+            hour = localized_time.hour
+            return scan_date, hour
+        else:
+            # Fallback to UTC
+            scan_date = scan_timestamp.strftime('%Y-%m-%d')
+            hour = scan_timestamp.hour
+            return scan_date, hour
+            
+    except Exception as e:
+        app.logger.warning(f"Error processing scan timestamp: {e}")
+        # Fallback to UTC if conversion fails
+        try:
+            scan_date = scan_timestamp.strftime('%Y-%m-%d')
+            hour = scan_timestamp.hour
+            return scan_date, hour
+        except:
+            return 'Unknown', 0
+
 @app.template_filter('tojson')
 def to_json(value):
     import json

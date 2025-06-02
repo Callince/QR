@@ -5,7 +5,7 @@
 {% block head %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 <style>
-    /* Formal UI styles with professional appearance */
+/* Formal UI styles with professional appearance */
     body {
         background-color: #f7f7f7;
     }
@@ -1034,82 +1034,91 @@
                         </div>
                         
                         <!-- Advanced Tab -->
-                        <div class="tab-pane fade hidden" id="advanced" role="tabpanel" aria-labelledby="advanced-tab">
+                        <div class="tab-pane fade" id="advanced" role="tabpanel" aria-labelledby="advanced-tab" x-data="{ sections: {} }">
                             <div class="space-y-4">
-                                <div class="accordion-header p-4 flex items-center justify-between cursor-pointer" x-data="{open: false}" @click="open = !open">
-                                    <h3 class="text-sm font-medium text-gray-700 flex items-center">
-                                        <i class="fas fa-eye text-gray-600 mr-2"></i> Eye Customization
-                                    </h3>
-                                    <i class="fas fa-chevron-down text-gray-400 text-sm transition-transform duration-200" :class="{'transform rotate-180': open}"></i>
-                                </div>
-                                <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-2" x-transition:enter-end="opacity-100 transform translate-y-0" class="p-4 border border-t-0 border-gray-200">
-                                    <div class="mb-4">
-                                        <div class="flex items-center">
-                                            <input class="h-4 w-4 text-blue-700 focus:ring-blue-500 mr-3" type="checkbox" id="custom_eyes" name="custom_eyes" value="true">
-                                            <label class="text-gray-700" for="custom_eyes">Customize QR code eyes</label>
-                                        </div>
-                                        <p class="help-text mt-2 ml-7">Modify the appearance of the three corner squares</p>
-                                    </div>
-                                    
-                                    <div id="eye-customization-options" class="hidden">
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div>
-                                                <label for="inner_eye_style" class="form-label block">Inner Eye Style</label>
-                                                <select class="form-input w-full" id="inner_eye_style" name="inner_eye_style">
-                                                    <option value="square">Square</option>
-                                                    <option value="circle" selected>Circle</option>
-                                                    <option value="rounded">Rounded</option>
-                                                </select>
-                                            </div>
-                                            
-                                            <div>
-                                                <label for="outer_eye_style" class="form-label block">Outer Eye Style</label>
-                                                <select class="form-input w-full" id="outer_eye_style" name="outer_eye_style">
-                                                    <option value="square">Square</option>
-                                                    <option value="circle">Circle</option>
-                                                    <option value="rounded" selected>Rounded</option>
-                                                </select>
-                                            </div>
-                                            
-                                            <div>
-                                                <label for="inner_eye_color" class="form-label block">Inner Eye Color</label>
-                                                <div class="flex">
-                                                    <span class="inline-flex items-center px-3 border border-r-0 border-gray-300 bg-gray-50">
-                                                        <div id="inner-eye-color-preview" class="color-preview" style="background-color: #000000;" tabindex="0" role="button"></div>
-                                                    </span>
-                                                    <input type="text" class="form-input flex-1" id="inner_eye_color" name="inner_eye_color" value="#000000">
-                                                </div>
-                                            </div>
-                                            
-                                            <div>
-                                                <label for="outer_eye_color" class="form-label block">Outer Eye Color</label>
-                                                <div class="flex">
-                                                    <span class="inline-flex items-center px-3 border border-r-0 border-gray-300 bg-gray-50">
-                                                        <div id="outer-eye-color-preview" class="color-preview" style="background-color: #000000;" tabindex="0" role="button"></div>
-                                                    </span>
-                                                    <input type="text" class="form-input flex-1" id="outer_eye_color" name="outer_eye_color" value="#000000">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
                                 
-                                <div class="accordion-header p-4 flex items-center justify-between cursor-pointer" x-data="{open: false}" @click="open = !open">
-                                    <h3 class="text-sm font-medium text-gray-700 flex items-center">
-                                        <i class="fas fa-fill-drip text-gray-600 mr-2"></i> Gradient & Effects
-                                    </h3>
-                                    <i class="fas fa-chevron-down text-gray-400 text-sm transition-transform duration-200" :class="{'transform rotate-180': open}"></i>
-                                </div>
-                                <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-2" x-transition:enter-end="opacity-100 transform translate-y-0" class="p-4 border border-t-0 border-gray-200">
-                                    <div class="mb-4">
-                                        <label for="export_type" class="form-label block">Effect Type</label>
-                                        <select class="form-input w-full" id="export_type" name="export_type">
-                                            <option value="png" selected>Solid Color</option>
-                                            <option value="gradient">Linear Gradient</option>
-                                        </select>
+                                <!-- Eye Customization -->
+                                <div>
+                                    <div class="accordion-header p-4 flex items-center justify-between cursor-pointer"
+                                        @click="sections.eye = !sections.eye">
+                                        <h3 class="text-sm font-medium text-gray-700 flex items-center">
+                                            <i class="fas fa-eye text-gray-600 mr-2"></i> Eye Customization
+                                        </h3>
+                                        <i class="fas fa-chevron-down text-gray-400 text-sm transition-transform duration-200"
+                                        :class="{'rotate-180': sections.eye}"></i>
                                     </div>
-                                    
-                                    <div id="gradient-options">
+                                    <div x-show="sections.eye" x-transition class="p-4 border border-t-0 border-gray-200">
+                                        <div class="mb-4">
+                                            <div class="flex items-center">
+                                                <input class="h-4 w-4 text-blue-700 focus:ring-blue-500 mr-3" type="checkbox" id="custom_eyes" name="custom_eyes" value="true" @change="sections.eyeOptions = $event.target.checked">
+                                                <label class="text-gray-700" for="custom_eyes">Customize QR code eyes</label>
+                                            </div>
+                                            <p class="help-text mt-2 ml-7">Modify the appearance of the three corner squares</p>
+                                        </div>
+
+                                        <div x-show="sections.eyeOptions" x-transition>
+                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label for="inner_eye_style" class="form-label block">Inner Eye Style</label>
+                                                    <select class="form-input w-full" id="inner_eye_style" name="inner_eye_style">
+                                                        <option value="square">Square</option>
+                                                        <option value="circle" selected>Circle</option>
+                                                        <option value="rounded">Rounded</option>
+                                                    </select>
+                                                </div>
+
+                                                <div>
+                                                    <label for="outer_eye_style" class="form-label block">Outer Eye Style</label>
+                                                    <select class="form-input w-full" id="outer_eye_style" name="outer_eye_style">
+                                                        <option value="square">Square</option>
+                                                        <option value="circle">Circle</option>
+                                                        <option value="rounded" selected>Rounded</option>
+                                                    </select>
+                                                </div>
+
+                                                <div>
+                                                    <label for="inner_eye_color" class="form-label block">Inner Eye Color</label>
+                                                    <div class="flex">
+                                                        <span class="inline-flex items-center px-3 border border-r-0 border-gray-300 bg-gray-50">
+                                                            <div id="inner-eye-color-preview" class="color-preview" style="background-color: #000000;" tabindex="0" role="button"></div>
+                                                        </span>
+                                                        <input type="text" class="form-input flex-1" id="inner_eye_color" name="inner_eye_color" value="#000000">
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <label for="outer_eye_color" class="form-label block">Outer Eye Color</label>
+                                                    <div class="flex">
+                                                        <span class="inline-flex items-center px-3 border border-r-0 border-gray-300 bg-gray-50">
+                                                            <div id="outer-eye-color-preview" class="color-preview" style="background-color: #000000;" tabindex="0" role="button"></div>
+                                                        </span>
+                                                        <input type="text" class="form-input flex-1" id="outer_eye_color" name="outer_eye_color" value="#000000">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Gradient & Effects -->
+                                <div>
+                                    <div class="accordion-header p-4 flex items-center justify-between cursor-pointer"
+                                        @click="sections.gradient = !sections.gradient">
+                                        <h3 class="text-sm font-medium text-gray-700 flex items-center">
+                                            <i class="fas fa-fill-drip text-gray-600 mr-2"></i> Gradient & Effects
+                                        </h3>
+                                        <i class="fas fa-chevron-down text-gray-400 text-sm transition-transform duration-200"
+                                        :class="{'rotate-180': sections.gradient}"></i>
+                                    </div>
+                                    <div x-show="sections.gradient" x-transition class="p-4 border border-t-0 border-gray-200">
+                                        <div class="mb-4">
+                                            <label for="export_type" class="form-label block">Effect Type</label>
+                                            <select class="form-input w-full" id="export_type" name="export_type">
+                                                <option value="png" selected>Solid Color</option>
+                                                <option value="gradient">Linear Gradient</option>
+                                            </select>
+                                        </div>
+
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
                                                 <label for="gradient_start_color" class="form-label block">Gradient Start Color</label>
@@ -1120,7 +1129,7 @@
                                                     <input type="text" class="form-input flex-1 rounded-l-none" id="gradient_start_color" name="gradient_start" value="#000000">
                                                 </div>
                                             </div>
-                                            
+
                                             <div>
                                                 <label for="gradient_end_color" class="form-label block">Gradient End Color</label>
                                                 <div class="flex">
@@ -1134,55 +1143,66 @@
                                         <div class="gradient-preview mt-4 rounded" style="background: linear-gradient(135deg, #000000, #333333); height: 40px; border: 1px solid #e5e7eb;"></div>
                                     </div>
                                 </div>
-                                
-                                <div class="accordion-header p-4 flex items-center justify-between cursor-pointer" x-data="{open: false}" @click="open = !open">
-                                    <h3 class="text-sm font-medium text-gray-700 flex items-center">
-                                        <i class="fas fa-expand-arrows-alt text-gray-600 mr-2"></i> Size & Error Correction
-                                    </h3>
-                                    <i class="fas fa-chevron-down text-gray-400 text-sm transition-transform duration-200" :class="{'transform rotate-180': open}"></i>
-                                </div>
-                                <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-2" x-transition:enter-end="opacity-100 transform translate-y-0" class="p-4 border border-t-0 border-gray-200">
-                                    <div class="mb-6">
-                                        <label for="module_size" class="form-label block">
-                                            Module Size: <span id="module-size-value" class="font-semibold">10</span>px
-                                        </label>
-                                        <input type="range" class="w-full" id="module_size" name="module_size" min="4" max="20" value="10">
-                                        <p class="help-text mt-1">Adjusts the size of individual QR code blocks</p>
+
+                                <!-- Size & Error Correction -->
+                                <div>
+                                    <div class="accordion-header p-4 flex items-center justify-between cursor-pointer"
+                                        @click="sections.size = !sections.size">
+                                        <h3 class="text-sm font-medium text-gray-700 flex items-center">
+                                            <i class="fas fa-expand-arrows-alt text-gray-600 mr-2"></i> Size & Error Correction
+                                        </h3>
+                                        <i class="fas fa-chevron-down text-gray-400 text-sm transition-transform duration-200"
+                                        :class="{'rotate-180': sections.size}"></i>
                                     </div>
-                                    
-                                    <div class="mb-6">
-                                        <label for="quiet_zone" class="form-label block">
-                                            Quiet Zone: <span id="quiet-zone-value" class="font-semibold">2</span> units
-                                        </label>
-                                        <input type="range" class="w-full" id="quiet_zone" name="quiet_zone" min="0" max="8" value="2">
-                                        <p class="help-text mt-1">White space around the QR code (minimum 4 units recommended)</p>
-                                    </div>
-                                    
-                                    <div class="mb-6">
-                                        <label for="error_correction" class="form-label block">Error Correction Level</label>
-                                        <select class="form-input w-full" id="error_correction" name="error_correction">
-                                            <option value="L">Low (7%)</option>
-                                            <option value="M">Medium (15%)</option>
-                                            <option value="Q">Quartile (25%)</option>
-                                            <option value="H" selected>High (30%)</option>
-                                        </select>
-                                        <p class="help-text mt-1">Higher levels allow QR codes to be readable even if partially damaged</p>
-                                    </div>
-                                </div>
-                                
-                                <div class="accordion-header p-4 flex items-center justify-between cursor-pointer" x-data="{open: false}" @click="open = !open">
-                                    <h3 class="text-sm font-medium text-gray-700 flex items-center">
-                                        <i class="fas fa-signature text-gray-600 mr-2"></i> Watermark
-                                    </h3>
-                                    <i class="fas fa-chevron-down text-gray-400 text-sm transition-transform duration-200" :class="{'transform rotate-180': open}"></i>
-                                </div>
-                                <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-2" x-transition:enter-end="opacity-100 transform translate-y-0" class="p-4 border border-t-0 border-gray-200">
-                                    <div class="mb-4">
-                                        <label for="watermark_text" class="form-label block">Watermark Text</label>
-                                        <input type="text" class="form-input w-full" id="watermark_text" name="watermark_text" placeholder="Created with QR Craft">
-                                        <p class="help-text mt-1">Adds subtle text to the bottom of the QR code</p>
+                                    <div x-show="sections.size" x-transition class="p-4 border border-t-0 border-gray-200">
+                                        <div class="mb-6">
+                                            <label for="module_size" class="form-label block">
+                                                Module Size: <span id="module-size-value" class="font-semibold">10</span>px
+                                            </label>
+                                            <input type="range" class="w-full" id="module_size" name="module_size" min="4" max="20" value="10">
+                                            <p class="help-text mt-1">Adjusts the size of individual QR code blocks</p>
+                                        </div>
+
+                                        <div class="mb-6">
+                                            <label for="quiet_zone" class="form-label block">
+                                                Quiet Zone: <span id="quiet-zone-value" class="font-semibold">2</span> units
+                                            </label>
+                                            <input type="range" class="w-full" id="quiet_zone" name="quiet_zone" min="0" max="8" value="2">
+                                            <p class="help-text mt-1">White space around the QR code (minimum 4 units recommended)</p>
+                                        </div>
+
+                                        <div class="mb-6">
+                                            <label for="error_correction" class="form-label block">Error Correction Level</label>
+                                            <select class="form-input w-full" id="error_correction" name="error_correction">
+                                                <option value="L">Low (7%)</option>
+                                                <option value="M">Medium (15%)</option>
+                                                <option value="Q">Quartile (25%)</option>
+                                                <option value="H" selected>High (30%)</option>
+                                            </select>
+                                            <p class="help-text mt-1">Higher levels allow QR codes to be readable even if partially damaged</p>
+                                        </div>
                                     </div>
                                 </div>
+
+                                <!-- Watermark -->
+                                <div>
+                                    <div class="accordion-header p-4 flex items-center justify-between cursor-pointer"
+                                        @click="sections.watermark = !sections.watermark">
+                                        <h3 class="text-sm font-medium text-gray-700 flex items-center">
+                                            <i class="fas fa-signature text-gray-600 mr-2"></i> Watermark
+                                        </h3>
+                                        <i class="fas fa-chevron-down text-gray-400 text-sm transition-transform duration-200"
+                                        :class="{'rotate-180': sections.watermark}"></i>
+                                    </div>
+                                    <div x-show="sections.watermark" x-transition class="p-4 border border-t-0 border-gray-200">
+                                        <div class="mb-4">
+                                            <label for="watermark_text" class="form-label block">Watermark Text</label>
+                                            <input type="text" class="form-input w-full" id="watermark_text" name="watermark_text" placeholder="Created with QR Craft">
+                                            <p class="help-text mt-1">Adds subtle text to the bottom of the QR code</p>
+                                        </div>
+                                    </div>
+                                </div>
+
                             </div>
                         </div>
                     </div>
@@ -1382,13 +1402,13 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 <script>
-    // [Keep all the existing JavaScript as it is - no changes to functionality]
     // Global variables to track form state
     let currentQRType = 'link';
     let formChanged = false;
     let changeHistory = [];
-    
+
     // Configuration for toast notifications
     toastr.options = {
         closeButton: true,
@@ -1405,7 +1425,33 @@
         showMethod: "fadeIn",
         hideMethod: "fadeOut"
     };
-    
+
+    // Helper function to manually trigger preview update (useful for debugging)
+    function manualPreviewUpdate(reason = 'Manual update') {
+        console.log('Manual preview update triggered:', reason);
+        updateQRPreview(reason);
+        return 'Preview update triggered. Check console for details.';
+    }
+
+    // Helper function to test color picker functionality
+    function testColorPicker(colorInputId = 'color', testColor = '#FF5500') {
+        const input = document.getElementById(colorInputId);
+        if (!input) {
+            console.error(`Color input ${colorInputId} not found`);
+            return false;
+        }
+        
+        const preview = document.getElementById(`${colorInputId}-preview`);
+        if (!preview) {
+            console.error(`Color preview ${colorInputId}-preview not found`);
+            return false;
+        }
+        
+        console.log(`Testing color picker for ${colorInputId} with color ${testColor}`);
+        updateColorInputWithPreview(input, preview, testColor);
+        return `Color picker test completed for ${colorInputId}`;
+    }
+
     function updateQRPreview(reason = null) {
         const previewContainer = document.querySelector('.qr-preview');
         const previewImage = document.getElementById('qr-preview-image');
@@ -1418,6 +1464,7 @@
             loadingOverlay.innerHTML = `
                 <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-secondary-600"></div>
                 <p class="mt-2 text-sm font-medium text-gray-700">Updating preview...</p>`;
+            previewContainer.style.position = 'relative';
             previewContainer.appendChild(loadingOverlay);
         } else {
             loadingOverlay.style.display = 'flex';
@@ -1426,7 +1473,7 @@
         // Build form data from current values
         const form = document.getElementById('create-qr-form');
         const formData = new FormData(form);
-    
+
         // Ensure all color values are included and properly formatted
         const colorFields = ['color', 'background_color', 'inner_eye_color', 'outer_eye_color'];
         colorFields.forEach(fieldId => {
@@ -1437,7 +1484,7 @@
                 formData.set(fieldId, colorValue);
             }
         });
-    
+
         // Handle logo file properly
         const logoInput = document.getElementById('logo');
         if (logoInput && logoInput.files && logoInput.files[0]) {
@@ -1454,7 +1501,7 @@
                 formData.set('round_logo', roundLogoCheckbox.checked ? 'true' : 'false');
             }
         }
-    
+
         // Ensure custom eyes options are included
         const customEyesCheckbox = document.getElementById('custom_eyes');
         if (customEyesCheckbox) {
@@ -1463,7 +1510,7 @@
                 formData.set('using_custom_eyes', 'true');
             }
         }
-    
+
         // Handle gradient colors if in gradient mode
         const exportType = document.getElementById('export_type');
         if (exportType && exportType.value === 'gradient') {
@@ -1501,7 +1548,9 @@
         })
         .then(blob => {
             // Hide loading overlay
-            loadingOverlay.style.display = 'none';
+            if (loadingOverlay) {
+                loadingOverlay.style.display = 'none';
+            }
             
             // Update preview image
             const url = URL.createObjectURL(blob);
@@ -1518,7 +1567,9 @@
             console.error('Error updating preview:', error);
             
             // Hide loading overlay
-            loadingOverlay.style.display = 'none';
+            if (loadingOverlay) {
+                loadingOverlay.style.display = 'none';
+            }
             
             // Show error toast with more details
             toastr.error(
@@ -1556,7 +1607,7 @@
         
         return color.toUpperCase();
     }
-    
+
     // Add to change history
     function addToChangeHistory(changeText) {
         const timestamp = new Date();
@@ -1577,10 +1628,12 @@
         // Update UI
         updateChangeHistoryUI();
     }
-    
+
     // Update change history UI
     function updateChangeHistoryUI() {
         const historyList = document.getElementById('changeHistoryList');
+        
+        if (!historyList) return;
         
         // Clear existing content
         historyList.innerHTML = '';
@@ -1607,15 +1660,7 @@
             historyList.appendChild(historyItem);
         });
     }
-    
-    // Display template guidance modal
-    function showTemplateGuidance() {
-        const templateModal = document.getElementById('templateGuidanceModal');
-        if (templateModal) {
-            templateModal.classList.remove('hidden');
-        }
-    }
-    
+
     // Setup form change detection with enhanced tracking
     function setupFormChangeDetection() {
         const form = document.getElementById('create-qr-form');
@@ -1641,13 +1686,13 @@
                     
                     // Create appropriate change text based on input type
                     if (input.type === 'checkbox') {
-                        changeText = `${this.checked ? 'Enabled' : 'Disabled'} ${this.labels[0].textContent.trim()}`;
+                        changeText = `${this.checked ? 'Enabled' : 'Disabled'} ${this.labels[0]?.textContent.trim() || input.name}`;
                     } else if (input.type === 'radio') {
                         if (input.name === 'shape') {
-                            changeText = `Changed shape to ${this.labels[0].querySelector('span').textContent}`;
+                            changeText = `Changed shape to ${this.labels[0]?.querySelector('span')?.textContent || input.value}`;
                         } else if (input.name === 'frame_type') {
                             changeText = input.value ? 
-                                `Added ${this.labels[0].querySelector('span').textContent} frame` : 
+                                `Added ${this.labels[0]?.querySelector('span')?.textContent || input.value} frame` : 
                                 'Removed frame';
                         } else if (input.name === 'template') {
                             const templateCard = document.querySelector(`.template-card[data-template="${input.value}"]`);
@@ -1664,12 +1709,18 @@
                     // Mark form as changed
                     formChanged = true;
                 });
+            } else if (input.id && input.id.includes('color')) {
+                // Color inputs are handled by setupColorPickers()
+                // But we'll add a backup listener just in case
+                input.addEventListener('change', function() {
+                    console.log('Color change detected for:', input.id, 'New value:', input.value);
+                    let changeText = `Updated ${input.id.replace('_', ' ')} color`;
+                    updateQRPreview(changeText);
+                    formChanged = true;
+                });
             } else {
                 // For other inputs, use input event for live updates
                 input.addEventListener('input', debounce(function() {
-                    // Skip color inputs as they're handled separately
-                    if (input.name.includes('color')) return;
-                    
                     let changeText = '';
                     
                     // Create appropriate change text based on input type and name
@@ -1716,8 +1767,35 @@
         
         // Handle logo upload
         setupLogoHandling();
+        
+        // Add specific listeners for range sliders to provide immediate feedback
+        const rangeInputs = form.querySelectorAll('input[type="range"]');
+        rangeInputs.forEach(slider => {
+            slider.addEventListener('input', function() {
+                const displayId = this.id.replace('_', '-') + '-value';
+                const display = document.getElementById(displayId);
+                if (display) {
+                    display.textContent = this.value;
+                }
+                
+                // Debounced preview update for sliders
+                debounce(() => {
+                    let changeText = '';
+                    if (this.name === 'module_size') {
+                        changeText = `Adjusted module size to ${this.value}px`;
+                    } else if (this.name === 'quiet_zone') {
+                        changeText = `Set quiet zone to ${this.value} units`;
+                    } else if (this.name === 'logo_size_percentage') {
+                        changeText = `Adjusted logo size to ${this.value}%`;
+                    }
+                    updateQRPreview(changeText);
+                }, 600)();
+                
+                formChanged = true;
+            });
+        });
     }
-    
+
     // Setup logo input handling
     function setupLogoHandling() {
         const logoInput = document.getElementById('logo');
@@ -1757,7 +1835,7 @@
             });
         }
     }
-    
+
     // Debounce function to prevent too many preview updates
     function debounce(func, wait) {
         let timeout;
@@ -1770,7 +1848,7 @@
             }, wait);
         };
     }
-    
+
     // Enhanced QR type switching with smooth transitions
     function setupQRTypeSwitching() {
         const qrTypeBtns = document.querySelectorAll('.qr-type-option');
@@ -1861,7 +1939,7 @@
             });
         });
     }
-    
+
     // Enhanced template selection with improved accessibility
     function setupTemplateSelection() {
         const templateCards = document.querySelectorAll('.template-card');
@@ -1916,7 +1994,7 @@
             });
         });
     }
-    
+
     // Setup tab switching
     function setupTabSwitching() {
         const tabButtons = document.querySelectorAll('[data-bs-toggle="pill"]');
@@ -1949,30 +2027,815 @@
             });
         });
     }
-    
-    // Initialize UI fixes
-    document.addEventListener('DOMContentLoaded', function() {
-        // Initialize all fixes for the QR code generator UI
-        initializeTabs();
-        setupColorPickers();
-        setupEyeCustomization();
-        setupFrameText();
-        setupGradientOptions();
-        setupSliders();
-        setupAccordions();
-        enhanceQRTypeSwitching();
+
+    // Initialize color pickers with FIXED preview refresh
+    function setupColorPickers() {
+        const inputs = document.querySelectorAll('input[id$="color"]');
         
-        // Initialize existing functionality
+        inputs.forEach(input => {
+            const flex = input.closest('.flex');
+            if (!flex) return;
+
+            const preview = flex.querySelector('.color-preview');
+            if (!preview) return;
+
+            // Set initial color from existing value
+            preview.style.backgroundColor = formatColorValue(input.value);
+
+            const popupId = `color-popup-${input.id}`;
+            let popup = document.getElementById(popupId);
+
+            if (!popup) {
+                popup = document.createElement('div');
+                popup.id = popupId;
+                popup.className = 'color-picker-popup hidden absolute z-50 mt-2 p-2';
+                popup.innerHTML = `
+                    <div class="grid grid-cols-6 gap-2">
+                        ${['#000000','#FFFFFF','#FF0000','#00FF00','#0000FF','#FFFF00','#FF00FF','#00FFFF','#FFA500','#800080','#008000','#800000']
+                            .map(color => `<div class="color-preset w-6 h-6 cursor-pointer rounded border border-gray-300 hover:border-gray-500" style="background-color: ${color}" data-color="${color}"></div>`).join('')}
+                    </div>
+                    <input type="color" class="mt-2 w-full h-8 rounded border border-gray-300" value="${formatColorValue(input.value)}">
+                `;
+                flex.appendChild(popup);
+
+                // Preset color click - triggers immediate preview update
+                popup.querySelectorAll('.color-preset').forEach(preset => {
+                    preset.addEventListener('click', function () {
+                        const color = this.dataset.color;
+                        updateColorInputWithPreview(input, preview, color);
+                        popup.classList.add('hidden');
+                        updateGradientPreview();
+                    });
+                });
+
+                // Native color picker change - triggers immediate preview update
+                popup.querySelector('input[type="color"]').addEventListener('input', function () {
+                    updateColorInputWithPreview(input, preview, this.value);
+                    updateGradientPreview();
+                });
+
+                // Native color picker change event for final value
+                popup.querySelector('input[type="color"]').addEventListener('change', function () {
+                    updateColorInputWithPreview(input, preview, this.value);
+                    updateGradientPreview();
+                });
+            }
+
+            preview.addEventListener('click', function (e) {
+                e.stopPropagation();
+                document.querySelectorAll('.color-picker-popup').forEach(p => {
+                    if (p !== popup) p.classList.add('hidden');
+                });
+                popup.classList.toggle('hidden');
+                popup.querySelector('input[type="color"]').value = formatColorValue(input.value);
+            });
+
+            // Direct input typing - debounced preview update
+            input.addEventListener('input', debounce(function() {
+                updateColorInputWithPreview(input, preview, this.value);
+                updateGradientPreview();
+            }, 500));
+
+            // Paste event - immediate preview update
+            input.addEventListener('paste', function () {
+                setTimeout(() => {
+                    updateColorInputWithPreview(input, preview, this.value);
+                    updateGradientPreview();
+                }, 100);
+            });
+
+            // Change event for final value - immediate preview update
+            input.addEventListener('change', function() {
+                updateColorInputWithPreview(input, preview, this.value);
+                updateGradientPreview();
+            });
+        });
+
+        document.addEventListener('click', () => {
+            document.querySelectorAll('.color-picker-popup').forEach(popup => popup.classList.add('hidden'));
+        });
+    }
+
+    function updateColorInput(input, preview, color) {
+        const formattedColor = formatColorValue(color);
+        input.value = formattedColor;
+        preview.style.backgroundColor = formattedColor;
+        input.dataset.userChanged = 'true';
+        
+        let changeText = '';
+        if (input.id === 'color') {
+            changeText = `Changed QR code color to ${formattedColor}`;
+        } else if (input.id === 'background_color') {
+            changeText = `Changed background color to ${formattedColor}`;
+        } else if (input.id.includes('eye')) {
+            changeText = `Updated eye colors`;
+        } else if (input.id.includes('gradient')) {
+            changeText = `Updated gradient colors`;
+        }
+        
+        updateQRPreview(changeText);
+    }
+
+    function updateColorInputWithPreview(input, preview, color) {
+        const formattedColor = formatColorValue(color);
+        input.value = formattedColor;
+        preview.style.backgroundColor = formattedColor;
+        input.dataset.userChanged = 'true';
+        
+        let changeText = '';
+        if (input.id === 'color') {
+            changeText = `Changed QR code color to ${formattedColor}`;
+        } else if (input.id === 'background_color') {
+            changeText = `Changed background color to ${formattedColor}`;
+        } else if (input.id.includes('eye')) {
+            changeText = `Updated eye colors`;
+        } else if (input.id.includes('gradient')) {
+            changeText = `Updated gradient colors`;
+        } else if (input.id === 'inner_eye_color') {
+            changeText = `Changed inner eye color to ${formattedColor}`;
+        } else if (input.id === 'outer_eye_color') {
+            changeText = `Changed outer eye color to ${formattedColor}`;
+        } else if (input.id === 'gradient_start_color') {
+            changeText = `Changed gradient start color to ${formattedColor}`;
+        } else if (input.id === 'gradient_end_color') {
+            changeText = `Changed gradient end color to ${formattedColor}`;
+        }
+        
+        // Always update the QR preview when colors change
+        updateQRPreview(changeText);
+    }
+
+    function updateGradientPreview() {
+        const startColor = document.getElementById('gradient_start_color');
+        const endColor = document.getElementById('gradient_end_color');
+        const gradientPreview = document.querySelector('.gradient-preview');
+        
+        if (gradientPreview && startColor && endColor) {
+            gradientPreview.style.background = `linear-gradient(135deg, ${startColor.value}, ${endColor.value})`;
+        }
+    }
+
+    // Setup eye customization
+    function setupEyeCustomization() {
+        const customEyesCheckbox = document.getElementById('custom_eyes');
+        const eyeCustomizationOptions = document.getElementById('eye-customization-options');
+        
+        if (customEyesCheckbox && eyeCustomizationOptions) {
+            // Set initial state
+            eyeCustomizationOptions.classList.toggle('hidden', !customEyesCheckbox.checked);
+            
+            // Add hidden field to track custom eyes
+            let customEyesField = document.getElementById('using_custom_eyes');
+            if (!customEyesField) {
+                customEyesField = document.createElement('input');
+                customEyesField.type = 'hidden';
+                customEyesField.id = 'using_custom_eyes';
+                customEyesField.name = 'using_custom_eyes';
+                customEyesCheckbox.parentNode.appendChild(customEyesField);
+            }
+            customEyesField.value = customEyesCheckbox.checked ? 'true' : 'false';
+            
+            // Add event listener
+            customEyesCheckbox.addEventListener('change', function() {
+                eyeCustomizationOptions.classList.toggle('hidden', !this.checked);
+                customEyesField.value = this.checked ? 'true' : 'false';
+                
+                // When enabling custom eyes, set the eye colors to match the main QR color if not already set
+                if (this.checked) {
+                    const mainColor = document.getElementById('color').value;
+                    const innerEyeColorInput = document.getElementById('inner_eye_color');
+                    const outerEyeColorInput = document.getElementById('outer_eye_color');
+                    
+                    if (innerEyeColorInput && (!innerEyeColorInput.value || innerEyeColorInput.value === '#000000')) {
+                        innerEyeColorInput.value = mainColor;
+                        const innerPreview = document.getElementById('inner-eye-color-preview');
+                        if (innerPreview) innerPreview.style.backgroundColor = mainColor;
+                    }
+                    
+                    if (outerEyeColorInput && (!outerEyeColorInput.value || outerEyeColorInput.value === '#000000')) {
+                        outerEyeColorInput.value = mainColor;
+                        const outerPreview = document.getElementById('outer-eye-color-preview');
+                        if (outerPreview) outerPreview.style.backgroundColor = mainColor;
+                    }
+                }
+                
+                // Trigger preview update
+                updateQRPreview('Toggled custom eye styles');
+            });
+        }
+        
+        // Setup eye style select elements
+        const eyeStyleSelects = [
+            document.getElementById('inner_eye_style'),
+            document.getElementById('outer_eye_style')
+        ];
+        
+        eyeStyleSelects.forEach(select => {
+            if (select) {
+                select.addEventListener('change', function() {
+                    // Trigger preview update on style change
+                    updateQRPreview(`Changed ${this.id === 'inner_eye_style' ? 'inner' : 'outer'} eye style to ${this.value}`);
+                });
+            }
+        });
+    }
+
+    // Setup frame text visibility toggle
+    function setupFrameText() {
+        const frameTypeRadios = document.querySelectorAll('input[name="frame_type"]');
+        const frameTextContainer = document.getElementById('frame-text-container');
+        
+        if (frameTypeRadios.length && frameTextContainer) {
+            // Set initial state based on selected frame type
+            const selectedFrameType = document.querySelector('input[name="frame_type"]:checked');
+            const needsText = selectedFrameType && ['scan_me', 'branded'].includes(selectedFrameType.value);
+            frameTextContainer.classList.toggle('hidden', !needsText);
+            
+            // Add event listeners to all frame type radios
+            frameTypeRadios.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    const needsText = ['scan_me', 'branded'].includes(this.value);
+                    frameTextContainer.classList.toggle('hidden', !needsText);
+                });
+            });
+        }
+    }
+
+    // Setup gradient options visibility and preview
+    function setupGradientOptions() {
+        const exportTypeSelect = document.getElementById('export_type');
+        const gradientOptions = document.getElementById('gradient-options');
+        
+        if (exportTypeSelect && gradientOptions) {
+            // Set initial state - ensure PNG is default
+            exportTypeSelect.value = 'png';
+            gradientOptions.classList.add('hidden');
+            
+            // Initialize hidden field for gradient tracking
+            let gradientField = document.getElementById('using_gradient');
+            if (!gradientField) {
+                gradientField = document.createElement('input');
+                gradientField.type = 'hidden';
+                gradientField.id = 'using_gradient';
+                gradientField.name = 'using_gradient';
+                exportTypeSelect.parentNode.appendChild(gradientField);
+            }
+            gradientField.value = 'false';
+            
+            // Add event listener for changes
+            exportTypeSelect.addEventListener('change', function() {
+                const isGradient = this.value === 'gradient';
+                gradientOptions.classList.toggle('hidden', !isGradient);
+                gradientField.value = isGradient ? 'true' : 'false';
+                
+                // Initialize gradient colors if switching to gradient
+                if (isGradient) {
+                    const mainColor = document.getElementById('color').value;
+                    const gradientStartInput = document.getElementById('gradient_start_color');
+                    const gradientEndInput = document.getElementById('gradient_end_color');
+                    
+                    if (gradientStartInput && (!gradientStartInput.value || gradientStartInput.value === '#000000')) {
+                        gradientStartInput.value = mainColor;
+                        const startPreview = document.getElementById('gradient-start-preview');
+                        if (startPreview) startPreview.style.backgroundColor = mainColor;
+                    }
+                    
+                    if (gradientEndInput && (!gradientEndInput.value || gradientEndInput.value === '#333333')) {
+                        // Generate a lighter shade for the end color
+                        const endColor = lightenColor(mainColor, 30);
+                        gradientEndInput.value = endColor;
+                        const endPreview = document.getElementById('gradient-end-preview');
+                        if (endPreview) endPreview.style.backgroundColor = endColor;
+                    }
+                    
+                    // Update gradient preview
+                    updateGradientPreview();
+                }
+                
+                // Update QR preview when switching to/from gradient
+                updateQRPreview('Changed to ' + this.options[this.selectedIndex].text);
+            });
+            
+            // Setup gradient preview updates
+            updateGradientPreview();
+            
+            // Add input listeners to gradient color inputs
+            const gradientStartInput = document.getElementById('gradient_start_color');
+            const gradientEndInput = document.getElementById('gradient_end_color');
+            
+            if (gradientStartInput && gradientEndInput) {
+                gradientStartInput.addEventListener('input', updateGradientPreview);
+                gradientEndInput.addEventListener('input', updateGradientPreview);
+            }
+        }
+    }
+
+    // Setup sliders to update their displayed values
+    function setupSliders() {
+        // Module size slider
+        const moduleSizeSlider = document.getElementById('module_size');
+        const moduleSizeValue = document.getElementById('module-size-value');
+        
+        if (moduleSizeSlider && moduleSizeValue) {
+            moduleSizeValue.textContent = moduleSizeSlider.value;
+            moduleSizeSlider.addEventListener('input', function() {
+                moduleSizeValue.textContent = this.value;
+            });
+        }
+        
+        // Quiet zone slider
+        const quietZoneSlider = document.getElementById('quiet_zone');
+        const quietZoneValue = document.getElementById('quiet-zone-value');
+        
+        if (quietZoneSlider && quietZoneValue) {
+            quietZoneValue.textContent = quietZoneSlider.value;
+            quietZoneSlider.addEventListener('input', function() {
+                quietZoneValue.textContent = this.value;
+            });
+        }
+        
+        // Logo size slider
+        const logoSizeSlider = document.getElementById('logo_size_percentage');
+        const logoSizeValue = document.getElementById('logo-size-value');
+        
+        if (logoSizeSlider && logoSizeValue) {
+            logoSizeValue.textContent = logoSizeSlider.value;
+            logoSizeSlider.addEventListener('input', function() {
+                logoSizeValue.textContent = this.value;
+            });
+        }
+    }
+
+    // Helper function to create a lighter variant of a color
+    function lightenColor(hex, percent) {
+        // Convert hex to RGB
+        hex = hex.replace(/^\s*#|\s*$/g, '');
+        
+        // Convert 3 char hex to 6 char
+        if(hex.length == 3){
+            hex = hex.replace(/(.)/g, '$1$1');
+        }
+        
+        var r = parseInt(hex.substr(0, 2), 16),
+            g = parseInt(hex.substr(2, 2), 16),
+            b = parseInt(hex.substr(4, 2), 16);
+        
+        // Increase each component by the percentage
+        r = Math.min(255, Math.round(r + (255 - r) * (percent / 100)));
+        g = Math.min(255, Math.round(g + (255 - g) * (percent / 100)));
+        b = Math.min(255, Math.round(b + (255 - b) * (percent / 100)));
+        
+        // Convert back to hex
+        return '#' + 
+            (r.toString(16).padStart(2, '0')) +
+            (g.toString(16).padStart(2, '0')) +
+            (b.toString(16).padStart(2, '0'));
+    }
+
+    // Enhanced form validation with better error reporting
+    function setupFormValidation() {
+        const form = document.getElementById('create-qr-form');
+        
+        // Add the validation classes
+        form.classList.add('needs-validation');
+        
+        // Prevent form submission if validation fails
+        form.addEventListener('submit', function(event) {
+            // Validate color inputs before submission
+            const colorInputs = form.querySelectorAll('input[id$="color"]');
+            let hasColorError = false;
+            
+            colorInputs.forEach(input => {
+                if (input && input.value) {
+                    let colorValue = input.value.trim();
+                    if (!colorValue.startsWith('#')) {
+                        colorValue = '#' + colorValue;
+                    }
+                    
+                    // Validate hex format
+                    if (!/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(colorValue)) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        hasColorError = true;
+                        
+                        const label = input.labels ? input.labels[0] : null;
+                        const fieldName = label ? label.textContent.trim() : (input.name || input.id);
+                        
+                        toastr.error(
+                            `Invalid color format for ${fieldName}. Please use a valid hex color (e.g., #000000).`,
+                            'Validation Error'
+                        );
+                        
+                        input.focus();
+                    }
+                    
+                    // Update input value with properly formatted color
+                    input.value = colorValue;
+                }
+            });
+
+            if (hasColorError) {
+                return false;
+            }
+            
+            // First, check for any hidden required fields and temporarily make them not required
+            const hiddenFields = form.querySelectorAll('.hidden [required]');
+            hiddenFields.forEach(field => {
+                field.setAttribute('data-was-required', 'true');
+                field.removeAttribute('required');
+            });
+            
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+                
+                // Find all invalid fields
+                const invalidFields = form.querySelectorAll(':invalid');
+                
+                // Create a list of missing fields
+                const missingFieldsList = Array.from(invalidFields).map(field => {
+                    const label = field.labels ? field.labels[0] : null;
+                    const fieldName = label ? label.textContent.trim() : (field.name || field.id);
+                    return fieldName.replace(' *', '');
+                });
+                
+                // Show error toast with specific field names
+                if (missingFieldsList.length > 0) {
+                    const errorMsg = `Please fill in the following required fields: ${missingFieldsList.join(', ')}`;
+                    toastr.error(errorMsg, 'Validation Error');
+                    
+                    // Focus the first invalid field
+                    invalidFields[0].focus();
+                    
+                    // Scroll to first invalid input
+                    invalidFields[0].scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'center' 
+                    });
+                } else {
+                    // Generic error if no specific fields were identified
+                    toastr.error('Please fill in all required fields correctly', 'Validation Error');
+                }
+            } else {
+                // Process form submission
+                // Add gradient flag if needed
+                const exportType = document.getElementById('export_type');
+                if (exportType && exportType.value === 'gradient') {
+                    let gradientField = document.getElementById('using_gradient');
+                    if (!gradientField) {
+                        gradientField = document.createElement('input');
+                        gradientField.type = 'hidden';
+                        gradientField.id = 'using_gradient';
+                        gradientField.name = 'using_gradient';
+                        form.appendChild(gradientField);
+                    }
+                    gradientField.value = 'true';
+                } else {
+                    // Explicitly set to non-gradient
+                    let gradientField = document.getElementById('using_gradient');
+                    if (!gradientField) {
+                        gradientField = document.createElement('input');
+                        gradientField.type = 'hidden';
+                        gradientField.id = 'using_gradient';
+                        gradientField.name = 'using_gradient';
+                        form.appendChild(gradientField);
+                    }
+                    gradientField.value = 'false';
+                }
+                
+                // Add custom eyes flag if needed
+                const customEyes = document.getElementById('custom_eyes');
+                if (customEyes && customEyes.checked) {
+                    let customEyesField = document.getElementById('using_custom_eyes');
+                    if (!customEyesField) {
+                        customEyesField = document.createElement('input');
+                        customEyesField.type = 'hidden';
+                        customEyesField.id = 'using_custom_eyes';
+                        customEyesField.name = 'using_custom_eyes';
+                        form.appendChild(customEyesField);
+                    }
+                    customEyesField.value = 'true';
+                }
+                
+                // Form is valid, add animation to submit button
+                const submitBtn = form.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.innerHTML = `
+                        <div class="animate-spin -ml-1 mr-3 h-5 w-5 text-white">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </div>
+                        Creating QR Code...`;
+                    submitBtn.disabled = true;
+                }
+                
+                // Reset unsaved changes flag
+                formChanged = false;
+            }
+            
+            // Restore required attribute to fields
+            hiddenFields.forEach(field => {
+                if (field.getAttribute('data-was-required') === 'true') {
+                    field.setAttribute('required', '');
+                    field.removeAttribute('data-was-required');
+                }
+            });
+            
+            form.classList.add('was-validated');
+        });
+    }
+
+    // Setup password toggle for WiFi password
+    function setupPasswordToggle() {
+        const togglePasswordBtn = document.getElementById('toggleWifiPassword');
+        const passwordInput = document.getElementById('wifi-password');
+        
+        if (togglePasswordBtn && passwordInput) {
+            togglePasswordBtn.addEventListener('click', function() {
+                // Toggle password visibility
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                
+                // Toggle icon
+                const icon = this.querySelector('i');
+                if (type === 'password') {
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                } else {
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                }
+            });
+        }
+    }
+
+    // Enhanced template application function
+    function enhancedApplyTemplateStyles(template) {
+        if (!template) return;
+        
+        console.log("Applying template:", template);
+        
+        // Define templates with their respective styles
+        const templates = {
+            modern: {
+                shape: "rounded",
+                color: "#2c5282", // Updated to match formal blue
+                background_color: "#FFFFFF",
+                export_type: "png", // Explicitly set to non-gradient
+                custom_eyes: true,
+                inner_eye_style: "circle",
+                outer_eye_style: "rounded",
+                inner_eye_color: "#2c5282", // Updated to match formal blue
+                outer_eye_color: "#2c5282" // Updated to match formal blue
+            },
+            corporate: {
+                shape: "square",
+                color: "#1a365d", // Darker blue for corporate style
+                background_color: "#FFFFFF",
+                export_type: "png", // Explicitly set to non-gradient
+                frame_type: "square",
+                frame_color: "#1a365d", // Darker blue for corporate style
+                custom_eyes: false
+            },
+            playful: {
+                shape: "circle",
+                export_type: "gradient", // Only this template uses gradient
+                gradient_start: "#3182ce", // Updated to match formal blue palette
+                gradient_end: "#90cdf4", // Updated to match formal blue palette
+                background_color: "#FFFFFF",
+                custom_eyes: true,
+                inner_eye_style: "circle",
+                outer_eye_style: "circle",
+                inner_eye_color: "#3182ce", // Updated to match formal blue palette
+                outer_eye_color: "#3182ce" // Updated to match formal blue palette
+            },
+            minimal: {
+                shape: "square",
+                color: "#2d3748", // Gray for minimal style
+                background_color: "#FFFFFF",
+                export_type: "png", // Explicitly set to non-gradient
+                custom_eyes: false
+            },
+            high_contrast: {
+                shape: "square",
+                color: "#000000",
+                background_color: "#FFFFFF",
+                export_type: "png", // Explicitly set to non-gradient
+                module_size: 12,
+                quiet_zone: 4,
+                custom_eyes: false
+            }
+        };
+        
+        // Get the template styles
+        const styles = templates[template];
+        if (!styles) return;
+        
+        console.log("Template styles:", styles);
+        
+        // Reset user-changed flags when applying template
+        document.querySelectorAll('input[id$="color"]').forEach(input => {
+            input.dataset.userChanged = 'false';
+        });
+        
+        // Apply template styles
+        Object.keys(styles).forEach(key => {
+            const value = styles[key];
+            const element = document.getElementById(key);
+            
+            if (element) {
+                // Handle color inputs specially
+                if (key.includes('color')) {
+                    // Only update if user hasn't changed it
+                    if (element.dataset.userChanged !== 'true') {
+                        const formattedColor = formatColorValue(value);
+                        element.value = formattedColor;
+                        
+                        // Update preview for color inputs
+                        const preview = document.getElementById(`${key}-preview`);
+                        if (preview) {
+                            preview.style.backgroundColor = formattedColor;
+                        }
+                    }
+                } 
+                // Handle checkboxes
+                else if (element.type === 'checkbox') {
+                    element.checked = value;
+                    
+                    // Toggle related panels for custom eyes
+                    if (key === 'custom_eyes') {
+                        const eyeOptions = document.getElementById('eye-customization-options');
+                        if (eyeOptions) {
+                            eyeOptions.classList.toggle('hidden', !value);
+                        }
+                        
+                        // Update hidden field
+                        const hiddenField = document.getElementById('using_custom_eyes');
+                        if (hiddenField) {
+                            hiddenField.value = value ? 'true' : 'false';
+                        }
+                    }
+                }
+                // Handle select elements
+                else if (element.tagName === 'SELECT') {
+                    element.value = value;
+                    
+                    // Special handling for export type
+                    if (key === 'export_type') {
+                        const gradientOptions = document.getElementById('gradient-options');
+                        if (gradientOptions) {
+                            const isGradient = value === 'gradient';
+                            gradientOptions.classList.toggle('hidden', !isGradient);
+                            
+                            // If gradient, ensure custom eyes are enabled
+                            if (isGradient) {
+                                const customEyesCheckbox = document.getElementById('custom_eyes');
+                                if (customEyesCheckbox) {
+                                    customEyesCheckbox.checked = true;
+                                    customEyesCheckbox.disabled = true;
+                                    
+                                    // Show eye customization options
+                                    const eyeOptions = document.getElementById('eye-customization-options');
+                                    if (eyeOptions) {
+                                        eyeOptions.classList.remove('hidden');
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // Update hidden field
+                        const gradientField = document.getElementById('using_gradient');
+                        if (gradientField) {
+                            gradientField.value = value === 'gradient' ? 'true' : 'false';
+                        } else {
+                            // Create hidden field if it doesn't exist
+                            const newField = document.createElement('input');
+                            newField.type = 'hidden';
+                            newField.id = 'using_gradient';
+                            newField.name = 'using_gradient';
+                            newField.value = value === 'gradient' ? 'true' : 'false';
+                            element.parentNode.appendChild(newField);
+                        }
+                    }
+                }
+                // Handle text inputs
+                else if (element.type === 'text' || element.type === 'number' || element.type === 'range') {
+                    element.value = value;
+                    
+                    // Update display value for range inputs
+                    if (element.type === 'range') {
+                        const valueDisplay = document.getElementById(`${key}-value`);
+                        if (valueDisplay) {
+                            valueDisplay.textContent = value;
+                        }
+                    }
+                }
+            }
+            
+            // Handle radio button groups
+            if (key === 'shape') {
+                const radio = document.getElementById(`shape-${value}`);
+                if (radio) {
+                    radio.checked = true;
+                    
+                    // Update styles on the label
+                    const allLabels = document.querySelectorAll('.shape-option label');
+                    allLabels.forEach(label => {
+                        label.classList.remove('bg-secondary-50', 'border-secondary-500');
+                    });
+                    
+                    const label = document.querySelector(`label[for="shape-${value}"]`);
+                    if (label) {
+                        label.classList.add('bg-secondary-50', 'border-secondary-500');
+                    }
+                }
+            }
+            else if (key === 'frame_type') {
+                const radio = document.getElementById(`frame-${value}`);
+                if (radio) {
+                    radio.checked = true;
+                    
+                    // Update styles on the label
+                    const allLabels = document.querySelectorAll('input[name="frame_type"] + label');
+                    allLabels.forEach(label => {
+                        label.classList.remove('bg-secondary-50', 'border-secondary-500');
+                    });
+                    
+                    const label = document.querySelector(`label[for="frame-${value}"]`);
+                    if (label) {
+                        label.classList.add('bg-secondary-50', 'border-secondary-500');
+                    }
+                    
+                    // Show/hide frame text input based on frame type
+                    const frameTextContainer = document.getElementById('frame-text-container');
+                    if (frameTextContainer) {
+                        frameTextContainer.classList.toggle('hidden', !['scan_me', 'branded'].includes(value));
+                    }
+                }
+            }
+        });
+        
+        // Update gradient preview if needed
+        if (styles.export_type === 'gradient') {
+            updateGradientPreview();
+        }
+        
+        // Trigger preview update
+        updateQRPreview(`Applied '${template}' template`);
+    }
+
+    // Main initialization for create QR form
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM loaded, initializing create QR form...');
+        
+        // Setup all functionality in proper order
+        setupTabSwitching();
+        setupColorPickers(); // This should now properly handle preview updates
         setupQRTypeSwitching();
         setupTemplateSelection();
-        setupTabSwitching();
+        setupEyeCustomization();
+        setupGradientOptions();
+        setupFrameText();
+        setupPasswordToggle();
         setupFormValidation();
         setupFormChangeDetection();
-        setupTemplateGuidanceModal();
-        setupPasswordToggle();
-
-        setupLogoHandling();
-        setupColorValidation();
+        setupSliders();
+        
+        // Initialize UI fixes
+        initializeTabs();
+        enhanceQRTypeSwitching();
+        
+        // Setup preview buttons
+        const refreshPreviewBtn = document.getElementById('refreshPreviewBtn');
+        if (refreshPreviewBtn) {
+            refreshPreviewBtn.addEventListener('click', function() {
+                console.log('Manual preview refresh triggered');
+                updateQRPreview('Manually refreshed preview');
+                toastr.info('QR code preview refreshed', 'Preview Updated');
+            });
+        }
+        
+        const downloadPreviewBtn = document.getElementById('downloadPreviewBtn');
+        if (downloadPreviewBtn) {
+            downloadPreviewBtn.addEventListener('click', function() {
+                const previewImage = document.getElementById('qr-preview-image');
+                if (!previewImage || previewImage.src.includes('placeholder')) {
+                    toastr.warning('Please generate a QR code first', 'Cannot Download');
+                    return;
+                }
+                
+                const link = document.createElement('a');
+                link.href = previewImage.src;
+                link.download = `qr-preview-${new Date().getTime()}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                toastr.success('QR code preview downloaded', 'Download Complete');
+            });
+        }
         
         // Track color changes made by user
         document.querySelectorAll('input[id$="color"]').forEach(input => {
@@ -1995,1466 +2858,96 @@
             });
         });
         
-        // Initialize UI fixes
-        function initializeTabs() {
-            // Hide all tab content except the first one (Templates)
-            const tabPanes = document.querySelectorAll('.tab-pane');
-            tabPanes.forEach((pane, index) => {
-                if (index === 0) {
-                    pane.classList.add('show', 'active');
-                    pane.classList.remove('hidden');
-                } else {
-                    pane.classList.remove('show', 'active');
-                    pane.classList.add('hidden');
-                }
-            });
-            
-            // Set the first tab as active
-            const tabButtons = document.querySelectorAll('[data-bs-toggle="pill"]');
-            tabButtons.forEach((btn, index) => {
-                if (index === 0) {
-                    btn.classList.add('border-secondary-500', 'text-secondary-600', 'active');
-                    btn.classList.remove('border-transparent', 'text-gray-500');
-                    btn.setAttribute('aria-selected', 'true');
-                } else {
-                    btn.classList.remove('border-secondary-500', 'text-secondary-600', 'active');
-                    btn.classList.add('border-transparent', 'text-gray-500');
-                    btn.setAttribute('aria-selected', 'false');
-                }
-            });
-        }
-
-        function updateColorInput(input, preview, color) {
-            // Format the color properly
-            const formattedColor = formatColorValue(color);
-            
-            // Update input value and preview
-            input.value = formattedColor;
-            preview.style.backgroundColor = formattedColor;
-            input.dataset.userChanged = 'true';
-            
-            // Create change text based on input ID
-            let changeText = '';
-            if (input.id === 'color') {
-                changeText = `Changed QR code color to ${formattedColor}`;
-            } else if (input.id === 'background_color') {
-                changeText = `Changed background color to ${formattedColor}`;
-            } else if (input.id.includes('eye')) {
-                changeText = `Updated eye colors`;
-            } else if (input.id.includes('gradient')) {
-                changeText = `Updated gradient colors`;
-            }
-            
-            // Trigger preview update immediately
-            updateQRPreview(changeText);
-        }
-        
-        // Fix for eye customization
-        function setupEyeCustomization() {
-            const customEyesCheckbox = document.getElementById('custom_eyes');
-            const eyeCustomizationOptions = document.getElementById('eye-customization-options');
-            
-            if (customEyesCheckbox && eyeCustomizationOptions) {
-                // Set initial state
-                eyeCustomizationOptions.classList.toggle('hidden', !customEyesCheckbox.checked);
-                
-                // Add hidden field to track custom eyes
-                let customEyesField = document.getElementById('using_custom_eyes');
-                if (!customEyesField) {
-                    customEyesField = document.createElement('input');
-                    customEyesField.type = 'hidden';
-                    customEyesField.id = 'using_custom_eyes';
-                    customEyesField.name = 'using_custom_eyes';
-                    customEyesCheckbox.parentNode.appendChild(customEyesField);
-                }
-                customEyesField.value = customEyesCheckbox.checked ? 'true' : 'false';
-                
-                // Add event listener
-                customEyesCheckbox.addEventListener('change', function() {
-                    eyeCustomizationOptions.classList.toggle('hidden', !this.checked);
-                    customEyesField.value = this.checked ? 'true' : 'false';
-                    
-                    // When enabling custom eyes, set the eye colors to match the main QR color if not already set
-                    if (this.checked) {
-                        const mainColor = document.getElementById('color').value;
-                        const innerEyeColorInput = document.getElementById('inner_eye_color');
-                        const outerEyeColorInput = document.getElementById('outer_eye_color');
-                        
-                        if (innerEyeColorInput && (!innerEyeColorInput.value || innerEyeColorInput.value === '#000000')) {
-                            innerEyeColorInput.value = mainColor;
-                            const innerPreview = document.getElementById('inner-eye-color-preview');
-                            if (innerPreview) innerPreview.style.backgroundColor = mainColor;
-                        }
-                        
-                        if (outerEyeColorInput && (!outerEyeColorInput.value || outerEyeColorInput.value === '#000000')) {
-                            outerEyeColorInput.value = mainColor;
-                            const outerPreview = document.getElementById('outer-eye-color-preview');
-                            if (outerPreview) outerPreview.style.backgroundColor = mainColor;
-                        }
-                    }
-                    
-                    // Trigger preview update
-                    if (window.updateQRPreview) {
-                        window.updateQRPreview('Toggled custom eye styles');
-                    }
-                });
-            }
-            
-            // Setup eye style select elements
-            const eyeStyleSelects = [
-                document.getElementById('inner_eye_style'),
-                document.getElementById('outer_eye_style')
-            ];
-            
-            eyeStyleSelects.forEach(select => {
-                if (select) {
-                    select.addEventListener('change', function() {
-                        // Trigger preview update on style change
-                        if (window.updateQRPreview) {
-                            window.updateQRPreview(`Changed ${this.id === 'inner_eye_style' ? 'inner' : 'outer'} eye style to ${this.value}`);
-                        }
-                    });
-                }
-            });
-        }
-        
-        // Setup frame text visibility toggle
-        function setupFrameText() {
-            const frameTypeRadios = document.querySelectorAll('input[name="frame_type"]');
-            const frameTextContainer = document.getElementById('frame-text-container');
-            
-            if (frameTypeRadios.length && frameTextContainer) {
-                // Set initial state based on selected frame type
-                const selectedFrameType = document.querySelector('input[name="frame_type"]:checked');
-                const needsText = selectedFrameType && ['scan_me', 'branded'].includes(selectedFrameType.value);
-                frameTextContainer.classList.toggle('hidden', !needsText);
-                
-                // Add event listeners to all frame type radios
-                frameTypeRadios.forEach(radio => {
-                    radio.addEventListener('change', function() {
-                        const needsText = ['scan_me', 'branded'].includes(this.value);
-                        frameTextContainer.classList.toggle('hidden', !needsText);
-                    });
-                });
-            }
-        }
-        
-        // Setup gradient options visibility and preview
-        function setupGradientOptions() {
-            const exportTypeSelect = document.getElementById('export_type');
-            const gradientOptions = document.getElementById('gradient-options');
-            
-            if (exportTypeSelect && gradientOptions) {
-                // Set initial state - ensure PNG is default
-                exportTypeSelect.value = 'png';
-                gradientOptions.classList.add('hidden');
-                
-                // Initialize hidden field for gradient tracking
-                let gradientField = document.getElementById('using_gradient');
-                if (!gradientField) {
-                    gradientField = document.createElement('input');
-                    gradientField.type = 'hidden';
-                    gradientField.id = 'using_gradient';
-                    gradientField.name = 'using_gradient';
-                    exportTypeSelect.parentNode.appendChild(gradientField);
-                }
-                gradientField.value = 'false';
-                
-                // Add event listener for changes
-                exportTypeSelect.addEventListener('change', function() {
-                    const isGradient = this.value === 'gradient';
-                    gradientOptions.classList.toggle('hidden', !isGradient);
-                    gradientField.value = isGradient ? 'true' : 'false';
-                    
-                    // Initialize gradient colors if switching to gradient
-                    if (isGradient) {
-                        const mainColor = document.getElementById('color').value;
-                        const gradientStartInput = document.getElementById('gradient_start');
-                        const gradientEndInput = document.getElementById('gradient_end');
-                        
-                        if (gradientStartInput && (!gradientStartInput.value || gradientStartInput.value === '#000000')) {
-                            gradientStartInput.value = mainColor;
-                            const startPreview = document.getElementById('gradient-start-preview');
-                            if (startPreview) startPreview.style.backgroundColor = mainColor;
-                        }
-                        
-                        if (gradientEndInput && (!gradientEndInput.value || gradientEndInput.value === '#000000')) {
-                            // Generate a lighter shade for the end color
-                            const endColor = lightenColor(mainColor, 30);
-                            gradientEndInput.value = endColor;
-                            const endPreview = document.getElementById('gradient-end-preview');
-                            if (endPreview) endPreview.style.backgroundColor = endColor;
-                        }
-                        
-                        // Update gradient preview
-                        updateGradientPreview();
-                    }
-                    
-                    // Update QR preview when switching to/from gradient
-                    if (window.updateQRPreview) {
-                        window.updateQRPreview('Changed to ' + this.options[this.selectedIndex].text);
-                    }
-                });
-                
-                // Setup gradient preview updates
-                updateGradientPreview();
-                
-                // Add input listeners to gradient color inputs
-                const gradientStartInput = document.getElementById('gradient_start');
-                const gradientEndInput = document.getElementById('gradient_end');
-                
-                if (gradientStartInput && gradientEndInput) {
-                    gradientStartInput.addEventListener('input', updateGradientPreview);
-                    gradientEndInput.addEventListener('input', updateGradientPreview);
-                }
-            }
-        }
-        
-        // Setup sliders to update their displayed values
-        function setupSliders() {
-            // Module size slider
-            const moduleSizeSlider = document.getElementById('module_size');
-            const moduleSizeValue = document.getElementById('module-size-value');
-            
-            if (moduleSizeSlider && moduleSizeValue) {
-                moduleSizeValue.textContent = moduleSizeSlider.value;
-                moduleSizeSlider.addEventListener('input', function() {
-                    moduleSizeValue.textContent = this.value;
-                });
-            }
-            
-            // Quiet zone slider
-            const quietZoneSlider = document.getElementById('quiet_zone');
-            const quietZoneValue = document.getElementById('quiet-zone-value');
-            
-            if (quietZoneSlider && quietZoneValue) {
-                quietZoneValue.textContent = quietZoneSlider.value;
-                quietZoneSlider.addEventListener('input', function() {
-                    quietZoneValue.textContent = this.value;
-                });
-            }
-            
-            // Logo size slider
-            const logoSizeSlider = document.getElementById('logo_size_percentage');
-            const logoSizeValue = document.getElementById('logo-size-value');
-            
-            if (logoSizeSlider && logoSizeValue) {
-                logoSizeValue.textContent = logoSizeSlider.value;
-                logoSizeSlider.addEventListener('input', function() {
-                    logoSizeValue.textContent = this.value;
-                });
-            }
-        }
-        
-        // Setup accordions
-        function setupAccordions() {
-            // Check if Alpine.js is available
-            if (typeof Alpine === 'undefined') {
-                // Find all accordion headers
-                const accordionHeaders = document.querySelectorAll('[x-data="{open: false}"] > div:first-child');
-                
-                accordionHeaders.forEach(header => {
-                    const content = header.nextElementSibling;
-                    
-                    // Set initial state
-                    content.style.display = 'none';
-                    
-                    // Add click handler
-                    header.addEventListener('click', () => {
-                        const isOpen = content.style.display !== 'none';
-                        
-                        // Toggle content
-                        content.style.display = isOpen ? 'none' : 'block';
-                        
-                        // Toggle icon
-                        const icon = header.querySelector('.fa-chevron-down');
-                        if (icon) {
-                            icon.style.transform = isOpen ? '' : 'rotate(180deg)';
-                        }
-                    });
-                });
-            }
-        }
-        
-        // Custom QR Type selection enhancement
-        function enhanceQRTypeSwitching() {
-            const qrTypeContents = document.querySelectorAll('.qr-type-content');
-            const qrTypeOptions = document.querySelectorAll('.qr-type-option');
-            
-            // Style all QR type options initially
-            qrTypeOptions.forEach((option, index) => {
-                if (index === 0) {
-                    option.classList.add('active');
-                    option.querySelector('i').classList.add('text-blue-700');
-                    option.querySelector('i').classList.remove('text-gray-600');
-                } else {
-                    option.classList.remove('active');
-                    option.querySelector('i').classList.remove('text-blue-700');
-                    option.querySelector('i').classList.add('text-gray-600');
-                }
-            });
-            
-            // Style all QR type contents initially
-            qrTypeContents.forEach((content, index) => {
-                if (index === 0) {
-                    content.classList.remove('hidden');
-                    content.style.opacity = '1';
-                    content.style.transition = 'opacity 0.3s ease';
-                } else {
-                    content.classList.add('hidden');
-                    content.style.opacity = '0';
-                    content.style.transition = 'opacity 0.3s ease';
-                }
-            });
-        }
-        
-        // Set up refreshPreviewBtn
-        const refreshPreviewBtn = document.getElementById('refreshPreviewBtn');
-        if (refreshPreviewBtn) {
-            refreshPreviewBtn.addEventListener('click', function() {
-                updateQRPreview('Manually refreshed preview');
-                
-                // Show toast notification
-                toastr.info('QR code preview refreshed', 'Preview Updated');
-            });
-        }
-        
-        // Set up downloadPreviewBtn
-        const downloadPreviewBtn = document.getElementById('downloadPreviewBtn');
-        if (downloadPreviewBtn) {
-            downloadPreviewBtn.addEventListener('click', function() {
-                const previewImage = document.getElementById('qr-preview-image');
-                if (!previewImage || previewImage.src.includes('placeholder')) {
-                    toastr.warning('Please generate a QR code first', 'Cannot Download');
-                    return;
-                }
-                
-                // Create a temporary anchor element
-                const link = document.createElement('a');
-                link.href = previewImage.src;
-                link.download = `qr-preview-${new Date().getTime()}.png`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                
-                // Show success toast
-                toastr.success('QR code preview downloaded', 'Download Complete');
-            });
-        }
-        
-        // Toggle dynamic QR code switch styling
-        const toggleCheckbox = document.getElementById('is_dynamic');
-        if (toggleCheckbox) {
-            toggleCheckbox.addEventListener('change', function() {
-                const toggleLabel = this.nextElementSibling;
-                if (this.checked) {
-                    toggleLabel.classList.remove('bg-gray-300');
-                    toggleLabel.classList.add('bg-secondary-500');
-                } else {
-                    toggleLabel.classList.remove('bg-secondary-500');
-                    toggleLabel.classList.add('bg-gray-300');
-                }
-            });
-        }
-        
-        // Setup handling of template selection
-        function setupTemplateGuidanceModal() {
-            const templateHelpBtn = document.getElementById('templateHelpBtn');
-            const closeModalBtn = document.getElementById('closeModalBtn');
-            const closeModalBtnBottom = document.getElementById('closeModalBtnBottom');
-            const modal = document.getElementById('templateGuidanceModal');
-            
-            if (templateHelpBtn && modal) {
-                templateHelpBtn.addEventListener('click', function() {
-                    modal.classList.remove('hidden');
-                });
-            }
-            
-            if (closeModalBtn && modal) {
-                closeModalBtn.addEventListener('click', function() {
-                    modal.classList.add('hidden');
-                });
-            }
-            
-            if (closeModalBtnBottom && modal) {
-                closeModalBtnBottom.addEventListener('click', function() {
-                    modal.classList.add('hidden');
-                });
-            }
-            
-            // Close modal when clicking outside
-            if (modal) {
-                modal.addEventListener('click', function(e) {
-                    if (e.target === modal) {
-                        modal.classList.add('hidden');
-                    }
-                });
-            }
-        }
-        
-        // Toggle password visibility for WiFi password
-        function setupPasswordToggle() {
-            const togglePasswordBtn = document.getElementById('toggleWifiPassword');
-            const passwordInput = document.getElementById('wifi-password');
-            
-            if (togglePasswordBtn && passwordInput) {
-                togglePasswordBtn.addEventListener('click', function() {
-                    // Toggle password visibility
-                    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-                    passwordInput.setAttribute('type', type);
-                    
-                    // Toggle icon
-                    const icon = this.querySelector('i');
-                    if (type === 'password') {
-                        icon.classList.remove('fa-eye-slash');
-                        icon.classList.add('fa-eye');
-                    } else {
-                        icon.classList.remove('fa-eye');
-                        icon.classList.add('fa-eye-slash');
-                    }
-                });
-            }
-        }
-        
-        // Enhanced form validation with better error reporting
-        function setupFormValidation() {
-            const form = document.getElementById('create-qr-form');
-            
-            // Add the validation classes
-            form.classList.add('needs-validation');
-            
-            // Prevent form submission if validation fails
-            form.addEventListener('submit', function(event) {
-                // Validate color inputs before submission
-                const colorInputs = form.querySelectorAll('input[id$="color"]');
-                let hasColorError = false;
-                
-                colorInputs.forEach(input => {
-                    if (input && input.value) {
-                        let colorValue = input.value.trim();
-                        if (!colorValue.startsWith('#')) {
-                            colorValue = '#' + colorValue;
-                        }
-                        
-                        // Validate hex format
-                        if (!/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(colorValue)) {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            hasColorError = true;
-                            
-                            const label = input.labels ? input.labels[0] : null;
-                            const fieldName = label ? label.textContent.trim() : (input.name || input.id);
-                            
-                            toastr.error(
-                                `Invalid color format for ${fieldName}. Please use a valid hex color (e.g., #000000).`,
-                                'Validation Error'
-                            );
-                            
-                            input.focus();
-                        }
-                        
-                        // Update input value with properly formatted color
-                        input.value = colorValue;
-                    }
-                });
-
-                if (hasColorError) {
-                    return false;
-                }
-                
-                // First, check for any hidden required fields and temporarily make them not required
-                const hiddenFields = form.querySelectorAll('.hidden [required]');
-                hiddenFields.forEach(field => {
-                    field.setAttribute('data-was-required', 'true');
-                    field.removeAttribute('required');
-                });
-                
-                if (!form.checkValidity()) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    
-                    // Find all invalid fields
-                    const invalidFields = form.querySelectorAll(':invalid');
-                    
-                    // Create a list of missing fields
-                    const missingFieldsList = Array.from(invalidFields).map(field => {
-                        const label = field.labels ? field.labels[0] : null;
-                        const fieldName = label ? label.textContent.trim() : (field.name || field.id);
-                        return fieldName.replace(' *', '');
-                    });
-                    
-                    // Show error toast with specific field names
-                    if (missingFieldsList.length > 0) {
-                        const errorMsg = `Please fill in the following required fields: ${missingFieldsList.join(', ')}`;
-                        toastr.error(errorMsg, 'Validation Error');
-                        
-                        // Focus the first invalid field
-                        invalidFields[0].focus();
-                        
-                        // Scroll to first invalid input
-                        invalidFields[0].scrollIntoView({ 
-                            behavior: 'smooth', 
-                            block: 'center' 
-                        });
-                    } else {
-                        // Generic error if no specific fields were identified
-                        toastr.error('Please fill in all required fields correctly', 'Validation Error');
-                    }
-                } else {
-                    // Process form submission
-                    // Add gradient flag if needed
-                    const exportType = document.getElementById('export_type');
-                    if (exportType && exportType.value === 'gradient') {
-                        let gradientField = document.getElementById('using_gradient');
-                        if (!gradientField) {
-                            gradientField = document.createElement('input');
-                            gradientField.type = 'hidden';
-                            gradientField.id = 'using_gradient';
-                            gradientField.name = 'using_gradient';
-                            form.appendChild(gradientField);
-                        }
-                        gradientField.value = 'true';
-                    } else {
-                        // Explicitly set to non-gradient
-                        let gradientField = document.getElementById('using_gradient');
-                        if (!gradientField) {
-                            gradientField = document.createElement('input');
-                            gradientField.type = 'hidden';
-                            gradientField.id = 'using_gradient';
-                            gradientField.name = 'using_gradient';
-                            form.appendChild(gradientField);
-                        }
-                        gradientField.value = 'false';
-                    }
-                    
-                    // Add custom eyes flag if needed
-                    const customEyes = document.getElementById('custom_eyes');
-                    if (customEyes && customEyes.checked) {
-                        let customEyesField = document.getElementById('using_custom_eyes');
-                        if (!customEyesField) {
-                            customEyesField = document.createElement('input');
-                            customEyesField.type = 'hidden';
-                            customEyesField.id = 'using_custom_eyes';
-                            customEyesField.name = 'using_custom_eyes';
-                            form.appendChild(customEyesField);
-                        }
-                        customEyesField.value = 'true';
-                    }
-                    
-                    // Form is valid, add animation to submit button
-                    const submitBtn = form.querySelector('button[type="submit"]');
-                    if (submitBtn) {
-                        submitBtn.innerHTML = `
-                            <div class="animate-spin -ml-1 mr-3 h-5 w-5 text-white">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                            </div>
-                            Creating QR Code...`;
-                        submitBtn.disabled = true;
-                    }
-                    
-                    // Reset unsaved changes flag
-                    formChanged = false;
-                }
-                
-                // Restore required attribute to fields
-                hiddenFields.forEach(field => {
-                    if (field.getAttribute('data-was-required') === 'true') {
-                        field.setAttribute('required', '');
-                        field.removeAttribute('data-was-required');
-                    }
-                });
-                
-                form.classList.add('was-validated');
-            });
-        }
-        
-        // Setup color validation
-        function setupColorValidation() {
-            const colorInputs = document.querySelectorAll('input[id$="color"]');
-            colorInputs.forEach(input => {
-                input.addEventListener('blur', function() {
-                    if (this.value) {
-                        let colorValue = this.value.trim();
-                        if (!colorValue.startsWith('#')) {
-                            colorValue = '#' + colorValue;
-                        }
-                        
-                        // If valid hex format, update value
-                        if (/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(colorValue)) {
-                            this.value = colorValue;
-                        } else {
-                            // Revert to default or last valid value
-                            const defaultColor = this.id === 'background_color' ? '#FFFFFF' : '#000000';
-                            this.value = defaultColor;
-                            
-                            toastr.warning(
-                                'Invalid color format. Using default color.',
-                                'Color Validation'
-                            );
-                        }
-                        
-                        // Update preview
-                        const preview = document.getElementById(`${this.id}-preview`);
-                        if (preview) {
-                            preview.style.backgroundColor = this.value;
-                        }
-                    }
-                });
-            });
-        }
-        
-        // Helper function to create a lighter variant of a color
-        function lightenColor(hex, percent) {
-            // Convert hex to RGB
-            hex = hex.replace(/^\s*#|\s*$/g, '');
-            
-            // Convert 3 char hex to 6 char
-            if(hex.length == 3){
-                hex = hex.replace(/(.)/g, '$1$1');
-            }
-            
-            var r = parseInt(hex.substr(0, 2), 16),
-                g = parseInt(hex.substr(2, 2), 16),
-                b = parseInt(hex.substr(4, 2), 16);
-            
-            // Increase each component by the percentage
-            r = Math.min(255, Math.round(r + (255 - r) * (percent / 100)));
-            g = Math.min(255, Math.round(g + (255 - g) * (percent / 100)));
-            b = Math.min(255, Math.round(b + (255 - b) * (percent / 100)));
-            
-            // Convert back to hex
-            return '#' + 
-                (r.toString(16).padStart(2, '0')) +
-                (g.toString(16).padStart(2, '0')) +
-                (b.toString(16).padStart(2, '0'));
-        }
-        
-
-        
         // Initial preview after a short delay to allow form to initialize
+        console.log('Setting up initial preview...');
         setTimeout(() => {
-            updateQRPreview();
+            updateQRPreview('Initial preview load');
         }, 500);
-    });
-    
-    // Enhanced color input handling
-    function setupEnhancedColorPickers() {
-        const colorInputs = document.querySelectorAll('input[type="text"][id$="color"]');
         
-        colorInputs.forEach(input => {
-            // Add data attributes to track if color was manually changed
-            input.dataset.userChanged = 'false';
-            
-            // Add enhanced input event handling
-            input.addEventListener('input', function() {
-                // Update user changed flag
-                this.dataset.userChanged = 'true';
-                
-                // Update associated color preview
-                const previewId = `${this.id}-preview`;
-                const preview = document.getElementById(previewId);
-                if (preview) {
-                    preview.style.backgroundColor = formatColorValue(this.value);
-                }
-                
-                // Create appropriate change text
-                let changeType = '';
-                if (this.id === 'color') {
-                    changeType = 'QR code color';
-                } else if (this.id === 'background_color') {
-                    changeType = 'background color';
-                } else if (this.id === 'inner_eye_color') {
-                    changeType = 'inner eye color';
-                } else if (this.id === 'outer_eye_color') {
-                    changeType = 'outer eye color';
-                } else if (this.id.includes('gradient')) {
-                    changeType = 'gradient color';
-                } else if (this.id === 'frame_color') {
-                    changeType = 'frame color';
-                }
-                
-                // Trigger preview update immediately after color change
-                debounce(() => updateQRPreview(`Changed ${changeType} to ${formatColorValue(this.value)}`), 300)();
-            });
-            
-            // Enhanced change event handling for color pickers
-            input.addEventListener('change', function() {
-                this.dataset.userChanged = 'true';
-            });
-        });
-    }
-    
-    
-    // Enhanced template application function
-    
-    
-    // Toggle password visibility for WiFi password
-    function togglePassword(elementId) {
-        const element = document.getElementById(elementId);
-        const isHidden = element.classList.contains('hidden');
+        // Add a test color change to verify functionality
+        setTimeout(() => {
+            console.log('Testing color picker functionality...');
+            const colorInput = document.getElementById('color');
+            if (colorInput) {
+                console.log('Color input found, current value:', colorInput.value);
+                // Trigger a synthetic change to test if preview updates
+                colorInput.dispatchEvent(new Event('change'));
+            }
+        }, 2000);
         
-        if (isHidden) {
-            element.classList.remove('hidden');
-            element.previousElementSibling.textContent = 'Hide';
-        } else {
-            element.classList.add('hidden');
-            element.previousElementSibling.textContent = 'Show';
-        }
-    }
-
-document.addEventListener("DOMContentLoaded", function () {
-    // Preview and input pairs
-    const colorInputs = [
-        { input: '#color', preview: '#color-preview' },
-        { input: '#background_color', preview: '#bg-color-preview' },
-        { input: '#inner_eye_color', preview: '#inner-eye-color-preview' },
-        { input: '#outer_eye_color', preview: '#outer-eye-color-preview' },
-        { input: '#gradient_start', preview: '#gradient-start-preview' },
-        { input: '#gradient_end', preview: '#gradient-end-preview' }
-    ];
-
-    // Initialize preview boxes
-    colorInputs.forEach(({ input, preview }) => {
-        const inputEl = document.querySelector(input);
-        const previewEl = document.querySelector(preview);
-
-        if (inputEl && previewEl) {
-            // Update preview when input changes
-            inputEl.addEventListener('input', () => {
-                previewEl.style.backgroundColor = inputEl.value;
-            });
-
-            // Optional: allow clicking preview to trigger input
-            previewEl.addEventListener('click', () => {
-                inputEl.focus();
-            });
-
-            // Set initial state
-            previewEl.style.backgroundColor = inputEl.value;
-        }
-    });
-
-    // Optional: show/hide gradient options
-    const exportType = document.getElementById('export_type');
-    const gradientOptions = document.getElementById('gradient-options');
-
-    if (exportType && gradientOptions) {
-        const toggleGradientOptions = () => {
-            gradientOptions.classList.toggle('hidden', exportType.value !== 'gradient');
+        // Make debugging functions globally available
+        window.qrCreateDebug = {
+            manualPreviewUpdate,
+            testColorPicker,
+            updateQRPreview,
+            formatColorValue,
+            updateGradientPreview,
+            setupColorPickers
         };
-
-        exportType.addEventListener('change', toggleGradientOptions);
-        toggleGradientOptions(); // initialize
-    }
-});
-
-function setupColorPickers() {
-    const inputs = document.querySelectorAll('input[id$="color"]');
-    
-    inputs.forEach(input => {
-        const flex = input.closest('.flex');
-        if (!flex) return;
-
-        const preview = flex.querySelector('.color-preview');
-        if (!preview) return;
-
-        // Set initial color
-        preview.style.backgroundColor = formatColorValue(input.value);
-
-        const popupId = `color-popup-${input.id}`;
-        let popup = document.getElementById(popupId);
-
-        if (!popup) {
-            popup = document.createElement('div');
-            popup.id = popupId;
-            popup.className = 'color-picker-popup hidden absolute z-50 mt-2 p-2';
-            popup.innerHTML = `
-                <div class="grid grid-cols-6 gap-2">
-                    ${['#000000','#FFFFFF','#FF0000','#00FF00','#0000FF','#FFFF00','#FF00FF','#00FFFF','#FFA500','#800080','#008000','#800000']
-                        .map(color => `<div class="color-preset w-6 h-6 cursor-pointer rounded border border-gray-300 hover:border-gray-500" style="background-color: ${color}" data-color="${color}"></div>`).join('')}
-                </div>
-                <input type="color" class="mt-2 w-full h-8 rounded border border-gray-300" value="${formatColorValue(input.value)}">
-            `;
-            flex.appendChild(popup);
-
-            // Preset click
-            popup.querySelectorAll('.color-preset').forEach(preset => {
-                preset.addEventListener('click', function () {
-                    const color = this.dataset.color;
-                    updateColorInput(input, preview, color);
-                    popup.classList.add('hidden');
-                    updateGradientPreview();
-                });
-            });
-
-            // Native color picker
-            popup.querySelector('input[type="color"]').addEventListener('input', function () {
-                updateColorInput(input, preview, this.value);
-                updateGradientPreview();
-            });
-        }
-
-        // Show popup on preview click
-        preview.addEventListener('click', function (e) {
-            e.stopPropagation();
-            document.querySelectorAll('.color-picker-popup').forEach(p => {
-                if (p !== popup) p.classList.add('hidden');
-            });
-            popup.classList.toggle('hidden');
-            popup.querySelector('input[type="color"]').value = formatColorValue(input.value);
-        });
-
-        // Also make the input update the preview and trigger changes
-        input.addEventListener('input', function() {
-            updateColorInput(input, preview, this.value);
-            updateGradientPreview();
-        });
-
-        // Handle paste
-        input.addEventListener('paste', function () {
-            setTimeout(() => {
-                updateColorInput(input, preview, this.value);
-                updateGradientPreview();
-            }, 10);
-        });
+        
+        console.log('Create QR form initialization complete. Debug functions available at window.qrCreateDebug');
     });
 
-    document.addEventListener('click', () => {
-        document.querySelectorAll('.color-picker-popup').forEach(popup => popup.classList.add('hidden'));
-    });
-}
-
-function formatColorValue(val) {
-    if (!val) return '#000000';
-    if (val[0] !== '#') val = '#' + val;
-    return val.length === 7 || val.length === 4 ? val : '#000000';
-}
-
-function updateColorInput(input, preview, color) {
-    input.value = color;
-    preview.style.backgroundColor = color;
-    input.dispatchEvent(new Event('change'));
-}
-function setupColorPickers() {
-    const inputs = document.querySelectorAll('input[id$="color"]');
-    
-    inputs.forEach(input => {
-        const flex = input.closest('.flex');
-        if (!flex) return;
-
-        const preview = flex.querySelector('.color-preview');
-        if (!preview) return;
-
-        // Set initial color
-        preview.style.backgroundColor = formatColorValue(input.value);
-
-        const popupId = `color-popup-${input.id}`;
-        let popup = document.getElementById(popupId);
-
-        if (!popup) {
-            popup = document.createElement('div');
-            popup.id = popupId;
-            popup.className = 'color-picker-popup hidden absolute z-50 mt-2 p-2';
-            popup.innerHTML = `
-                <div class="grid grid-cols-6 gap-2">
-                    ${['#000000','#FFFFFF','#FF0000','#00FF00','#0000FF','#FFFF00','#FF00FF','#00FFFF','#FFA500','#800080','#008000','#800000']
-                        .map(color => `<div class="color-preset w-6 h-6 cursor-pointer rounded border border-gray-300 hover:border-gray-500" style="background-color: ${color}" data-color="${color}"></div>`).join('')}
-                </div>
-                <input type="color" class="mt-2 w-full h-8 rounded border border-gray-300" value="${formatColorValue(input.value)}">
-            `;
-            flex.appendChild(popup);
-
-            // Preset click
-            popup.querySelectorAll('.color-preset').forEach(preset => {
-                preset.addEventListener('click', function () {
-                    const color = this.dataset.color;
-                    updateColorInput(input, preview, color);
-                    popup.classList.add('hidden');
-                    updateGradientPreview();
-                });
-            });
-
-            // Native color picker
-            popup.querySelector('input[type="color"]').addEventListener('input', function () {
-                updateColorInput(input, preview, this.value);
-                updateGradientPreview();
-            });
-        }
-
-        // Show popup on preview click
-        preview.addEventListener('click', function (e) {
-            e.stopPropagation();
-            document.querySelectorAll('.color-picker-popup').forEach(p => {
-                if (p !== popup) p.classList.add('hidden');
-            });
-            popup.classList.toggle('hidden');
-            popup.querySelector('input[type="color"]').value = formatColorValue(input.value);
-        });
-
-        // Also make the input update the preview and trigger changes
-        input.addEventListener('input', function() {
-            updateColorInput(input, preview, this.value);
-            updateGradientPreview();
-        });
-
-        // Handle paste
-        input.addEventListener('paste', function () {
-            setTimeout(() => {
-                updateColorInput(input, preview, this.value);
-                updateGradientPreview();
-            }, 10);
-        });
-    });
-
-    document.addEventListener('click', () => {
-        document.querySelectorAll('.color-picker-popup').forEach(popup => popup.classList.add('hidden'));
-    });
-}
-
-function formatColorValue(val) {
-    if (!val) return '#000000';
-    if (val[0] !== '#') val = '#' + val;
-    return val.length === 7 || val.length === 4 ? val : '#000000';
-}
-
-function updateColorInput(input, preview, color) {
-    input.value = color;
-    preview.style.backgroundColor = color;
-    input.dispatchEvent(new Event('change'));
-}
-
-function updateGradientPreview() {
-    const startColor = document.getElementById('gradient_start_color').value;
-    const endColor = document.getElementById('gradient_end_color').value;
-    const gradientPreview = document.querySelector('.gradient-preview');
-    
-    if (gradientPreview) {
-        gradientPreview.style.background = `linear-gradient(135deg, ${startColor}, ${endColor})`;
-    }
-}
-
-// Enhanced setupGradientOptions function
-function setupGradientOptions() {
-    const exportTypeSelect = document.getElementById('export_type');
-    const gradientOptions = document.getElementById('gradient-options');
-    const customEyesCheckbox = document.getElementById('custom_eyes');
-    const eyeCustomizationOptions = document.getElementById('eye-customization-options');
-    
-    if (exportTypeSelect && gradientOptions) {
-        // Set initial state - ensure PNG is default
-        exportTypeSelect.value = 'png';
-        gradientOptions.classList.add('hidden');
-        
-        // Initialize hidden field for gradient tracking
-        let gradientField = document.getElementById('using_gradient');
-        if (!gradientField) {
-            gradientField = document.createElement('input');
-            gradientField.type = 'hidden';
-            gradientField.id = 'using_gradient';
-            gradientField.name = 'using_gradient';
-            exportTypeSelect.parentNode.appendChild(gradientField);
-        }
-        gradientField.value = 'false';
-        
-        // Store original state of eye customization
-        let originalEyeState = customEyesCheckbox ? customEyesCheckbox.checked : false;
-        
-        // Add event listener for changes
-        exportTypeSelect.addEventListener('change', function() {
-            const isGradient = this.value === 'gradient';
-            gradientOptions.classList.toggle('hidden', !isGradient);
-            gradientField.value = isGradient ? 'true' : 'false';
-            
-            // Force eye customization when gradient is selected
-            if (isGradient && customEyesCheckbox) {
-                // Store original state only when switching to gradient
-                if (!customEyesCheckbox.disabled) {
-                    originalEyeState = customEyesCheckbox.checked;
-                }
-                
-                // Force check the custom eyes checkbox
-                customEyesCheckbox.checked = true;
-                
-                // Disable the checkbox so user can't uncheck it while using gradient
-                customEyesCheckbox.disabled = true;
-                
-                // Show eye customization options
-                if (eyeCustomizationOptions) {
-                    eyeCustomizationOptions.classList.remove('hidden');
-                }
-                
-                // Update hidden field for custom eyes tracking
-                let customEyesField = document.getElementById('using_custom_eyes');
-                if (!customEyesField) {
-                    customEyesField = document.createElement('input');
-                    customEyesField.type = 'hidden';
-                    customEyesField.id = 'using_custom_eyes';
-                    customEyesField.name = 'using_custom_eyes';
-                    customEyesCheckbox.parentNode.appendChild(customEyesField);
-                }
-                customEyesField.value = 'true';
-                
-                // Initialize gradient colors from main QR color
-                const mainColor = document.getElementById('color').value || '#000000';
-                const gradientStartInput = document.getElementById('gradient_start');
-                const gradientEndInput = document.getElementById('gradient_end');
-                
-                // Set start color to main color if not already set
-                if (gradientStartInput && (!gradientStartInput.dataset.userChanged || gradientStartInput.dataset.userChanged !== 'true')) {
-                    gradientStartInput.value = mainColor;
-                    const startPreview = document.getElementById('gradient-start-preview');
-                    if (startPreview) startPreview.style.backgroundColor = mainColor;
-                    gradientStartInput.dataset.userChanged = 'false';
-                }
-                
-                // Set end color to lighter version of main color if not already set
-                if (gradientEndInput && (!gradientEndInput.dataset.userChanged || gradientEndInput.dataset.userChanged !== 'true')) {
-                    const endColor = lightenColor(mainColor, 30);
-                    gradientEndInput.value = endColor;
-                    const endPreview = document.getElementById('gradient-end-preview');
-                    if (endPreview) endPreview.style.backgroundColor = endColor;
-                    gradientEndInput.dataset.userChanged = 'false';
-                }
-                
-                // Set eye colors to match gradient colors
-                synchronizeEyeColors(true);
-            } 
-            else if (customEyesCheckbox) {
-                // Re-enable the checkbox when switching back to solid color
-                customEyesCheckbox.disabled = false;
-                
-                // Restore original state if we had previously forced it on
-                if (customEyesCheckbox.disabled) {
-                    customEyesCheckbox.checked = originalEyeState;
-                    
-                    // Hide eye customization options if they were originally hidden
-                    if (eyeCustomizationOptions && !originalEyeState) {
-                        eyeCustomizationOptions.classList.add('hidden');
-                    }
-                    
-                    // Update hidden field for custom eyes
-                    let customEyesField = document.getElementById('using_custom_eyes');
-                    if (customEyesField) {
-                        customEyesField.value = originalEyeState ? 'true' : 'false';
-                    }
-                }
-            }
-            
-            // Update gradient preview
-            if (isGradient) {
-                updateGradientPreview();
-            }
-            
-            // Update QR preview
-            if (window.updateQRPreview) {
-                window.updateQRPreview('Changed to ' + this.options[this.selectedIndex].text);
+    // Initialize UI fixes
+    function initializeTabs() {
+        // Hide all tab content except the first one (Templates)
+        const tabPanes = document.querySelectorAll('.tab-pane');
+        tabPanes.forEach((pane, index) => {
+            if (index === 0) {
+                pane.classList.add('show', 'active');
+                pane.classList.remove('hidden');
+            } else {
+                pane.classList.remove('show', 'active');
+                pane.classList.add('hidden');
             }
         });
         
-        // Listen for gradient color changes to sync with eye colors
-        const gradientStartInput = document.getElementById('gradient_start');
-        const gradientEndInput = document.getElementById('gradient_end');
-        
-        if (gradientStartInput && gradientEndInput) {
-            gradientStartInput.addEventListener('input', () => synchronizeEyeColors(true));
-            gradientEndInput.addEventListener('input', () => synchronizeEyeColors(true));
-        }
-    }
-}
-
-// Helper function to synchronize eye colors with gradient colors
-function synchronizeEyeColors(forceSync = false) {
-    const isGradient = document.getElementById('export_type')?.value === 'gradient';
-    
-    if (!isGradient && !forceSync) return;
-    
-    const gradientStartInput = document.getElementById('gradient_start');
-    const gradientEndInput = document.getElementById('gradient_end');
-    const innerEyeColorInput = document.getElementById('inner_eye_color');
-    const outerEyeColorInput = document.getElementById('outer_eye_color');
-    
-    // Set eye colors to match gradient colors if using gradient
-    if (innerEyeColorInput && gradientStartInput && 
-        (!innerEyeColorInput.dataset.userChanged || innerEyeColorInput.dataset.userChanged !== 'true')) {
-        innerEyeColorInput.value = gradientStartInput.value;
-        const innerPreview = document.getElementById('inner-eye-color-preview');
-        if (innerPreview) innerPreview.style.backgroundColor = gradientStartInput.value;
-    }
-    
-    if (outerEyeColorInput && gradientEndInput && 
-        (!outerEyeColorInput.dataset.userChanged || outerEyeColorInput.dataset.userChanged !== 'true')) {
-        outerEyeColorInput.value = gradientEndInput.value;
-        const outerPreview = document.getElementById('outer-eye-color-preview');
-        if (outerPreview) outerPreview.style.backgroundColor = gradientEndInput.value;
-    }
-}
-
-// Improved template application function
-function enhancedApplyTemplateStyles(template) {
-    if (!template) return;
-    
-    console.log("Applying template:", template);
-    
-    // Define templates with their respective styles
-    const templates = {
-        modern: {
-            shape: "rounded",
-            color: "#2c5282", // Updated to match formal blue
-            background_color: "#FFFFFF",
-            export_type: "png", // Explicitly set to non-gradient
-            custom_eyes: true,
-            inner_eye_style: "circle",
-            outer_eye_style: "rounded",
-            inner_eye_color: "#2c5282", // Updated to match formal blue
-            outer_eye_color: "#2c5282" // Updated to match formal blue
-        },
-        corporate: {
-            shape: "square",
-            color: "#1a365d", // Darker blue for corporate style
-            background_color: "#FFFFFF",
-            export_type: "png", // Explicitly set to non-gradient
-            frame_type: "square",
-            frame_color: "#1a365d", // Darker blue for corporate style
-            custom_eyes: false
-        },
-        playful: {
-            shape: "circle",
-            export_type: "gradient", // Only this template uses gradient
-            gradient_start: "#3182ce", // Updated to match formal blue palette
-            gradient_end: "#90cdf4", // Updated to match formal blue palette
-            background_color: "#FFFFFF",
-            custom_eyes: true,
-            inner_eye_style: "circle",
-            outer_eye_style: "circle",
-            inner_eye_color: "#3182ce", // Updated to match formal blue palette
-            outer_eye_color: "#3182ce" // Updated to match formal blue palette
-        },
-        minimal: {
-            shape: "square",
-            color: "#2d3748", // Gray for minimal style
-            background_color: "#FFFFFF",
-            export_type: "png", // Explicitly set to non-gradient
-            custom_eyes: false
-        },
-        high_contrast: {
-            shape: "square",
-            color: "#000000",
-            background_color: "#FFFFFF",
-            export_type: "png", // Explicitly set to non-gradient
-            module_size: 12,
-            quiet_zone: 4,
-            custom_eyes: false
-        }
-    };
-    
-    // Get the template styles
-    const styles = templates[template];
-    if (!styles) return;
-    
-    console.log("Template styles:", styles);
-    
-    // Reset user-changed flags when applying template
-    document.querySelectorAll('input[id$="color"]').forEach(input => {
-        input.dataset.userChanged = 'false';
-    });
-    
-    // Apply template styles
-    Object.keys(styles).forEach(key => {
-        const value = styles[key];
-        const element = document.getElementById(key);
-        
-        if (element) {
-            // Handle color inputs specially
-            if (key.includes('color')) {
-                // Only update if user hasn't changed it
-                if (element.dataset.userChanged !== 'true') {
-                    const formattedColor = formatColorValue(value);
-                    element.value = formattedColor;
-                    
-                    // Update preview for color inputs
-                    const preview = document.getElementById(`${key}-preview`);
-                    if (preview) {
-                        preview.style.backgroundColor = formattedColor;
-                    }
-                }
-            } 
-            // Handle checkboxes
-            else if (element.type === 'checkbox') {
-                element.checked = value;
-                
-                // Toggle related panels for custom eyes
-                if (key === 'custom_eyes') {
-                    const eyeOptions = document.getElementById('eye-customization-options');
-                    if (eyeOptions) {
-                        eyeOptions.classList.toggle('hidden', !value);
-                    }
-                    
-                    // Update hidden field
-                    const hiddenField = document.getElementById('using_custom_eyes');
-                    if (hiddenField) {
-                        hiddenField.value = value ? 'true' : 'false';
-                    }
-                }
-            }
-            // Handle select elements
-            else if (element.tagName === 'SELECT') {
-                element.value = value;
-                
-                // Special handling for export type
-                if (key === 'export_type') {
-                    const gradientOptions = document.getElementById('gradient-options');
-                    if (gradientOptions) {
-                        const isGradient = value === 'gradient';
-                        gradientOptions.classList.toggle('hidden', !isGradient);
-                        
-                        // If gradient, ensure custom eyes are enabled
-                        if (isGradient) {
-                            const customEyesCheckbox = document.getElementById('custom_eyes');
-                            if (customEyesCheckbox) {
-                                customEyesCheckbox.checked = true;
-                                customEyesCheckbox.disabled = true;
-                                
-                                // Show eye customization options
-                                const eyeOptions = document.getElementById('eye-customization-options');
-                                if (eyeOptions) {
-                                    eyeOptions.classList.remove('hidden');
-                                }
-                                
-                                // Sync eye colors with gradient colors
-                                synchronizeEyeColors(true);
-                            }
-                        }
-                    }
-                    
-                    // Update hidden field
-                    const gradientField = document.getElementById('using_gradient');
-                    if (gradientField) {
-                        gradientField.value = value === 'gradient' ? 'true' : 'false';
-                    } else {
-                        // Create hidden field if it doesn't exist
-                        const newField = document.createElement('input');
-                        newField.type = 'hidden';
-                        newField.id = 'using_gradient';
-                        newField.name = 'using_gradient';
-                        newField.value = value === 'gradient' ? 'true' : 'false';
-                        element.parentNode.appendChild(newField);
-                    }
-                }
-            }
-            // Handle text inputs
-            else if (element.type === 'text' || element.type === 'number' || element.type === 'range') {
-                element.value = value;
-                
-                // Update display value for range inputs
-                if (element.type === 'range') {
-                    const valueDisplay = document.getElementById(`${key}-value`);
-                    if (valueDisplay) {
-                        valueDisplay.textContent = value;
-                    }
-                }
-            }
-        }
-        
-        // Handle radio button groups
-        if (key === 'shape') {
-            const radio = document.getElementById(`shape-${value}`);
-            if (radio) {
-                radio.checked = true;
-                
-                // Update styles on the label
-                const allLabels = document.querySelectorAll('.shape-option label');
-                allLabels.forEach(label => {
-                    label.classList.remove('bg-secondary-50', 'border-secondary-500');
-                });
-                
-                const label = document.querySelector(`label[for="shape-${value}"]`);
-                if (label) {
-                    label.classList.add('bg-secondary-50', 'border-secondary-500');
-                }
-            }
-        }
-        else if (key === 'frame_type') {
-            const radio = document.getElementById(`frame-${value}`);
-            if (radio) {
-                radio.checked = true;
-                
-                // Update styles on the label
-                const allLabels = document.querySelectorAll('input[name="frame_type"] + label');
-                allLabels.forEach(label => {
-                    label.classList.remove('bg-secondary-50', 'border-secondary-500');
-                });
-                
-                const label = document.querySelector(`label[for="frame-${value}"]`);
-                if (label) {
-                    label.classList.add('bg-secondary-50', 'border-secondary-500');
-                }
-                
-                // Show/hide frame text input based on frame type
-                const frameTextContainer = document.getElementById('frame-text-container');
-                if (frameTextContainer) {
-                    frameTextContainer.classList.toggle('hidden', !['scan_me', 'branded'].includes(value));
-                }
-            }
-        }
-    });
-    
-    // Update gradient preview if needed
-    if (styles.export_type === 'gradient') {
-        updateGradientPreview();
-    }
-    
-    // Trigger preview update
-    updateQRPreview(`Applied '${template}' template`);
-}
-
-// Fix for gradient activation issues
-function fixGradientActivation() {
-    const exportTypeSelect = document.getElementById('export_type');
-    const gradientOptions = document.getElementById('gradient-options');
-    
-    if (exportTypeSelect && gradientOptions) {
-        // Ensure 'png' (solid color) is the default value
-        exportTypeSelect.value = 'png';
-        gradientOptions.classList.add('hidden');
-        
-        // Make sure the hidden gradient field is set correctly
-        let gradientField = document.getElementById('using_gradient');
-        if (!gradientField) {
-            gradientField = document.createElement('input');
-            gradientField.type = 'hidden';
-            gradientField.id = 'using_gradient';
-            gradientField.name = 'using_gradient';
-            exportTypeSelect.parentNode.appendChild(gradientField);
-        }
-        gradientField.value = 'false';
-        
-        // Setup initial eye customization state
-        const customEyesCheckbox = document.getElementById('custom_eyes');
-        if (customEyesCheckbox) {
-            customEyesCheckbox.disabled = false;
-            
-            // Make sure eye customization is correctly initialized
-            const eyeOptions = document.getElementById('eye-customization-options');
-            if (eyeOptions) {
-                eyeOptions.classList.toggle('hidden', !customEyesCheckbox.checked);
-            }
-        }
-    }
-}
-
-// Enhanced setup for eye customization
-function setupEnhancedEyeCustomization() {
-    const customEyesCheckbox = document.getElementById('custom_eyes');
-    const eyeCustomizationOptions = document.getElementById('eye-customization-options');
-    const exportTypeSelect = document.getElementById('export_type');
-    
-    if (customEyesCheckbox && eyeCustomizationOptions) {
-        // Set initial state
-        eyeCustomizationOptions.classList.toggle('hidden', !customEyesCheckbox.checked);
-        
-        // Add hidden field to track custom eyes
-        let customEyesField = document.getElementById('using_custom_eyes');
-        if (!customEyesField) {
-            customEyesField = document.createElement('input');
-            customEyesField.type = 'hidden';
-            customEyesField.id = 'using_custom_eyes';
-            customEyesField.name = 'using_custom_eyes';
-            customEyesCheckbox.parentNode.appendChild(customEyesField);
-        }
-        customEyesField.value = customEyesCheckbox.checked ? 'true' : 'false';
-        
-        // Add event listener
-        customEyesCheckbox.addEventListener('change', function() {
-            // Don't allow unchecking if using gradient
-            if (exportTypeSelect && exportTypeSelect.value === 'gradient' && !this.checked) {
-                this.checked = true;
-                return;
-            }
-            
-            eyeCustomizationOptions.classList.toggle('hidden', !this.checked);
-            customEyesField.value = this.checked ? 'true' : 'false';
-            
-            // When enabling custom eyes, set the eye colors appropriately
-            if (this.checked) {
-                // If gradient is active, set eye colors to match gradient colors
-                if (exportTypeSelect && exportTypeSelect.value === 'gradient') {
-                    synchronizeEyeColors(true);
-                } else {
-                    // Otherwise use main QR color
-                    const mainColor = document.getElementById('color').value;
-                    const innerEyeColorInput = document.getElementById('inner_eye_color');
-                    const outerEyeColorInput = document.getElementById('outer_eye_color');
-                    
-                    if (innerEyeColorInput && (!innerEyeColorInput.value || innerEyeColorInput.value === '#000000')) {
-                        innerEyeColorInput.value = mainColor;
-                        const innerPreview = document.getElementById('inner-eye-color-preview');
-                        if (innerPreview) innerPreview.style.backgroundColor = mainColor;
-                    }
-                    
-                    if (outerEyeColorInput && (!outerEyeColorInput.value || outerEyeColorInput.value === '#000000')) {
-                        outerEyeColorInput.value = mainColor;
-                        const outerPreview = document.getElementById('outer-eye-color-preview');
-                        if (outerPreview) outerPreview.style.backgroundColor = mainColor;
-                    }
-                }
-            }
-            
-            // Trigger preview update
-            if (window.updateQRPreview) {
-                window.updateQRPreview('Toggled custom eye styles');
+        // Set the first tab as active
+        const tabButtons = document.querySelectorAll('[data-bs-toggle="pill"]');
+        tabButtons.forEach((btn, index) => {
+            if (index === 0) {
+                btn.classList.add('border-secondary-500', 'text-secondary-600', 'active');
+                btn.classList.remove('border-transparent', 'text-gray-500');
+                btn.setAttribute('aria-selected', 'true');
+            } else {
+                btn.classList.remove('border-secondary-500', 'text-secondary-600', 'active');
+                btn.classList.add('border-transparent', 'text-gray-500');
+                btn.setAttribute('aria-selected', 'false');
             }
         });
     }
-    
-    // Add listeners to eye color inputs to track user changes
-    const eyeColorInputs = [
-        document.getElementById('inner_eye_color'),
-        document.getElementById('outer_eye_color')
-    ];
-    
-    eyeColorInputs.forEach(input => {
-        if (input) {
-            input.addEventListener('input', function() {
-                this.dataset.userChanged = 'true';
-            });
-        }
-    });
-}
 
-// Initialize everything together
-document.addEventListener('DOMContentLoaded', function() {
-    // Setup the enhanced gradient options
-    setupGradientOptions();
-    
-    // Setup enhanced eye customization
-    setupEnhancedEyeCustomization();
-    
-    // Fix gradient activation
-    fixGradientActivation();
-    
-    // Add listener to template selection to handle gradient properly
-    document.querySelectorAll('.template-card').forEach(card => {
-        card.addEventListener('click', function() {
-            const templateName = this.dataset.template;
-            
-            // Check if this is a gradient template
-            if (templateName === 'playful') {
-                // Make sure export type is set to gradient
-                const exportTypeSelect = document.getElementById('export_type');
-                if (exportTypeSelect) {
-                    exportTypeSelect.value = 'gradient';
-                    
-                    // Trigger the change event to update UI
-                    const event = new Event('change');
-                    exportTypeSelect.dispatchEvent(event);
-                }
+    // Custom QR Type selection enhancement
+    function enhanceQRTypeSwitching() {
+        const qrTypeContents = document.querySelectorAll('.qr-type-content');
+        const qrTypeOptions = document.querySelectorAll('.qr-type-option');
+        
+        // Style all QR type options initially
+        qrTypeOptions.forEach((option, index) => {
+            if (index === 0) {
+                option.classList.add('active');
+                option.querySelector('i').classList.add('text-blue-700');
+                option.querySelector('i').classList.remove('text-gray-600');
+            } else {
+                option.classList.remove('active');
+                option.querySelector('i').classList.remove('text-blue-700');
+                option.querySelector('i').classList.add('text-gray-600');
             }
         });
-    });
-});
+        
+        // Style all QR type contents initially
+        qrTypeContents.forEach((content, index) => {
+            if (index === 0) {
+                content.classList.remove('hidden');
+                content.style.opacity = '1';
+                content.style.transition = 'opacity 0.3s ease';
+            } else {
+                content.classList.add('hidden');
+                content.style.opacity = '0';
+                content.style.transition = 'opacity 0.3s ease';
+            }
+        });
+    }
 </script>
 
 {% endblock %}

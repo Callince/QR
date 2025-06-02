@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="format-detection" content="telephone=no">
   <meta name="theme-color" content="{{ detail.primary_color or '#1e3a8a' }}">
-  <title>{{ detail.name }} - Business Card</title>
+  <title>{{ detail.name or 'Business Card' }} - Business Card</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -576,14 +576,18 @@
       <div class="profile-section">
         <div class="profile-image">
           {% if detail.logo_path %}
-          <img src="{{ url_for('static', filename='uploads/' + detail.logo_path.replace('\\', '/')) }}" alt="{{ detail.name }}">
+          <img src="{{ url_for('static', filename='uploads/' + detail.logo_path.replace('\\', '/')) }}" alt="{{ detail.name or 'Business Card' }}">
           {% else %}
           <div class="profile-image-placeholder">
-            {{ detail.name[0] | upper }}
+            {% if detail.name and detail.name|length > 0 %}
+              {{ detail.name[0] | upper }}
+            {% else %}
+              ?
+            {% endif %}
           </div>
           {% endif %}
         </div>
-        <h1>{{ detail.name }}</h1>
+        <h1>{{ detail.name or 'No Name Provided' }}</h1>
         <div class="title-company">
           {% if detail.title %}{{ detail.title }}{% endif %}
           {% if detail.title and detail.company %} • {% endif %}
@@ -703,8 +707,8 @@
       
       const vcard = `BEGIN:VCARD
 VERSION:3.0
-FN:{{ detail.name }}
-N:{{ detail.name.split()[-1] if detail.name.split()|length > 1 else '' }};{{ detail.name.split()[0] if detail.name.split()|length > 0 else detail.name }};;;
+FN:{{ detail.name or 'Unknown' }}
+N:{{ (detail.name or 'Unknown').split()[-1] if (detail.name or 'Unknown').split()|length > 1 else '' }};{{ (detail.name or 'Unknown').split()[0] if (detail.name or 'Unknown').split()|length > 0 else (detail.name or 'Unknown') }};;;
 {% if detail.title %}TITLE:{{ detail.title }}{% endif %}
 {% if detail.company %}ORG:{{ detail.company }}{% endif %}
 {% if detail.phone %}TEL:{{ detail.phone }}{% endif %}
@@ -727,7 +731,7 @@ END:VCARD`;
       const a = document.createElement('a');
       a.style.display = 'none';
       a.href = url;
-      a.download = '{{ detail.name | replace(" ", "_") }}.vcf';
+      a.download = '{{ (detail.name or "Business_Card") | replace(" ", "_") }}.vcf';
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -745,7 +749,7 @@ END:VCARD`;
       if (navigator.share) {
         try {
           await navigator.share({
-            title: '{{ detail.name }}\'s Business Card',
+            title: '{{ detail.name or "Business Card" }}\'s Business Card',
             text: 'Contact information',
             url: currentUrl
           });

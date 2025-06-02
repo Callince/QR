@@ -360,6 +360,17 @@
             position: relative;
             overflow: hidden;
         }
+        .popup {
+            position: fixed; /* or absolute if inside a relatively positioned container */
+            bottom: 2rem; /* or top/left/right depending on where it should appear */
+            right: 2rem;
+            background: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
         
         .btn::after {
             content: '';
@@ -735,50 +746,7 @@
         </div>
     </header>
 
-    <!-- Subscription Status Indicator (NEW) -->
-    {% if current_user.is_authenticated %}
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
-        {% if has_subscription %}
-        <div class="bg-white shadow-sm rounded-lg p-3 border border-gray-200 flex items-center justify-between">
-            <div class="flex items-center space-x-4">
-                <div class="h-10 w-10 bg-secondary-100 rounded-full flex items-center justify-center text-secondary-700">
-                    <i class="fas fa-crown text-lg"></i>
-                </div>
-                <div>
-                    <span class="text-sm text-gray-600">{{ plan_name }} Plan</span>
-                    <div class="flex space-x-4 text-xs text-gray-500">
-                        <span>QR Codes: {{ qr_remaining }}/{{ qr_limit }}</span>
-                        {% if analytics_remaining is defined %}
-                        <span>Analytics: {{ analytics_remaining }} remaining</span>
-                        {% endif %}
-                        <span>Expires: {{ expires_on|date('%b %d, %Y') if expires_on else 'Unknown' }}</span>
-                    </div>
-                </div>
-            </div>
-            <a href="{{ url_for('subscription.user_subscriptions') }}" class="text-sm text-secondary-600 hover:text-secondary-800 font-medium">
-                Manage Subscription
-            </a>
-        </div>
-        {% else %}
-        <div class="bg-gray-50 shadow-sm rounded-lg p-3 border border-gray-200 flex items-center justify-between">
-            <div class="flex items-center space-x-4">
-                <div class="h-10 w-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-500">
-                    <i class="fas fa-crown text-lg"></i>
-                </div>
-                <div>
-                    <span class="text-sm text-gray-600">No Active Subscription</span>
-                    <div class="text-xs text-gray-500">
-                        <span>Subscribe to create more QR codes and access analytics</span>
-                    </div>
-                </div>
-            </div>
-            <a href="{{ url_for('subscription.user_subscriptions') }}" class="btn btn-sm btn-gradient">
-                Subscribe Now
-            </a>
-        </div>
-        {% endif %}
-    </div>
-    {% endif %}
+    
 
     <!-- Main Content with improved aesthetics -->
     <main class="main-content flex-grow fade-in">

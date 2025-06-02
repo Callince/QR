@@ -1,0 +1,240 @@
+/* Formal UI styles with professional appearance */
+body {
+    background-color: #f7f7f7;
+}
+
+.formal-card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.formal-button {
+    background-color: #2c5282;
+    color: white;
+    border: none;
+    transition: background-color 0.2s ease;
+}
+
+.formal-button:hover {
+    background-color: #2a4e7c;
+}
+
+.section-header {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1a202c;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #4a5568;
+    margin-bottom: 0.5rem;
+}
+
+.form-input {
+    border: 1px solid #cbd5e0;
+    background-color: #ffffff;
+    font-size: 0.875rem;
+    padding: 0.625rem 0.875rem;
+    transition: border-color 0.15s ease;
+}
+
+.form-input:focus {
+    border-color: #2c5282;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(44, 82, 130, 0.1);
+}
+
+.qr-type-option {
+    background: white;
+    border: 2px solid #e2e8f0;
+    transition: all 0.15s ease;
+    cursor: pointer;
+}
+
+.qr-type-option:hover {
+    border-color: #cbd5e0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.qr-type-option.active {
+    border-color: #2c5282;
+    background-color: #f7fafc;
+}
+
+.tab-button {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #718096;
+    padding: 0.75rem 1rem;
+    border-bottom: 3px solid transparent;
+    transition: all 0.15s ease;
+}
+
+.tab-button.active {
+    color: #2c5282;
+    border-bottom-color: #2c5282;
+}
+
+.template-card {
+    border: 2px solid #e2e8f0;
+    transition: all 0.15s ease;
+    cursor: pointer;
+    background: white;
+}
+
+.template-card:hover {
+    border-color: #cbd5e0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.template-card.selected {
+    border-color: #2c5282;
+    background-color: #f7fafc;
+}
+
+/* Color preview with formal styling */
+.color-preview {
+    width: 28px;
+    height: 28px;
+    border: 1px solid #e2e8f0;
+    cursor: pointer;
+    transition: box-shadow 0.15s ease;
+}
+
+.color-preview:hover {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Professional accordion styling */
+.accordion-header {
+    background-color: #f8f9fa;
+    border: 1px solid #e2e8f0;
+    font-weight: 500;
+    color: #2d3748;
+    transition: background-color 0.15s ease;
+}
+
+.accordion-header:hover {
+    background-color: #f1f3f5;
+}
+
+/* Formal shape options */
+.shape-option label {
+    border: 2px solid #e2e8f0;
+    background: white;
+    transition: all 0.15s ease;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+.shape-option input:checked + label {
+    border-color: #2c5282;
+    background-color: #f7fafc;
+    box-shadow: none;
+    transform: none;
+}
+
+.shape-option label:hover {
+    border-color: #cbd5e0;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Professional range slider */
+input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 3px;
+    outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #2c5282;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    background: #2a4e7c;
+    transform: none;
+}
+
+/* Formal notification style */
+.toast {
+    font-family: inherit;
+    font-size: 0.875rem;
+}
+
+/* Professional color picker popup */
+.color-picker-popup {
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    background: white;
+    border-radius: 4px;
+}
+
+.color-preset {
+    border: 1px solid #e2e8f0;
+    transition: transform 0.1s ease;
+}
+
+.color-preset:hover {
+    transform: scale(1.05);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Preview section styling */
+.qr-preview {
+    border: 1px solid #e2e8f0;
+    background: #fafafa;
+    padding: 1.5rem;
+}
+
+/* Professional toggle switch */
+.toggle-checkbox:checked {
+    right: 0;
+    border-color: #2c5282;
+}
+
+.toggle-checkbox:checked + .toggle-label {
+    background-color: #2c5282;
+}
+
+/* Help text styling */
+.help-text {
+    font-size: 0.8125rem;
+    color: #718096;
+}
+
+/* Error message styling */
+.error-text {
+    font-size: 0.8125rem;
+    color: #e53e3e;
+}
+
+/* Badge styling */
+.badge {
+    background-color: #edf2f7;
+    color: #4a5568;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.75rem;
+    border-radius: 3px;
+}
+
+.badge.primary {
+    background-color: #e6f2ff;
+    color: #2c5282;
+}
